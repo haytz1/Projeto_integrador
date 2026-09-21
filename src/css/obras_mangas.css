@@ -1,0 +1,420 @@
+/* =====================
+   FONTE & RESET
+   ===================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d1117;
+    color: #8b5cf6;
+    min-height: 100vh;
+}
+
+/* =====================
+   BOTÃO VOLTAR
+   ===================== */
+.btn-voltar,
+.btn-historico-link {
+    display: inline-block;
+    position: fixed;
+    top: 16px;
+    color: #8b5cf6;
+    text-decoration: none;
+    font-size: 1rem;
+    background-color: rgba(139, 92, 246, 0.1);
+    border: 1px solid #8b5cf6;
+    padding: 6px 14px;
+    border-radius: 6px;
+    z-index: 100;
+    transition: all 0.2s ease;
+}
+
+.btn-voltar {
+    left: 16px;
+}
+
+.btn-historico-link {
+    left: 210px;
+    background-color: #c384ff;
+    border-color: #c384ff;
+    color: #15092e;
+    font-weight: 700;
+}
+
+.btn-voltar:hover,
+.btn-historico-link:hover {
+    background-color: #8b5cf6;
+    color: #0d1117;
+    transform: translateY(-1px);
+}
+
+/* =====================
+   CABEÇALHO / BARRA DE PESQUISA
+   ===================== */
+.cabecalho {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: #161b22;
+    border-bottom: 1px solid #8b5cf6;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.icone-perfil{
+    width: 20px;
+    align-items: center;   
+    display: inline-flex;
+    gap: 2px;
+    vertical-align: middle;
+}
+
+.barra-pesquisa-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.barra-pesquisa {
+    background-color: #0d1117;
+    border: 1px solid #8b5cf6;
+    color: #8b5cf6;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    border-radius: 6px;
+    width: 240px;
+    outline: none;
+}
+
+.barra-pesquisa::placeholder {
+    color: rgba(139, 92, 246, 0.5);
+}
+
+.barra-pesquisa:focus {
+    border-color: #fff;
+}
+
+.resultado-pesquisa {
+    font-size: 0.85rem;
+    color: rgba(139, 92, 246, 0.7);
+    min-width: 80px;
+}
+
+/* =====================
+   FILTRO DE GÊNEROS (tag <details>)
+   ===================== */
+.filtro-container {
+    position: relative;
+}
+
+.filtro-icone {
+    cursor: pointer;
+    background-color: #8b5cf6;
+    color: #0d1117;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    list-style: none;
+    transition: 0.2s;
+}
+
+.filtro-icone::-webkit-details-marker {
+    display: none;
+}
+
+.filtro-icone:hover {
+    background-color: #a78bfa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.filtro-generos {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width:220px;
+    background-color: #161b22;
+    border: 1px solid #8b5cf6;
+    border-radius: 12px;
+    padding: 14px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.45),
+        0 0 20px rgba(139, 92, 246, 0.12);
+}
+
+.filtro-generos label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 9px;
+    border-radius: 7px;
+    font-size: 0.9rem;
+    color: #8b5cf6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filtro-generos label:hover {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: #c4b5fd;
+    transform: translateX(3px);
+}
+
+.filtro-generos input[type="checkbox"] {
+    appearance: none;
+    width: 16px;                                              
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    border-radius: 4px;
+    border: 2px solid #8b5cf6;
+    background-color: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.filtro-generos input[type="checkbox"]:checked {
+    background-color: #8b5cf6;
+    border-color: #8b5cf6;
+}
+
+.filtro-generos input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0d1117;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* =====================
+   ÁREA PRINCIPAL
+   ===================== */
+.conteudo-principal {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+    align-items: flex-start;
+}
+
+/* =====================
+   PAINEL DO USUÁRIO (aside)
+   ===================== */
+.painel-usuario {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    width: 280px;
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 20px;
+    border: 1px solid #8b5cf6;
+    border-radius: 14px;
+    justify-content: center;
+}
+
+.cabecalho-perfil{
+    margin-bottom: 8px;
+}
+
+.usuario-foto {
+    width: 150px;
+    height: 150px;
+    aspect-ratio: 1 / 1.4;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #8b5cf6;
+    align-items: center;
+}
+
+.usuario-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.12);
+}
+
+.usuario-nome {
+    font-size: 20px;
+    color: #8b5cf6;
+    text-align: center;
+    margin-bottom: 10px;
+    margin-top:15px;
+    font-weight: bold;
+}
+
+.obras-lidas {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.obras-lidas-titulo {
+    font-size: 20px;
+    color: rgba(139, 92, 246, 0.7);
+    margin-bottom: 25px;
+    margin: 0 0 30px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.obras-lidas ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+}
+
+.obras-lidas li:hover{
+    border-color: #a78bfa;
+    background: #1c2128;
+    transform: translateX(-2px);
+}
+
+.obras-lidas ul li {
+    font-size: 15px;
+    color: #8b5cf6;
+    text-align: center;
+    background-color: rgba(139, 92, 246, 0.1);
+    border-radius: 6px;
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: 0.2s;
+}
+
+.btn-historico {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background-color: #8b5cf6;
+    color: #0d1117;
+    text-decoration: none;
+    padding: 8px 0;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    margin-top: 30px;
+}
+
+.btn-historico:hover {
+    background-color: #a78bfa;
+}
+
+/* =====================
+   GRADE DE CARDS
+   ===================== */
+.grade-obras {
+    display: grid;
+    grid-template-columns: repeat(4, 260px);
+    gap: 20px;
+    flex: 1;
+    justify-content: center;
+    margin-left:120px;
+}
+
+/* =====================
+   CARD
+   ===================== */
+.card {
+    background-color: #161b22;
+    border: 1px solid #8b5cf6;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 14px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 260px;
+    height: 420px;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+}
+
+.card-imagem {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    display: block;
+}
+
+.card-nome {
+    font-size: 0.9rem;
+    color: #8b5cf6;
+    text-align: center;
+    margin: 10px 10px 4px;
+    font-size: 0.95rem;
+}
+
+.card-autor {
+    font-size: 0.78rem;
+    color: rgba(139, 92, 246, 0.7);
+    text-align: center;
+    padding: 0 8px;
+}
+
+.card-capitulos {
+    font-size: 0.78rem;
+    color: rgba(139, 92, 246, 0.5);
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* =====================
+   RESPONSIVIDADE BÁSICA
+   ===================== */
+@media (max-width: 1200px) {
+    .grade-obras {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .grade-obras {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .conteudo-principal {
+        flex-direction: column;
+    }
+    .painel-usuario {
+        width: 100%;
+        position: static;
+    }
+    .grade-obras {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
