@@ -1,0 +1,214 @@
+/* ==========================================================================
+   CSS Específico para Página de Moedas
+   ========================================================================== */
+
+/* Variáveis locais para garantir as cores solicitadas, caso não existam no global */
+:root {
+    --bg-moedas: #15092e;
+    --btn-moedas: #c384ff;
+    --btn-moedas-hover: #b06cf0;
+}
+
+body {
+    background-color: var(--bg-moedas);
+}
+
+/* Header Principal */
+.coins-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-top: 5rem;
+}
+
+.main-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    background: linear-gradient(90deg, #ffffff, var(--btn-moedas));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.coins-header p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Grid de Moedas */
+.coins-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+}
+
+/* Cards de Moedas */
+.coin-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.coin-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    border-color: rgba(195, 132, 255, 0.2);
+}
+
+/* Destaque (Plano do Meio) */
+.coin-featured {
+    border-color: var(--btn-moedas);
+    background: linear-gradient(180deg, rgba(195, 132, 255, 0.1) 0%, rgba(255,255,255,0.03) 100%);
+    transform: scale(1.05);
+}
+
+.coin-featured:hover {
+    transform: scale(1.05) translateY(-10px);
+    border-color: var(--btn-moedas-hover);
+    box-shadow: 0 15px 40px rgba(195, 132, 255, 0.2);
+}
+
+.featured-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--btn-moedas);
+    color: #15092e;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.4rem 1.2rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Textos e Preços */
+.coin-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.coin-icon {
+    font-size: 3rem;
+    color: var(--btn-moedas);
+    margin-bottom: 1rem;
+}
+
+.coin-header h2 {
+    font-size: 1.8rem;
+    border: none;
+    padding: 0;
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+.coin-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+.currency {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Vantagens / Features */
+.coin-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.coin-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex: 1;
+    list-style: none;
+    padding: 0;
+}
+
+.coin-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.95rem;
+    color: #e0e0e0;
+}
+
+.coin-features li i {
+    font-size: 1.2rem;
+    color: var(--btn-moedas);
+}
+
+/* Botões */
+.btn-coin {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.coin-card:not(.coin-featured) .btn-coin {
+    background: transparent;
+    border: 1px solid var(--btn-moedas);
+    color: var(--btn-moedas);
+}
+
+.coin-card:not(.coin-featured) .btn-coin:hover {
+    background: var(--btn-moedas);
+    color: #15092e;
+}
+
+.coin-featured .btn-coin {
+    background: var(--btn-moedas);
+    border: 1px solid var(--btn-moedas);
+    color: #15092e;
+}
+
+.coin-featured .btn-coin:hover {
+    background: var(--btn-moedas-hover);
+    border-color: var(--btn-moedas-hover);
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .coins-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+    
+    .coin-featured {
+        transform: none;
+    }
+    
+    .coin-featured:hover {
+        transform: translateY(-10px);
+    }
+}
