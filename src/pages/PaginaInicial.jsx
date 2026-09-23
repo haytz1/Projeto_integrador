@@ -5,9 +5,6 @@ function PaginaInicial() {
 
         <>
 
-            
-
-
             <nav class="navbar" role="navigation" aria-label="Navegação principal">
                 <div class="nav-left">
                     <a href="#" class="nav-logo" aria-label="Anime Spot - Página inicial">
