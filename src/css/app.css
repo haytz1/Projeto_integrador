@@ -843,7 +843,7 @@ img { max-width: 100%; display: block; }
     Por enquanto você pode colocar
     uma imagem do mapa aqui.
   */
-  background-image: url("./imagens/images-removebg-preview\ \(1\).png");
+  background-image: url("./public/images-removebg-preview\ \(1\).png");
   background-size: cover;
   background-position: center;
 }
