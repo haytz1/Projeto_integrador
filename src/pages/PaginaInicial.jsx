@@ -380,8 +380,8 @@ function PaginaInicial() {
                         <ul>
                             <li><Link to="/">Início</Link></li>
                             <li><Link to="/Planos">Planos</Link></li>
-                            <li><Link href="#">Explorar</Link></li>
-                            <li><Link href="#">Eventos</Link></li>
+                            <li><a href="#">Explorar</a></li>
+                            <li><a href="#">Eventos</a></li>
                         </ul>
                     </div>
                     <div className="footer-links">
