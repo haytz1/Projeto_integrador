@@ -8,114 +8,114 @@ function Perfil() {
 
         <Navbar/>
 
-            <main class="page-wrapper">
-                <div class="profile-container">
+            <main className="page-wrapper">
+                <div className="profile-container">
 
-                    <div class="profile-header-row">
+                    <div className="profile-header-row">
 
 
-                        <section class="user-info-section">
-                            <div class="avatar-col">
-                                <div class="avatar-circle">
-                                    <i class="ph ph-user"></i>
+                        <section className="user-info-section">
+                            <div className="avatar-col">
+                                <div className="avatar-circle">
+                                    <i className="ph ph-user"></i>
                                 </div>
-                                <button class="edit-photo-btn"><i class="ph ph-pencil-simple"></i> Editar foto</button>
+                                <button className="edit-photo-btn"><i className="ph ph-pencil-simple"></i> Editar foto</button>
                             </div>
-                            <div class="info-col">
-                                <h2 class="section-title" style="margin-bottom: 0.5rem;">Perfil de usuário</h2>
-                                <div class="info-item">
-                                    <span class="info-label">Nome do usuario:</span>
-                                    <span class="info-value">@usuario12</span>
+                            <div className="info-col">
+                                <h2 className="section-title" style="margin-bottom: 0.5rem;">Perfil de usuário</h2>
+                                <div className="info-item">
+                                    <span className="info-label">Nome do usuario:</span>
+                                    <span className="info-value">@usuario12</span>
                                 </div>
-                                <div class="info-item">
-                                    <span class="info-label">E-mail:</span>
-                                    <span class="info-value">usuario1@gmail.com</span>
+                                <div className="info-item">
+                                    <span className="info-label">E-mail:</span>
+                                    <span className="info-value">usuario1@gmail.com</span>
                                 </div>
-                                <div class="info-item">
-                                    <span class="info-label">Data de cadastro:</span>
-                                    <span class="info-value">12/08/2026</span>
+                                <div className="info-item">
+                                    <span className="info-label">Data de cadastro:</span>
+                                    <span className="info-value">12/08/2026</span>
                                 </div>
                             </div>
                         </section>
 
 
-                        <section class="plan-section">
-                            <h2 class="section-title" style="margin-bottom: 0.5rem;">Plano atual</h2>
-                            <div class="plan-coins">
-                                <i class="ph-fill ph-coin"></i>
-                                <i class="ph-fill ph-coin"></i>
+                        <section className="plan-section">
+                            <h2 className="section-title" style="margin-bottom: 0.5rem;">Plano atual</h2>
+                            <div className="plan-coins">
+                                <i className="ph-fill ph-coin"></i>
+                                <i className="ph-fill ph-coin"></i>
                             </div>
-                            <div class="plan-name">Plano 1</div>
-                            <p class="plan-desc">Aproveite os recursos mais populares do nosso site.</p>
-                            <a href="planos.html" class="plan-link">Ver planos</a>
+                            <div className="plan-name">Plano 1</div>
+                            <p className="plan-desc">Aproveite os recursos mais populares do nosso site.</p>
+                            <Link to="/Planos" className="plan-link">Ver planos</Link>
                         </section>
 
                     </div>
 
 
-                    <section class="preferences-section">
-                        <h2 class="section-title">Preferências de animes</h2>
-                        <p class="section-subtitle">Personalize sua experiência no site</p>
+                    <section className="preferences-section">
+                        <h2 className="section-title">Preferências de animes</h2>
+                        <p className="section-subtitle">Personalize sua experiência no site</p>
 
-                        <div class="prefs-grid">
+                        <div className="prefs-grid">
 
-                            <div class="pref-col">
-                                <h3 class="pref-title">Animes favoritos</h3>
-                                <p class="pref-desc">Adicione os animes que você mais gosta.</p>
-                                <div class="tags-container">
-                                    <span class="tag">Naruto <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">One Piece <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Attack on Titan <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Haikyuu <button class="tag-remove">&times;</button></span>
+                            <div className="pref-col">
+                                <h3 className="pref-title">Animes favoritos</h3>
+                                <p className="pref-desc">Adicione os animes que você mais gosta.</p>
+                                <div className="tags-container">
+                                    <span className="tag">Naruto <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">One Piece <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Attack on Titan <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Haikyuu <button className="tag-remove">&times;</button></span>
                                 </div>
-                                <button class="btn-add">+ Adicionar</button>
+                                <button className="btn-add">+ Adicionar</button>
                             </div>
 
-                            <div class="pref-col">
-                                <h3 class="pref-title">Gêneros favoritos</h3>
-                                <p class="pref-desc">Selecione seus gêneros favoritos.</p>
-                                <div class="tags-container">
-                                    <span class="tag">Ação <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Aventura <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Drama <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Fantasia <button class="tag-remove">&times;</button></span>
+                            <div className="pref-col">
+                                <h3 className="pref-title">Gêneros favoritos</h3>
+                                <p className="pref-desc">Selecione seus gêneros favoritos.</p>
+                                <div className="tags-container">
+                                    <span className="tag">Ação <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Aventura <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Drama <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Fantasia <button className="tag-remove">&times;</button></span>
                                 </div>
-                                <button class="btn-add">+ Adicionar</button>
+                                <button className="btn-add">+ Adicionar</button>
                             </div>
 
-                            <div class="pref-col">
-                                <h3 class="pref-title">Tags de interesse</h3>
-                                <p class="pref-desc">Escolha as tags que mais te interessam.</p>
-                                <div class="tags-container">
-                                    <span class="tag">Shounen <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Séries longas <button class="tag-remove">&times;</button></span>
-                                    <span class="tag">Mundos fantásticos <button class="tag-remove">&times;</button></span>
+                            <div className="pref-col">
+                                <h3 className="pref-title">Tags de interesse</h3>
+                                <p className="pref-desc">Escolha as tags que mais te interessam.</p>
+                                <div className="tags-container">
+                                    <span className="tag">Shounen <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Séries longas <button className="tag-remove">&times;</button></span>
+                                    <span className="tag">Mundos fantásticos <button className="tag-remove">&times;</button></span>
                                 </div>
-                                <button class="btn-add">+ Adicionar</button>
+                                <button className="btn-add">+ Adicionar</button>
                             </div>
 
                         </div>
                     </section>
 
 
-                    <section class="security-section">
-                        <h2 class="section-title"><i class="ph ph-shield-check"></i> Segurança da conta</h2>
-                        <p class="pref-desc" style="margin-bottom: 0;">Mantenha sua conta segura.</p>
+                    <section className="security-section">
+                        <h2 className="section-title"><i className="ph ph-shield-check"></i> Segurança da conta</h2>
+                        <p className="pref-desc" style="margin-bottom: 0;">Mantenha sua conta segura.</p>
 
-                        <div class="sec-buttons">
-                            <button class="btn-sec btn-password">
-                                <i class="ph ph-lock-key"></i> Alterar Senha
+                        <div className="sec-buttons">
+                            <button className="btn-sec btn-password">
+                                <i className="ph ph-lock-key"></i> Alterar Senha
                             </button>
-                            <button class="btn-sec btn-logout">
-                                <i class="ph ph-door-open"></i> Sair da conta
+                            <button className="btn-sec btn-logout">
+                                <i className="ph ph-door-open"></i> Sair da conta
                             </button>
                         </div>
                     </section>
 
 
-                    <footer class="actions-footer">
-                        <button class="btn-action btn-cancel">Cancelar</button>
-                        <button class="btn-action btn-save">Salvar alterações</button>
+                    <footer className="actions-footer">
+                        <button className="btn-action btn-cancel">Cancelar</button>
+                        <button className="btn-action btn-save">Salvar alterações</button>
                     </footer>
 
                 </div>
