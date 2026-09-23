@@ -6,7 +6,7 @@ function NavbarPesquisa() {
             <nav class="navbar">
                 <div class="nav-left">
                     <img src="public/logo_animespot.png" alt="Logo AnimeSpot" className="nav-logo-img" />
-                    <a href="index.html" class="nav-logo-text">AnimeSpot</a>
+                    <Link to="/" class="nav-logo-text">AnimeSpot</Link>
                 </div>
                         <div class="nav-center">
                     <div class="search-bar">
@@ -20,10 +20,10 @@ function NavbarPesquisa() {
                     
                 </div>
                 <div class="nav-right">
-                    <a href="login.html" class="btn-entrar" id="btn-entrar">Entrar</a>
-                    <a href="login.html" class="btn-criar-conta" id="btn-criar-conta">
+                    <Link to="/Login" class="btn-entrar" id="btn-entrar">Entrar</Link>
+                    <Link to="/Cadastro" class="btn-criar-conta" id="btn-criar-conta">
                         Criar conta <i class="ph ph-user"></i>
-                    </a>
+                    </Link>
                 </div>
             </nav>
         </div>
