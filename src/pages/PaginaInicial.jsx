@@ -8,9 +8,9 @@ function PaginaInicial() {
 
             <nav className="navbar" role="navigation" aria-label="Navegação principal">
                 <div className="nav-left">
-                    <a href="#" className="nav-logo" aria-label="Anime Spot - Página inicial">
+                    <Link to="/" className="nav-logo" aria-label="Anime Spot - Página inicial">
                         <span className="logo-text"><span className="logo-highlight">Anime</span>Spot</span>
-                    </a>
+                    </Link>
                 </div>
 
                 <div className="nav-center">
@@ -79,9 +79,9 @@ function PaginaInicial() {
                     <div className="sidebar-apoiador">
                         <p className="apoiador-title">Seja um <strong>apoiador!</strong></p>
                         <p className="apoiador-desc">Apoie criadores independentes e receba benefícios exclusivos!</p>
-                        <a href="planos.html" className="btn-assinar" id="btn-assinar">
+                        <Link to="/Planos" className="btn-assinar" id="btn-assinar">
                             <i className="ph-fill ph-crown"></i> Assinar
-                        </a>
+                        </Link>
                     </div>
                 </aside>
 
@@ -398,10 +398,10 @@ function PaginaInicial() {
                     <div className="footer-links">
                         <h4>Navegação</h4>
                         <ul>
-                            <li><a href="#">Início</a></li>
-                            <li><a href="planos.html">Planos</a></li>
-                            <li><a href="#">Explorar</a></li>
-                            <li><a href="#">Eventos</a></li>
+                            <li><Link href="/">Início</Link></li>
+                            <li><Link href="/Planos">Planos</Link></li>
+                            <li><Link href="#">Explorar</Link></li>
+                            <li><Link href="#">Eventos</Link></li>
                         </ul>
                     </div>
                     <div className="footer-links">
