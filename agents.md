@@ -5,7 +5,7 @@ Este é um projeto web feito em React com Vite, sendo o banco de dados e comunic
 - Sempre leia os arquivos da pasta `docs` antes de tomar decisões
 - O diretório docs contém todo o contexto desse projeto
 - Sempre leia o arquivo `docs/contexto.md` para entender do que se trata o meu projeto
-- **IMPORTANTE:** Sempre leia e seiga as regras do arquivo `docs/arquitetura.md` antes de criar novos códigos
+- **IMPORTANTE:** Sempre leia e siga as regras do arquivo `docs/arquitetura.md` antes de criar novos códigos
 
 ## Backlogs
 - Você deve sempre ler o arquivo `docs/backlog.md`
