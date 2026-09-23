@@ -1,4 +1,5 @@
 import './css/obras_mangas.css'
+import { Link } from 'react-router-dom';
 
 function ObrasMangas() {
     return (
@@ -8,7 +9,8 @@ function ObrasMangas() {
                 <div className="barra-pesquisa-wrapper">
                     <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
                     <span className="resultado-pesquisa" id="resultado-pesquisa"></span>
-                    <a className="btn-voltar" href="./index.html"> ⭠ Voltar para o Menu </a>
+                
+                    <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
 
                     <details className="filtro-container">
                         <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
@@ -128,7 +130,7 @@ function ObrasMangas() {
                 <aside className="painel-usuario">
 
                     <div className="cabecalho-perfil">
-                        <img className="icone-perfil" src="./imagens/person.png" alt="Perfil" />
+                        <img className="icone-perfil" src="./public/person.png" alt="Perfil" />
                         <span> PERFIL</span>
                     </div>
 
@@ -169,7 +171,7 @@ function ObrasMangas() {
                         </ul>
                     </div>
 
-                    <a href="historico.html" className="btn-historico">Ver Histórico</a>
+                    <Link to="/Historico" className="btn-historico">Ver Histórico</Link>
 
                 </aside>
 

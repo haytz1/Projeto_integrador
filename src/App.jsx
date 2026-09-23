@@ -1,4 +1,5 @@
 import './css/app.css'
+import { Link } from 'react-router-dom';
 
 function App() {
     return (
@@ -33,10 +34,10 @@ function App() {
 
                 
                 <aside class="sidebar-left" aria-label="Menu lateral">
-                    <a href="./filtro_historias.html" class="sidebar-notif" id="link-notificacoes">
+                    <Link to="/ObrasMangas" className="sidebar-notif" id="link-notificacoes">
                         <i class="ph-fill ph-bell notif-bell"></i>
-                        <span>Notificações<br/><span class="notif-sub">de histórias</span> 🔥</span>
-                    </a>
+                        <span>Notificações<br/><span className="notif-sub">de histórias</span> 🔥</span>
+                    </Link>
 
                     <nav class="sidebar-nav">
                         <a href="#" class="sidebar-link active" id="nav-para-voce">

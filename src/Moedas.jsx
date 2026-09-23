@@ -6,6 +6,8 @@ function Moedas() {
 
     return (
 
+    
+
         <>
 
             <nav class="navbar">
