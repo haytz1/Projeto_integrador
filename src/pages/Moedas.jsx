@@ -10,33 +10,8 @@ function Moedas() {
 
         <>
 
-            <nav class="navbar">
-                <div class="nav-left">
-                    <a href="#" class="notification-icon" aria-label="Notificações">
-                        <i class="ph ph-bell"></i>
-                    </a>
-                    <a href="index.html" class="site-logo">Anime Spot</a>
-                    <a href="index.html" class="nav-link">Início</a>
-                    <a href="planos.html" class="nav-link">Planos</a>
-                    <a href="moedas.html" class="nav-link active">Moedas</a>
-                </div>
+            <Navbar/>
 
-                <div class="nav-center">
-                    <div class="search-bar">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" placeholder="Pesquisar animes, autores..."/>
-                    </div>
-                </div>
-
-                <div class="nav-right">
-                    <a href="#" class="nav-link">Login / Cadastro</a>
-                    <a href="#" class="nav-link profile-link">
-                        <i class="ph ph-user-circle"></i> Perfil
-                    </a>
-                </div>
-            </nav>
-
-            
             <main class="container">
 
                 
