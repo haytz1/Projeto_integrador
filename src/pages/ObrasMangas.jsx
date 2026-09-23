@@ -1,4 +1,5 @@
 import NavbarPesquisa from '../components/Navbar_pesquisa';
+import Rodape from '../components/Rodape';
 import '../css/obras_mangas.css'
 import { Link } from 'react-router-dom';
 
@@ -174,7 +175,10 @@ function ObrasMangas() {
 
                 </aside>
 
+
             </main>
+                
+            <Rodape/>
         </>
     )
 }
