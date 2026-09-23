@@ -11,103 +11,103 @@ function Planos() {
                     <a href="#" class="notification-icon" aria-label="Notificações">
                         <i class="ph ph-bell"></i>
                     </a>
-                    <a href="index.html" class="site-logo">Anime Spot</a>
-                    <a href="index.html" class="nav-link">Início</a>
-                    <a href="planos.html" class="nav-link active">Planos</a>
-                    <a href="moedas.html" class="nav-link">Moedas</a>
+                    <Link to="/" className="site-logo">Anime Spot</Link>
+                    <Link to="/" className="nav-link">Início</Link>
+                    <Link to="/Planos" className="nav-link active">Planos</Link>
+                    <Link to="/moedas" className="nav-link">Moedas</Link>
                 </div>
 
-                <div class="nav-center">
-                    <div class="search-bar">
-                        <i class="ph ph-magnifying-glass"></i>
+                <div className="nav-center">
+                    <div className="search-bar">
+                        <i className="ph ph-magnifying-glass"></i>
                         <input type="text" placeholder="Pesquisar animes, autores..."/>
                     </div>
                 </div>
 
-                <div class="nav-right">
-                    <a href="#" class="nav-link">Login / Cadastro</a>
-                    <a href="#" class="nav-link profile-link">
-                        <i class="ph ph-user-circle"></i> Perfil
+                <div className="nav-right">
+                    <a href="#" className="nav-link">Login / Cadastro</a>
+                    <a href="#" className="nav-link profile-link">
+                        <i className="ph ph-user-circle"></i> Perfil
                     </a>
                 </div>
             </nav>
 
             
-            <main class="container">
+            <main className="container">
 
                 
-                <header class="plans-header">
-                    <h1 class="main-title">Planos de Assinatura</h1>
+                <header className="plans-header">
+                    <h1 className="main-title">Planos de Assinatura</h1>
                     <p>Escolha o plano ideal para você continuar lendo as melhores histórias.</p>
                 </header>
 
                 
-                <section class="plans-grid">
+                <section className="plans-grid">
 
                     
-                    <article class="plan-card">
-                        <div class="plan-header">
+                    <article className="plan-card">
+                        <div className="plan-header">
                             <h2>Plano Grátis</h2>
-                            <div class="plan-price">
-                                <span class="currency">R$</span>
-                                <span class="amount">0,00</span>
-                                <span class="period">/mês</span>
+                            <div className="plan-price">
+                                <span className="currency">R$</span>
+                                <span className="amount">0,00</span>
+                                <span className="period">/mês</span>
                             </div>
                         </div>
-                        <div class="plan-body">
-                            <ul class="plan-features">
-                                <li><i class="ph ph-check-circle"></i> Acesso a histórias gratuitas</li>
-                                <li><i class="ph ph-check-circle"></i> Deixar comentários</li>
-                                <li><i class="ph ph-check-circle"></i> Seguir autores favoritos</li>
-                                <li class="disabled"><i class="ph ph-x-circle"></i> Sem anúncios</li>
-                                <li class="disabled"><i class="ph ph-x-circle"></i> Capítulos adiantados</li>
+                        <div className="plan-body">
+                            <ul className="plan-features">
+                                <li><i className="ph ph-check-circle"></i> Acesso a histórias gratuitas</li>
+                                <li><i className="ph ph-check-circle"></i> Deixar comentários</li>
+                                <li><i className="ph ph-check-circle"></i> Seguir autores favoritos</li>
+                                <li className="disabled"><i className="ph ph-x-circle"></i> Sem anúncios</li>
+                                <li className="disabled"><i className="ph ph-x-circle"></i> Capítulos adiantados</li>
                             </ul>
-                            <button class="btn-cta btn-plan">Começar Grátis</button>
+                            <button className="btn-cta btn-plan">Começar Grátis</button>
                         </div>
                     </article>
 
                     
-                    <article class="plan-card plan-featured">
-                        <div class="featured-badge">Mais Popular</div>
-                        <div class="plan-header">
+                    <article className="plan-card plan-featured">
+                        <div className="featured-badge">Mais Popular</div>
+                        <div className="plan-header">
                             <h2>Plano 1</h2>
-                            <div class="plan-price">
-                                <span class="currency">R$</span>
-                                <span class="amount">15,00</span>
-                                <span class="period">/mês</span>
+                            <div className="plan-price">
+                                <span className="currency">R$</span>
+                                <span className="amount">15,00</span>
+                                <span className="period">/mês</span>
                             </div>
                         </div>
-                        <div class="plan-body">
-                            <ul class="plan-features">
-                                <li><i class="ph ph-check-circle"></i> Acesso a histórias gratuitas</li>
-                                <li><i class="ph ph-check-circle"></i> Deixar comentários</li>
-                                <li><i class="ph ph-check-circle"></i> Seguir autores favoritos</li>
-                                <li><i class="ph ph-check-circle"></i> Sem anúncios em mangás</li>
-                                <li class="disabled"><i class="ph ph-x-circle"></i> Capítulos adiantados</li>
+                        <div className="plan-body">
+                            <ul className="plan-features">
+                                <li><i className="ph ph-check-circle"></i> Acesso a histórias gratuitas</li>
+                                <li><i className="ph ph-check-circle"></i> Deixar comentários</li>
+                                <li><i className="ph ph-check-circle"></i> Seguir autores favoritos</li>
+                                <li><i className="ph ph-check-circle"></i> Sem anúncios em mangás</li>
+                                <li className="disabled"><i className="ph ph-x-circle"></i> Capítulos adiantados</li>
                             </ul>
-                            <button class="btn-cta btn-plan">Assinar plano 1</button>
+                            <button className="btn-cta btn-plan">Assinar plano 1</button>
                         </div>
                     </article>
 
                     
-                    <article class="plan-card">
-                        <div class="plan-header">
+                    <article className="plan-card">
+                        <div className="plan-header">
                             <h2>Plano 2</h2>
-                            <div class="plan-price">
-                                <span class="currency">R$</span>
-                                <span class="amount">35,00</span>
-                                <span class="period">/mês</span>
+                            <div className="plan-price">
+                                <span className="currency">R$</span>
+                                <span className="amount">35,00</span>
+                                <span className="period">/mês</span>
                             </div>
                         </div>
-                        <div class="plan-body">
-                            <ul class="plan-features">
-                                <li><i class="ph ph-check-circle"></i> Acesso a todas histórias</li>
-                                <li><i class="ph ph-check-circle"></i> Deixar comentários e reviews</li>
-                                <li><i class="ph ph-check-circle"></i> Seguir e apoiar autores</li>
-                                <li><i class="ph ph-check-circle"></i> Zero anúncios em todo o site</li>
-                                <li><i class="ph ph-check-circle"></i> Acesso a capítulos adiantados</li>
+                        <div className="plan-body">
+                            <ul className="plan-features">
+                                <li><i className="ph ph-check-circle"></i> Acesso a todas histórias</li>
+                                <li><i className="ph ph-check-circle"></i> Deixar comentários e reviews</li>
+                                <li><i className="ph ph-check-circle"></i> Seguir e apoiar autores</li>
+                                <li><i className="ph ph-check-circle"></i> Zero anúncios em todo o site</li>
+                                <li><i className="ph ph-check-circle"></i> Acesso a capítulos adiantados</li>
                             </ul>
-                            <button class="btn-cta btn-plan">Assinar plano 2</button>
+                            <button className="btn-cta btn-plan">Assinar plano 2</button>
                         </div>
                     </article>
 
@@ -116,21 +116,21 @@ function Planos() {
             </main>
 
             
-            <footer class="site-footer">
-                <div class="footer-container">
-                    <div class="footer-about">
-                        <h3 class="site-logo" style="margin:0;">Anime Spot</h3>
+            <footer className="site-footer">
+                <div className="footer-container">
+                    <div className="footer-about">
+                        <h3 className="site-logo" style="margin:0;">Anime Spot</h3>
                         <p>O seu destino final para ler e descobrir os melhores animes, mangás e autores em um só lugar.</p>
                     </div>
-                    <div class="footer-links">
+                    <div className="footer-links">
                         <h4>Navegação</h4>
                         <ul>
-                            <li><a href="index.html">Início</a></li>
-                            <li><a href="planos.html">Planos</a></li>
-                            <li><a href="moedas.html">Moedas</a></li>
+                            <li><Link to="/">Início</Link></li>
+                            <li><Link to="/Planos">Planos</Link></li>
+                            <li><Link to="/moedas">Moedas</Link></li>
                         </ul>
                     </div>
-                    <div class="footer-links">
+                    <div className="footer-links">
                         <h4>Suporte</h4>
                         <ul>
                             <li><a href="#">FAQ</a></li>
@@ -139,17 +139,17 @@ function Planos() {
                             <li><a href="#">Contato</a></li>
                         </ul>
                     </div>
-                    <div class="footer-social">
+                    <div className="footer-social">
                         <h4>Redes Sociais</h4>
-                        <div class="social-icons">
-                            <a href="#" aria-label="Instagram"><i class="ph ph-instagram-logo"></i></a>
-                            <a href="#" aria-label="Twitter"><i class="ph ph-twitter-logo"></i></a>
-                            <a href="#" aria-label="Discord"><i class="ph ph-discord-logo"></i></a>
-                            <a href="#" aria-label="YouTube"><i class="ph ph-youtube-logo"></i></a>
+                        <div className="social-icons">
+                            <a href="#" aria-label="Instagram"><i className="ph ph-instagram-logo"></i></a>
+                            <a href="#" aria-label="Twitter"><i className="ph ph-twitter-logo"></i></a>
+                            <a href="#" aria-label="Discord"><i className="ph ph-discord-logo"></i></a>
+                            <a href="#" aria-label="YouTube"><i className="ph ph-youtube-logo"></i></a>
                         </div>
                     </div>
                 </div>
-                <div class="footer-bottom">
+                <div className="footer-bottom">
                     <p>&copy; 2026 Plataforma PI_UC3 - Anime Spot. Todos os direitos reservados.</p>
                 </div>
             </footer>

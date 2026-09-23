@@ -30,7 +30,7 @@ function Historico() {
                     <article className="item-historico">
                         <div className="item-esquerda">
                             <div className="capa capa-2">L</div>
-                            <div class="informacoes">
+                            <div className="informacoes">
                                 <h2>Luz Eterna</h2>
                                 <p>Último capítulo: 112</p>
                             </div>

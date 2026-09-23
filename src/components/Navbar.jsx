@@ -10,7 +10,7 @@ function Navbar() {
                        
                 <div class="nav-right">
                     <span>Já tem uma conta?</span>
-                    <a href="cadastro.html" class="nav-login-link">Crie uma conta</a>
+                    <a href="cadastro.html" className="nav-login-link">Crie uma conta</a>
                 </div>
             </nav>
         </div>
