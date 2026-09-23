@@ -1,28 +1,29 @@
-
+import { Link } from 'react-router-dom';
 import"./Navbar.css"
+
 function NavbarPesquisa() {
     return ( 
         <div>
-            <nav class="navbar">
-                <div class="nav-left">
+            <nav className="navbar">
+                <div className="nav-left">
                     <img src="public/logo_animespot.png" alt="Logo AnimeSpot" className="nav-logo-img" />
-                    <Link to="/" class="nav-logo-text">AnimeSpot</Link>
+                    <Link to= "/" className="nav-logo-text">AnimeSpot</Link>
                 </div>
-                        <div class="nav-center">
-                    <div class="search-bar">
-                        <i class="ph ph-magnifying-glass"></i>
+                        <div className="nav-center">
+                    <div className="search-bar">
+                        <i className="ph ph-magnifying-glass"></i>
                         <input type="text" id="search-input" placeholder="Buscar animes, mangás, notícias..."
                             aria-label="Buscar conteúdo"/>
                     </div>
                 </div>
 
-                <div class="nav-right">
+                <div className="nav-right">
                     
                 </div>
-                <div class="nav-right">
-                    <Link to="/Login" class="btn-entrar" id="btn-entrar">Entrar</Link>
-                    <Link to="/Cadastro" class="btn-criar-conta" id="btn-criar-conta">
-                        Criar conta <i class="ph ph-user"></i>
+                <div className="nav-right">
+                    <Link to="/Login" className="btn-entrar" id="btn-entrar">Entrar</Link>
+                    <Link to="/Cadastro" className="btn-criar-conta" id="btn-criar-conta">
+                        Criar conta <i className="ph ph-user"></i>
                     </Link>
                 </div>
             </nav>
