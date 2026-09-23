@@ -1,6 +1,6 @@
+import './css/perfil.css'
+
 function Perfil() {
-
-
 
     return (
 
