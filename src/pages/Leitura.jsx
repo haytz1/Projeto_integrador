@@ -1,4 +1,4 @@
-import './css/leitura.css'
+import '../css/leitura.css'
 
 function Leitura() {
     return (

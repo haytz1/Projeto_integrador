@@ -1,4 +1,4 @@
-import './css/historico.css'
+import '../css/historico.css'
 import { Link } from 'react-router-dom';
 
 function Historico() {

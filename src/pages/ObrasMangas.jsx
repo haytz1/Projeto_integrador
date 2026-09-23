@@ -1,4 +1,4 @@
-import './css/obras_mangas.css'
+import '../css/obras_mangas.css'
 import { Link } from 'react-router-dom';
 
 function ObrasMangas() {

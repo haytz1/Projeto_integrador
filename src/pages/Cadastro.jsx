@@ -1,4 +1,4 @@
-import './css/cadastro.css'
+import '../css/cadastro.css'
 
 function Cadastro() {
 

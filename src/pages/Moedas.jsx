@@ -1,4 +1,4 @@
-import './css/moedas.css'
+import '../css/moedas.css'
 
 function Moedas() {
 
