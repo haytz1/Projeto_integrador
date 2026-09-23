@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import PaginaInicial from './pages/PaginaInicial'
-import ObrasMangas from './ObrasMangas';
-import Historico from './Historico'
+import ObrasMangas from './pages/ObrasMangas';
+import Historico from './pages/Historico'
 
 
 function App() {
@@ -15,8 +15,8 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<PaginaInicial />} />
-                    <Route path="/ObrasMangas" element={<ObrasMangas />} />
-                    <Route path="/Historico" element={<Historico />} />
+                    <Route path="./ObrasMangas" element={<ObrasMangas />} />
+                    <Route path="./Historico" element={<Historico />} />
                 </Routes>
             </BrowserRouter>
 
