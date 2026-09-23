@@ -1,10 +1,11 @@
+import Navbar from '../components/Navbar';
 import '../css/planos.css'
 
 function Planos() {
     return (
 
         <>
-
+    <Navbar/>
             <nav class="navbar">
                 <div class="nav-left">
                     <a href="#" class="notification-icon" aria-label="Notificações">

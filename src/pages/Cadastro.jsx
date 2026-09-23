@@ -1,6 +1,8 @@
+import Navbar from '../components/Navbar';
 import '../css/cadastro.css'
 
 function Cadastro() {
+   
 
     (function () {
         const c = document.getElementById('stars');
@@ -36,9 +38,9 @@ function Cadastro() {
     });
 
     return (
-
+        
         <>
-
+        <Navbar/>
             <div class="stars" id="stars" aria-hidden="true"></div>
 
 

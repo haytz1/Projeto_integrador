@@ -1,3 +1,4 @@
+import Navbar from '../components/Navbar';
 import '../css/historico.css'
 import { Link } from 'react-router-dom';
 
@@ -5,7 +6,7 @@ function Historico() {
     return (
 
         <>
-         
+         <Navbar/>
             <Link to="/ObrasMangas" className="btn-voltar">← Voltar</Link>
 
             <main className="container">

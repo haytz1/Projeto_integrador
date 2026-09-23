@@ -34,3 +34,47 @@
       background: rgba(123,47,247,.18); border-color: var(--purple-mid);
       color: var(--purple-glow); box-shadow: 0 0 12px rgba(123,47,247,.3);
     }
+    .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.btn-entrar {
+    background: var(--purple);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-full);
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.btn-entrar:hover {
+    background: var(--purple-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-criar-conta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    transition: color var(--transition), border-color var(--transition);
+}
+
+.btn-criar-conta:hover {
+    color: var(--text-main);
+    border-color: var(--border-hover);
+}
+
+.btn-criar-conta i {
+    font-size: 1rem;
+}

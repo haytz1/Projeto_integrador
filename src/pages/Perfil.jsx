@@ -1,3 +1,4 @@
+import Navbar from '../components/Navbar';
 import '../css/perfil.css'
 
 function Perfil() {

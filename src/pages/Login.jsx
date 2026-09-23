@@ -1,3 +1,4 @@
+import Navbar from '../components/Navbar';
 import '../css/login.css'
 
 function Login() {
@@ -60,7 +61,7 @@ function Login() {
     return (
 
         <>
-
+        <Navbar/>
             <div class="stars" id="stars" aria-hidden="true"></div>
 
 

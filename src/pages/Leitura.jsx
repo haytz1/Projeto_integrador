@@ -1,9 +1,10 @@
+import Navbar from '../components/Navbar';
 import '../css/leitura.css'
 
 function Leitura() {
     return (
         <>
-
+    <Navbar/>
             <a href="obras_mangas.html" class="btn btn-voltar">⭠ Voltar</a>
 
             <div class="header">

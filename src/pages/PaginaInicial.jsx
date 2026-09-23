@@ -1,32 +1,12 @@
+import Navbar from '../components/Navbar';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 import '../css/paginainicial.css'
 
 function PaginaInicial() {
     return (
 
         <>
-
-            <nav class="navbar" role="navigation" aria-label="Navegação principal">
-                <div class="nav-left">
-                    <a href="#" class="nav-logo" aria-label="Anime Spot - Página inicial">
-                        <span class="logo-text"><span class="logo-highlight">Anime</span>Spot</span>
-                    </a>
-                </div>
-
-                <div class="nav-center">
-                    <div class="search-bar">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" id="search-input" placeholder="Buscar animes, mangás, notícias..."
-                            aria-label="Buscar conteúdo"/>
-                    </div>
-                </div>
-
-                <div class="nav-right">
-                    <a href="login.html" class="btn-entrar" id="btn-entrar">Entrar</a>
-                    <a href="login.html" class="btn-criar-conta" id="btn-criar-conta">
-                        Criar conta <i class="ph ph-user"></i>
-                    </a>
-                </div>
-            </nav>
+    <NavbarPesquisa/>
 
             
             <div class="page-layout">

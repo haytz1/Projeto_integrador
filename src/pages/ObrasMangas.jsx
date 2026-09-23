@@ -1,10 +1,11 @@
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 import '../css/obras_mangas.css'
 import { Link } from 'react-router-dom';
 
 function ObrasMangas() {
     return (
         <>
-
+    <NavbarPesquisa/>
             <header className="cabecalho">
                 <div className="barra-pesquisa-wrapper">
                     <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
