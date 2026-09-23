@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import '../css/perfil.css'
+import { Link } from 'react-router-dom';
 
 function Perfil() {
 
@@ -23,7 +24,7 @@ function Perfil() {
                                 <button className="edit-photo-btn"><i className="ph ph-pencil-simple"></i> Editar foto</button>
                             </div>
                             <div className="info-col">
-                                <h2 className="section-title" style="margin-bottom: 0.5rem;">Perfil de usuário</h2>
+                                <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Perfil de usuário</h2>
                                 <div className="info-item">
                                     <span className="info-label">Nome do usuario:</span>
                                     <span className="info-value">@usuario12</span>
@@ -41,7 +42,7 @@ function Perfil() {
 
 
                         <section className="plan-section">
-                            <h2 className="section-title" style="margin-bottom: 0.5rem;">Plano atual</h2>
+                            <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Plano atual</h2>
                             <div className="plan-coins">
                                 <i className="ph-fill ph-coin"></i>
                                 <i className="ph-fill ph-coin"></i>
@@ -101,7 +102,7 @@ function Perfil() {
 
                     <section className="security-section">
                         <h2 className="section-title"><i className="ph ph-shield-check"></i> Segurança da conta</h2>
-                        <p className="pref-desc" style="margin-bottom: 0;">Mantenha sua conta segura.</p>
+                        <p className="pref-desc" style={{ marginBottom: 0 }}>Mantenha sua conta segura.</p>
 
                         <div className="sec-buttons">
                             <button className="btn-sec btn-password">

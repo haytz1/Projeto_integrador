@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import '../css/planos.css'
+import { Link } from 'react-router-dom';
 
 function Planos() {
     return (
@@ -14,7 +15,7 @@ function Planos() {
                     <Link to="/" className="site-logo">Anime Spot</Link>
                     <Link to="/" className="nav-link">Início</Link>
                     <Link to="/Planos" className="nav-link active">Planos</Link>
-                    <Link to="/moedas" className="nav-link">Moedas</Link>
+                    <Link to="/Moedas" className="nav-link">Moedas</Link>
                 </div>
 
                 <div className="nav-center">
@@ -25,10 +26,10 @@ function Planos() {
                 </div>
 
                 <div className="nav-right">
-                    <a href="#" className="nav-link">Login / Cadastro</a>
-                    <a href="#" className="nav-link profile-link">
+                    <Link to="/Login" className="nav-link">Login / Cadastro</Link>
+                    <Link to="/Perfil" className="nav-link profile-link">
                         <i className="ph ph-user-circle"></i> Perfil
-                    </a>
+                    </Link>
                 </div>
             </nav>
 
@@ -119,7 +120,7 @@ function Planos() {
             <footer className="site-footer">
                 <div className="footer-container">
                     <div className="footer-about">
-                        <h3 className="site-logo" style="margin:0;">Anime Spot</h3>
+                        <h3 className="site-logo" style={{ margin: 0 }}>Anime Spot</h3>
                         <p>O seu destino final para ler e descobrir os melhores animes, mangás e autores em um só lugar.</p>
                     </div>
                     <div className="footer-links">
@@ -127,7 +128,7 @@ function Planos() {
                         <ul>
                             <li><Link to="/">Início</Link></li>
                             <li><Link to="/Planos">Planos</Link></li>
-                            <li><Link to="/moedas">Moedas</Link></li>
+                            <li><Link to="/Moedas">Moedas</Link></li>
                         </ul>
                     </div>
                     <div className="footer-links">
