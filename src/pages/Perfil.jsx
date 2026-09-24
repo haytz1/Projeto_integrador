@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NavbarPesquisa from '../components/Navbar_pesquisa';
+import Navbar from '../components/Navbar';
 import '../css/perfil.css';
 import { Link } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
@@ -7,63 +7,61 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-console.log('URL:', supabaseUrl);
-console.log('KEY:', supabaseKey);
-
-// Inicialize o seu cliente Supabase (ou importe do seu arquivo de configuração)
-const supabase = createClient( supabaseUrl , supabaseKey);
+// Inicialize o seu cliente Supabase (ou importe de um arquivo de configuração)
+const supabase = createClient( supabaseUrl, supabaseKey )
 
 function Perfil() {
-    // Estados para armazenar os dados do usuário e o controle de upload
     const [userId, setUserId] = useState(null);
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [registro, setRegistro] = useState('');
     const [fotoUrl, setFotoUrl] = useState('');
-    const [carregando, setCarregando] = useState(false);
+    const [carregandoUpload, setCarregandoUpload] = useState(false);
 
-    // 1. Buscar os dados do usuário logado ao carregar a página
+    // 1. Buscar os dados da conta no banco de dados ao carregar a página
     useEffect(() => {
-        async function carregarDadosDoUsuario() {
+        async function buscarDadosDoBanco() {
             try {
-                // Exemplo usando Supabase Auth para identificar quem está logado
-                const { data: { user } } = await supabase.auth.getUser();
+                // OPÇÃO DE TESTE: Se você inseriu um e-mail específico manualmente no banco, 
+                // coloque-o aqui embaixo para testar direto:
+                const emailProcurado = "dograu244@email.com"; // Substitua pelo e-mail que você cadastrou no banco
 
-                if (user) {
-                    // Busca os dados na sua tabela 'usuarios' usando o e-mail do Auth
-                    const { data: dadosUsuario, error } = await supabase
-                        .from('usuarios')
-                        .select('*')
-                        .eq('email', user.email)
-                        .single();
+                const { data: dadosUsuario, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', emailProcurado) // Procura a linha com esse e-mail
+                    .single(); // Retorna apenas um registro
 
-                    if (error) throw error;
+                if (error) throw error;
 
-                    if (dadosUsuario) {
-                        setUserId(dadosUsuario.id);
-                        setNome(dadosUsuario.username);
-                        setEmail(dadosUsuario.email);
+                if (dadosUsuario) {
+                    setUserId(dadosUsuario.id);
+                    setNome(dadosUsuario.username);
+                    setEmail(dadosUsuario.email);
+                    
+                    // Formata a data de cadastro para o padrão brasileiro (DD/MM/AAAA)
+                    if (dadosUsuario.registro) {
                         setRegistro(new Date(dadosUsuario.registro).toLocaleDateString('pt-BR'));
-                        setFotoUrl(dadosUsuario.foto); // Carrega a foto salva no banco
                     }
+                    
+                    setFotoUrl(dadosUsuario.foto); // Renderiza a foto se houver link salvo
                 }
             } catch (error) {
-                console.error('Erro ao carregar perfil:', error.message);
+                console.error('Erro ao buscar usuário:', error.message);
             }
         }
 
-        carregarDadosDoUsuario();
+        buscarDadosDoBanco();
     }, []);
 
-    // 2. Função disparada quando o usuário seleciona uma nova foto
+    // 2. Função para lidar com a troca ou envio da foto de perfil
     const handleFileChange = async (e) => {
         const arquivo = e.target.files[0];
         if (!arquivo || !userId) return;
 
-        setCarregando(true);
+        setCarregandoUpload(true);
 
         try {
-            // Nome único para o arquivo
             const fileExt = arquivo.name.split('.').pop();
             const nomeDoArquivo = `${userId}_${Date.now()}.${fileExt}`;
 
@@ -74,14 +72,14 @@ function Perfil() {
 
             if (uploadError) throw uploadError;
 
-            // Pega a URL pública
+            // Pega a URL pública gerada pelo Storage
             const { data: urlData } = supabase.storage
                 .from('avatars_usuarios')
                 .getPublicUrl(uploadData.path);
 
             const linkDaFoto = urlData.publicUrl;
 
-            // Atualiza a coluna 'foto' na tabela 'usuarios'
+            // Salva a URL da foto na coluna 'foto' do usuário correspondente no banco
             const { error: dbError } = await supabase
                 .from('usuarios')
                 .update({ foto: linkDaFoto })
@@ -89,21 +87,19 @@ function Perfil() {
 
             if (dbError) throw dbError;
 
-            // Atualiza o estado visualmente na hora
             setFotoUrl(linkDaFoto);
             alert('Foto de perfil atualizada com sucesso!');
         } catch (error) {
             console.error('Erro no upload:', error.message);
             alert('Não foi possível atualizar a foto.');
         } finally {
-            setCarregando(false);
+            setCarregandoUpload(false);
         }
     };
 
     return (
         <>
-            <NavbarPesquisa />
-            
+            <Navbar />
 
             <main className="page-wrapper">
                 <div className="profile-container">
@@ -128,7 +124,7 @@ function Perfil() {
                                     onChange={handleFileChange} 
                                 />
                                 <label htmlFor="fileInput" className="edit-photo-btn" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <i className="ph ph-pencil-simple"></i> {carregando ? 'Enviando...' : 'Editar foto'}
+                                    <i className="ph ph-pencil-simple"></i> {carregandoUpload ? 'Enviando...' : 'Editar foto'}
                                 </label>
                             </div>
 
