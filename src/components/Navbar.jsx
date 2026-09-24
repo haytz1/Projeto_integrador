@@ -11,7 +11,7 @@ function Navbar() {
                 </div>
                        
                 <div className="nav-right">
-                    <span>Já tem uma conta?</span>
+                    <Link to="/Login" className="nav-login-link">Já tem uma conta?</Link>
                     <Link to="/Cadastro" className="nav-login-link">Crie uma conta</Link>
                 </div>
             </nav>
