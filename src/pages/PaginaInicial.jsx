@@ -1,18 +1,82 @@
-
+import React, { useState, useEffect } from 'react';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
-import '../css/paginainicial.css'
-import { Link } from 'react-router-dom'
+import '../css/paginainicial.css';
+import { Link } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function PaginaInicial() {
+    const [posts, setPosts] = useState([]);
+    const [postsHero, setPostsHero] = useState([]); // Posts aleatórios para o carrossel
+    const [slideAtual, setSlideAtual] = useState(0); // Índice do slide ativo
+    const [carregando, setCarregando] = useState(true);
+
+    useEffect(() => {
+        async function buscarPostagens() {
+            try {
+                const { data, error } = await supabase
+                    .from('postagens')
+                    .select(`
+                        id,
+                        titulo,
+                        conteudo,
+                        categoria,
+                        imagem,
+                        criado_em,
+                        usuarios (
+                            username,
+                            foto
+                        )
+                    `)
+                    .order('criado_em', { ascending: false });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    setPosts(data);
+
+                    // Seleciona até 3 posts aleatórios para o carrossel do Hero
+                    const postsEmbaralhados = [...data].sort(() => 0.5 - Math.random());
+                    setPostsHero(postsEmbaralhados.slice(0, 3));
+                }
+            } catch (error) {
+                console.error('Erro ao buscar postagens:', error.message);
+            } finally {
+                setCarregando(false);
+            }
+        }
+
+        buscarPostagens();
+    }, []);
+
+    // Efeito para trocar o slide do carrossel automaticamente a cada 5 segundos
+    useEffect(() => {
+        if (postsHero.length === 0) return;
+
+        const intervalo = setInterval(() => {
+            setSlideAtual((prevSlide) => (prevSlide + 1) % postsHero.length);
+        }, 5000);
+
+        return () => clearInterval(intervalo);
+    }, [postsHero]);
+
+    const formatarData = (dataIso) => {
+        if (!dataIso) return '';
+        const data = new Date(dataIso);
+        return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    };
+
     return (
-
         <>
-            <NavbarPesquisa/>
+            <NavbarPesquisa />
 
-            
             <div className="page-layout">
-
                 
+                {/* SIDEBAR ESQUERDA */}
                 <aside className="sidebar-left" aria-label="Menu lateral">
                     <Link to="/ObrasMangas" className="sidebar-notif" id="link-notificacoes">
                         <i className="ph-fill ph-bell notif-bell"></i>
@@ -50,12 +114,10 @@ function PaginaInicial() {
                         </Link>
                     </nav>
 
-                    
                     <div className="sidebar-character" aria-hidden="true">
                         <div className="char-glow"></div>
                     </div>
 
-                    
                     <div className="sidebar-apoiador">
                         <p className="apoiador-title">Seja um <strong>apoiador!</strong></p>
                         <p className="apoiador-desc">Apoie criadores independentes e receba benefícios exclusivos!</p>
@@ -65,206 +127,130 @@ function PaginaInicial() {
                     </div>
                 </aside>
 
-               
+                {/* CONTEÚDO PRINCIPAL */}
                 <main className="main-content" id="main-content">
 
-                    
+                    {/* HERO BANNER DINÂMICO E AUTOMÁTICO */}
                     <section className="hero-banner" aria-label="Destaque principal">
                         <div className="hero-slides">
-                            <div className="hero-slide active">
-                                <div className="hero-bg hero-bg-1"></div>
-                                <div className="hero-overlay"></div>
-                                <div className="hero-content">
-                                    <span className="hero-badge">DESTAQUE</span>
-                                    <h1 className="hero-title">OS GIGANTES<br/>NUNCA PARAM</h1>
-                                    <p className="hero-desc">Acompanhe as notícias mais quentes<br/>do mundo dos animes e mangás!</p>
-                                    <a href="#" className="btn-ver-mais" id="btn-ver-mais">Ver mais</a>
+                            {postsHero.length > 0 ? (
+                                postsHero.map((post, index) => (
+                                    <div 
+                                        className={`hero-slide ${index === slideAtual ? 'active' : ''}`} 
+                                        key={post.id}
+                                    >
+                                        <div 
+                                            className="hero-bg" 
+                                            style={{ 
+                                                backgroundImage: post.imagem ? `url(${post.imagem})` : undefined,
+                                                backgroundColor: '#1f1c2c'
+                                            }}
+                                        ></div>
+                                        <div className="hero-overlay"></div>
+                                        <div className="hero-content">
+                                            <span className="hero-badge">{post.categoria || 'DESTAQUE'}</span>
+                                            <h1 className="hero-title">{post.titulo}</h1>
+                                            <p className="hero-desc">
+                                                {post.conteudo.length > 100 ? post.conteudo.substring(0, 100) + '...' : post.conteudo}
+                                            </p>
+                                            <Link to={`/post/${post.id}`} className="btn-ver-mais">Ver mais</Link>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="hero-slide active">
+                                    <div className="hero-bg" style={{ backgroundColor: '#1f1c2c' }}></div>
+                                    <div className="hero-overlay"></div>
+                                    <div className="hero-content">
+                                        <span className="hero-badge">DESTAQUE</span>
+                                        <h1 className="hero-title">CARREGANDO<br/>DESTAQUES...</h1>
+                                        <p className="hero-desc">Aguarde enquanto buscamos as melhores histórias.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="hero-slide">
-                                <div className="hero-bg hero-bg-2"></div>
-                                <div className="hero-overlay"></div>
-                                <div className="hero-content">
-                                    <span className="hero-badge">ANIME</span>
-                                    <h1 className="hero-title">NOVOS ARCOS<br/>CHEGANDO</h1>
-                                    <p className="hero-desc">As maiores estreias da temporada<br/>estão chegando ao Anime Spot!</p>
-                                    <a href="#" className="btn-ver-mais">Ver mais</a>
-                                </div>
-                            </div>
-                            <div className="hero-slide">
-                                <div className="hero-bg hero-bg-3"></div>
-                                <div className="hero-overlay"></div>
-                                <div className="hero-content">
-                                    <span className="hero-badge">MANGÁ</span>
-                                    <h1 className="hero-title">CAPÍTULOS<br/>EXCLUSIVOS</h1>
-                                    <p className="hero-desc">Leia em primeira mão os capítulos<br/>mais aguardados da semana!</p>
-                                    <a href="#" className="btn-ver-mais">Ver mais</a>
-                                </div>
-                            </div>
+                            )}
                         </div>
+
+                        {/* Indicadores (Bolinhas) dinâmicos */}
                         <div className="hero-dots" aria-label="Indicadores do carrossel">
-                            <button className="hero-dot active" data-slide="0" aria-label="Slide 1"></button>
-                            <button className="hero-dot" data-slide="1" aria-label="Slide 2"></button>
-                            <button className="hero-dot" data-slide="2" aria-label="Slide 3"></button>
-                            <button className="hero-dot" data-slide="3" aria-label="Slide 4"></button>
+                            {postsHero.map((_, index) => (
+                                <button 
+                                    key={index}
+                                    className={`hero-dot ${index === slideAtual ? 'active' : ''}`} 
+                                    onClick={() => setSlideAtual(index)}
+                                    aria-label={`Slide ${index + 1}`}
+                                ></button>
+                            ))}
                         </div>
                     </section>
 
-                    
+                    {/* SEÇÃO DE POSTS DINÂMICOS DO BANCO */}
                     <section className="posts-section" aria-labelledby="posts-titulo">
                         <h2 id="posts-titulo" className="section-title">🔥 Posts em destaque</h2>
 
                         <div className="posts-grid">
-                            
-                            <article className="post-card" id="post-card-1">
-                                <div className="post-image post-img-1">
-                                    <span className="post-tag tag-news">NEWS</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">One Piece: Novo arco promete mudar tudo!</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-1"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">AnimeSpot News</span>
-                                            <span className="author-time">há 3h</span>
+                            {carregando ? (
+                                <p style={{ color: '#fff' }}>Carregando postagens...</p>
+                            ) : posts.length > 0 ? (
+                                posts.map((post) => (
+                                    <article className="post-card" key={post.id}>
+                                        <div 
+                                            className="post-image" 
+                                            style={{ 
+                                                backgroundImage: post.imagem ? `url(${post.imagem})` : 'none',
+                                                backgroundColor: '#2a2a2a' 
+                                            }}
+                                        >
+                                            <span className="post-tag">{post.categoria || 'GERAL'}</span>
                                         </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 1.2k</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 320</span>
-                                    </div>
-                                </div>
-                            </article>
 
-                            
-                            <article className="post-card" id="post-card-2">
-                                <div className="post-image post-img-2">
-                                    <span className="post-tag tag-manga">MANGÁ</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">Jujutsu Kaisen: Capítulo mais insano até agora!</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-2"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">MangaDaily</span>
-                                            <span className="author-time">há 3h</span>
+                                        <div className="post-body">
+                                            <h3 className="post-title">{post.titulo}</h3>
+                                            
+                                            <div className="post-author">
+                                                <div 
+                                                    className="author-avatar" 
+                                                    style={{ 
+                                                        backgroundImage: post.usuarios?.foto ? `url(${post.usuarios.foto})` : 'none',
+                                                        backgroundSize: 'cover',
+                                                        backgroundColor: '#444'
+                                                    }}
+                                                ></div>
+                                                
+                                                <div className="author-info">
+                                                    <span className="author-name">
+                                                        @{post.usuarios?.username || 'Usuário'}
+                                                    </span>
+                                                    <span className="author-time">{formatarData(post.criado_em)}</span>
+                                                </div>
+                                                <button className="post-more-btn" aria-label="Mais opções">···</button>
+                                            </div>
+
+                                            <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
+                                                {post.conteudo.length > 80 ? post.conteudo.substring(0, 80) + '...' : post.conteudo}
+                                            </p>
+
+                                            <div className="post-stats">
+                                                <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 0</span>
+                                                <span className="stat"><i className="ph ph-chat-circle"></i> 0</span>
+                                            </div>
                                         </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 985</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 210</span>
-                                    </div>
-                                </div>
-                            </article>
-
-                            
-                            <article className="post-card" id="post-card-3">
-                                <div className="post-image post-img-3">
-                                    <span className="post-tag tag-anime">ANIME</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">Demon Slayer: Filme bate novo recorde no Japão!</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-3"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">Kimetsu News</span>
-                                            <span className="author-time">há 5h</span>
-                                        </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 1.5k</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 412</span>
-                                    </div>
-                                </div>
-                            </article>
-
-                            
-                            <article className="post-card" id="post-card-4">
-                                <div className="post-image post-img-4">
-                                    <span className="post-tag tag-art">ART</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">As melhores fanarts da semana — votação aberta!</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-4"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">ArtSpot</span>
-                                            <span className="author-time">há 7h</span>
-                                        </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 730</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 88</span>
-                                    </div>
-                                </div>
-                            </article>
-
-                            
-                            <article className="post-card" id="post-card-5">
-                                <div className="post-image post-img-5">
-                                    <span className="post-tag tag-teoria">TEORIA</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">Teoria: O verdadeiro fim de Evangelion explicado</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-5"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">TheoryHub</span>
-                                            <span className="author-time">há 9h</span>
-                                        </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 620</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 155</span>
-                                    </div>
-                                </div>
-                            </article>
-
-                            
-                            <article className="post-card" id="post-card-6">
-                                <div className="post-image post-img-6">
-                                    <span className="post-tag tag-curiosidade">CURIOSIDADE</span>
-                                </div>
-                                <div className="post-body">
-                                    <h3 className="post-title">Por que Totoro continua sendo o ícone do Studio Ghibli?</h3>
-                                    <div className="post-author">
-                                        <div className="author-avatar av-6"></div>
-                                        <div className="author-info">
-                                            <span className="author-name">Ghibli Fan</span>
-                                            <span className="author-time">há 12h</span>
-                                        </div>
-                                        <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                    </div>
-                                    <div className="post-stats">
-                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 445</span>
-                                        <span className="stat"><i className="ph ph-chat-circle"></i> 67</span>
-                                    </div>
-                                </div>
-                            </article>
-
-
-
+                                    </article>
+                                ))
+                            ) : (
+                                <p style={{ color: '#fff' }}>Nenhuma postagem encontrada no momento.</p>
+                            )}
                         </div>
                     </section>
 
-
                 </main>
 
-                
+                {/* SIDEBAR DIREITA */}
                 <aside className="sidebar-right" aria-label="Informações adicionais">
-
                     <span className="widget-title">Mapa do Site</span>
                     
                     <div className="mapa-eventos">
-
                         <div className="pin pin-1">
                             <span className="pin-icon">📍</span>
-
                             <div className="map-evento-info">
                                 <strong>Anime Friends</strong>
                                 <span>📍 São Paulo Expo</span>
@@ -272,11 +258,8 @@ function PaginaInicial() {
                                 <small>Animes</small>
                             </div>
                         </div>
-
-
                         <div className="pin pin-2">
                             <span className="pin-icon">📍</span>
-
                             <div className="map-evento-info">
                                 <strong>Festival de Mangás</strong>
                                 <span>📍 Liberdade</span>
@@ -284,11 +267,8 @@ function PaginaInicial() {
                                 <small>Mangás</small>
                             </div>
                         </div>
-
-
                         <div className="pin pin-3">
                             <span className="pin-icon">📍</span>
-
                             <div className="map-evento-info">
                                 <strong>Encontro Otaku</strong>
                                 <span>📍 Centro de São Paulo</span>
@@ -296,11 +276,8 @@ function PaginaInicial() {
                                 <small>Comunidade</small>
                             </div>
                         </div>
-
                     </div>
 
-
-                    
                     <div className="sidebar-widget" id="widget-eventos">
                         <div className="widget-header">
                             <h3 className="widget-title"><i className="ph ph-calendar-blank"></i> Próximos eventos</h3>
@@ -329,21 +306,9 @@ function PaginaInicial() {
                                 </div>
                                 <span className="evento-badge badge-presencial">Presencial</span>
                             </div>
-                            <div className="evento-item" id="evento-3">
-                                <div className="evento-data">
-                                    <span className="evento-dia">15</span>
-                                    <span className="evento-mes">JUN</span>
-                                </div>
-                                <div className="evento-info">
-                                    <span className="evento-nome">Concurso de Cosplay</span>
-                                    <span className="evento-local">Online</span>
-                                </div>
-                                <span className="evento-badge badge-online">Online</span>
-                            </div>
                         </div>
                     </div>
 
-                    
                     <div className="sidebar-widget" id="widget-em-alta">
                         <h3 className="widget-title"><i className="ph-fill ph-lightning"></i> Em alta agora</h3>
                         <div className="em-alta-list">
@@ -357,18 +322,12 @@ function PaginaInicial() {
                                 <span className="em-alta-nome">Boruto: Two Blue Vortex</span>
                                 <span className="em-alta-tag">#mangá</span>
                             </div>
-                            <div className="em-alta-item" id="em-alta-3">
-                                <span className="em-alta-num">3</span>
-                                <span className="em-alta-nome">Oshi no Ko 2ª temporada</span>
-                                <span className="em-alta-tag">#anime</span>
-                            </div>
                         </div>
                     </div>
-
                 </aside>
             </div>
 
-            
+            {/* FOOTER */}
             <footer className="site-footer">
                 <div className="footer-container">
                     <div className="footer-about">
@@ -407,9 +366,7 @@ function PaginaInicial() {
                     <p>&copy; 2026 Anime Spot — PI_UC3. Todos os direitos reservados.</p>
                 </div>
             </footer>
-
         </>
-
     );
 }
 
