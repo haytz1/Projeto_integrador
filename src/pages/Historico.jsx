@@ -6,7 +6,7 @@ function Historico() {
     return (
 
         <>
-         <Navbar/>
+            <Navbar />
             <Link to="/ObrasMangas" className="btn-voltar">← Voltar</Link>
 
             <main className="container">
