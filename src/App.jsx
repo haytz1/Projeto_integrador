@@ -15,8 +15,6 @@ function App() {
     return (
 
         <>
-
-
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<PaginaInicial />} />
@@ -30,7 +28,6 @@ function App() {
                     <Route path="/Perfil" element={<Perfil />} />
                 </Routes>
             </BrowserRouter>
-
         </>
 
     );

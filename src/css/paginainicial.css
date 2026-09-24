@@ -39,8 +39,8 @@
     --shadow-glow: 0 0 20px var(--purple-glow);
 
     --transition: 0.25s ease;
-    --sidebar-w: 200px;
-    --sidebar-r-w: 290px;
+    --sidebar-w: 220px;
+    --sidebar-r-w: 300px;
     --navbar-h: 64px;
 }
 
@@ -234,9 +234,18 @@ img { max-width: 100%; display: block; }
    ========================================================================== */
 .page-layout {
     display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-r-w);
+
+    /* esquerda | conteúdo | direita */
+    grid-template-columns:
+        var(--sidebar-w)
+        minmax(0, 1fr)
+        var(--sidebar-r-w);
+
+    width: 100%;
     min-height: calc(100vh - var(--navbar-h));
+
     margin-top: var(--navbar-h);
+
     align-items: start;
 }
 
@@ -244,16 +253,24 @@ img { max-width: 100%; display: block; }
    SIDEBAR ESQUERDA
    ========================================================================== */
 .sidebar-left {
+    width: var(--sidebar-w);
+
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border);
+
     position: sticky;
     top: var(--navbar-h);
+
     height: calc(100vh - var(--navbar-h));
+
     overflow-y: auto;
     overflow-x: hidden;
+
     scrollbar-width: none;
+
     display: flex;
     flex-direction: column;
+
     padding-bottom: 1rem;
 }
 
@@ -405,11 +422,14 @@ img { max-width: 100%; display: block; }
    CONTEÚDO PRINCIPAL
    ========================================================================== */
 .main-content {
-    padding: 1.25rem 1.25rem 2rem;
+    width: 100%;
     min-width: 0;
+
+    padding: 1.25rem 1.25rem 2rem;
+
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.5rem
 }
 
 /* ==========================================================================
@@ -765,17 +785,25 @@ img { max-width: 100%; display: block; }
    SIDEBAR DIREITA
    ========================================================================== */
 .sidebar-right {
+    width: var(--sidebar-r-w);
+    min-width: var(--sidebar-r-w);
+
     border-left: 1px solid var(--border);
     background: var(--bg-sidebar);
+
     position: sticky;
     top: var(--navbar-h);
+
     height: calc(100vh - var(--navbar-h));
+
     overflow-y: auto;
     overflow-x: hidden;
+
     scrollbar-width: none;
+
     display: flex;
     flex-direction: column;
-    gap: 0;
+
     padding: 1rem;
 }
 
@@ -829,16 +857,15 @@ img { max-width: 100%; display: block; }
 
 /* --- MAPA DO SITE --- */
 .mapa-eventos {
-  position: relative;
-
-  width: 100%;
-  height: 300px;
-
-  border-radius: 10px;
-  overflow: hidden;
-
-  background-color: #061b14;
-
+    position: relative;
+    width: 100%;
+    height: 280px;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #061b14;
+    background-image: url("./imagens/images-removebg-preview\\ (1).png");
+    background-size: cover;
+    background-position: center;
   /*
     Por enquanto você pode colocar
     uma imagem do mapa aqui.
@@ -853,10 +880,8 @@ img { max-width: 100%; display: block; }
 
 .pin {
   position: absolute;
-
   width: 20px;
   height: 20px;
-
   cursor: pointer;
 }
 
@@ -881,26 +906,17 @@ img { max-width: 100%; display: block; }
 
 .pin-icon {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   width: 26px;
   height: 26px;
-
   color: white;
-
   background: #8b5cf6;
-
   border: 3px solid #ffffff;
-
   border-radius: 50%;
-
   font-size: 12px;
-
   box-shadow:
     0 3px 10px rgba(0, 0, 0, .5);
-
   transform: translate(-50%, -50%);
 }
 
@@ -909,31 +925,19 @@ img { max-width: 100%; display: block; }
 
 .map-evento-info {
   position: absolute;
-
   left: 20px;
   bottom: 25px;
-
   width: 190px;
-
   padding: 12px;
-
   background: #151b20;
-
   border: 1px solid #303940;
-
   border-radius: 8px;
-
   color: #fff;
-
   box-shadow:
     0 8px 25px rgba(0, 0, 0, .4);
-
   opacity: 0;
-
   visibility: hidden;
-
   transform: translateY(5px);
-
   transition:
     opacity .2s ease,
     transform .2s ease;
@@ -952,27 +956,18 @@ img { max-width: 100%; display: block; }
 
 .map-evento-info span {
   display: block;
-
   margin-top: 4px;
-
   color: #aeb7bd;
-
   font-size: 11px;
 }
 
 .map-evento-info small {
   display: inline-block;
-
   margin-top: 8px;
-
   padding: 4px 7px;
-
   background: #35235d;
-
   color: #c4a7ff;
-
   border-radius: 4px;
-
   font-size: 10px;
 }
 
@@ -981,9 +976,7 @@ img { max-width: 100%; display: block; }
 
 .pin:hover .map-evento-info {
   opacity: 1;
-
   visibility: visible;
-
   transform: translateY(0);
 }
 
@@ -1197,30 +1190,54 @@ img { max-width: 100%; display: block; }
    ========================================================================== */
 @media (max-width: 1200px) {
     :root {
-        --sidebar-r-w: 240px;
-        --sidebar-w: 180px;
+        --sidebar-w: 200px;
+        --sidebar-r-w: 250px;
+    }
+
+    .page-layout {
+        grid-template-columns:
+            var(--sidebar-w)
+            minmax(0, 1fr)
+            var(--sidebar-r-w);
     }
 }
 
 @media (max-width: 960px) {
     .page-layout {
-        grid-template-columns: var(--sidebar-w) 1fr;
+        grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     }
-    .sidebar-right { display: none; }
+
+    .sidebar-right {
+        display: none;
+    }
 }
 
 @media (max-width: 700px) {
     .page-layout {
-        grid-template-columns: 1fr;
+        display: block;
+        width: 100%;
+        margin-top: var(--navbar-h);
     }
-    .sidebar-left { display: none; }
-    .posts-grid { grid-template-columns: 1fr 1fr; }
-    .nav-brand-center { display: none; }
-    .footer-container { grid-template-columns: 1fr 1fr; }
+
+    .sidebar-left {
+        display: none;
+    }
+
+    .posts-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 @media (max-width: 480px) {
-    .posts-grid { grid-template-columns: 1fr; }
-    .footer-container { grid-template-columns: 1fr; }
-    .search-bar { width: 180px; }
+    .posts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+    }
+
+    .search-bar {
+        width: 180px;
+    }
 }

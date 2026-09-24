@@ -1,4 +1,4 @@
-import Navbar from '../components/Navbar';
+
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 import '../css/paginainicial.css'
 import { Link } from 'react-router-dom'
@@ -7,7 +7,7 @@ function PaginaInicial() {
     return (
 
         <>
-    <NavbarPesquisa/>
+            <NavbarPesquisa/>
 
             
             <div className="page-layout">
