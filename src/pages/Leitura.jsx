@@ -6,7 +6,7 @@ function Leitura() {
     return (
         <>
     <Navbar/>
-            <a href="obras_mangas.html" class="btn btn-voltar">⭠ Voltar</a>
+            <Link to="/ObrasMangas" className="btn btn-voltar">⭠ Voltar</Link>
 
             <div class="header">
                 <h1>Sombras do Vazio</h1>

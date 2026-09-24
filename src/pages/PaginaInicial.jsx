@@ -44,10 +44,10 @@ function PaginaInicial() {
                             <i className="ph ph-heart"></i>
                             <span>Favoritos</span>
                         </a>
-                        <a href="#" className="sidebar-link" id="nav-historico">
+                        <Link to="/Historico" className="sidebar-link" id="nav-historico">
                             <i className="ph ph-clock-counter-clockwise"></i>
                             <span>Histórico</span>
-                        </a>
+                        </Link>
                     </nav>
 
                     

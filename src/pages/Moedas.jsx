@@ -1,4 +1,6 @@
 import '../css/moedas.css'
+import { Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 function Moedas() {
 
@@ -99,7 +101,7 @@ function Moedas() {
             <footer className="site-footer">
                 <div className="footer-container">
                     <div className="footer-about">
-                        <h3 className="site-logo" style="margin:0;">Anime Spot</h3>
+                        <h3 className="site-logo" style={{ margin: 0 }}>Anime Spot</h3>
                         <p>O seu destino final para ler e descobrir os melhores animes, mangás e autores em um só lugar.</p>
                     </div>
                     <div className="footer-links">
