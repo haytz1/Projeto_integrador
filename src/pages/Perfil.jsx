@@ -24,7 +24,7 @@ function Perfil() {
             try {
                 // OPÇÃO DE TESTE: Se você inseriu um e-mail específico manualmente no banco, 
                 // coloque-o aqui embaixo para testar direto:
-                const emailProcurado = "dograu244@email.com"; // Substitua pelo e-mail que você cadastrou no banco
+                const emailProcurado = "dograu244@gmail.com"; // Substitua pelo e-mail que você cadastrou no banco
 
                 const { data: dadosUsuario, error } = await supabase
                     .from('usuarios')

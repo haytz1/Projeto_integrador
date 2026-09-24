@@ -1,6 +1,6 @@
-import Navbar from '../components/Navbar';
-import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import { supabase } from '../../supabase';
 import '../css/cadastro.css';
 
@@ -8,12 +8,23 @@ export default function Cadastro() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const navigate = useNavigate();
 
-    // Função disparada ao enviar o formulário
     async function fazerCadastro(e) {
-        e.preventDefault(); // Evita o recarregamento da página
+        e.preventDefault();
 
-        // 1. Cria a conta no Supabase Auth
+        // VALIDACAO ANTES DE ENVIAR (Adicione isso no início da sua função de cadastro)
+        if (!email || !senha) {
+            alert("Por favor, preencha todos os campos.");
+            return;
+        }
+
+        if (senha.length < 6) {
+            alert("A senha deve ter pelo menos 6 caracteres.");
+            return;
+        }
+
+        // 1. Cria a conta no Supabase Auth (Seu código continua aqui abaixo...)
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: email,
             password: senha,
@@ -28,7 +39,7 @@ export default function Cadastro() {
             // 2. Insere dados adicionais na tabela 'usuarios'
             const { error: dbError } = await supabase.from('usuarios').insert([
                 {
-                    id: authData.user.id, 
+                    id: authData.user.id,
                     username: username,
                     email: email,
                     moedas: 0
@@ -39,6 +50,7 @@ export default function Cadastro() {
                 alert("Erro ao salvar dados do perfil: " + dbError.message);
             } else {
                 alert("Cadastro realizado com sucesso!");
+                navigate('/Login'); // Redireciona para o login após cadastrar
             }
         }
     }
@@ -48,23 +60,11 @@ export default function Cadastro() {
             <Navbar />
             <div className="stars" id="stars" aria-hidden="true"></div>
 
-            <nav className="navbar" role="navigation" aria-label="Navegação principal">
-                <div className="nav-left">
-                    <img src="imagens/logo_animespot.png" alt="Logo AnimeSpot" className="nav-logo-img" id="nav-logo" />
-                    <Link to="/" className="nav-logo-text">AnimeSpot</Link>
-                </div>
-                <div className="nav-right">
-                    <span>Já tem uma conta?</span>
-                    <Link to="/Login" className="nav-login-link">Fazer login</Link>
-                </div>
-            </nav>
-
             <main className="page-wrapper">
                 <div className="cadastro-card" role="main">
 
                     <div className="avatar-wrapper">
                         <div className="avatar-circle" id="avatar-circle" title="Clique para adicionar uma foto de perfil">
-                            {/* <img src="" alt="Foto de perfil" className="avatar-img" id="avatar-img" /> */}
                             <div className="avatar-placeholder" id="avatar-placeholder">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="8" r="4" />
@@ -85,10 +85,8 @@ export default function Cadastro() {
 
                     <h1 className="welcome-title">É rápido e grátis!</h1>
 
-                    {/* Adicionado o onSubmit no formulário */}
                     <form id="cadastro-form" noValidate onSubmit={fazerCadastro}>
 
-                        {/* Campo Username */}
                         <div className="form-group">
                             <label className="form-label" htmlFor="input-username">Username</label>
                             <div className="input-wrapper">
@@ -105,7 +103,6 @@ export default function Cadastro() {
                             </div>
                         </div>
 
-                        {/* Campo E-mail */}
                         <div className="form-group">
                             <label className="form-label" htmlFor="input-email">E-mail</label>
                             <div className="input-wrapper">
@@ -122,7 +119,6 @@ export default function Cadastro() {
                             </div>
                         </div>
 
-                        {/* Campo Senha */}
                         <div className="form-group">
                             <label className="form-label" htmlFor="input-senha">Senha</label>
                             <div className="input-wrapper">
