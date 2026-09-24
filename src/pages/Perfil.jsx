@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
 import '../css/perfil.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // 1. Importe o useNavigate
 import { createClient } from '@supabase/supabase-js';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Inicialize o seu cliente Supabase (ou importe de um arquivo de configuração)
-const supabase = createClient( supabaseUrl, supabaseKey )
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 function Perfil() {
     const [userId, setUserId] = useState(null);
@@ -18,19 +17,24 @@ function Perfil() {
     const [fotoUrl, setFotoUrl] = useState('');
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
-    // 1. Buscar os dados da conta no banco de dados ao carregar a página
+    const navigate = useNavigate(); // 2. Inicialize o hook de navegação
+
     useEffect(() => {
         async function buscarDadosDoBanco() {
             try {
-                // OPÇÃO DE TESTE: Se você inseriu um e-mail específico manualmente no banco, 
-                // coloque-o aqui embaixo para testar direto:
-                const emailProcurado = "dograu244@gmail.com"; // Substitua pelo e-mail que você cadastrou no banco
+                // Pega o e-mail que salvamos no localStorage durante o login
+                const emailSalvo = localStorage.getItem('usuario_email');
+
+                if (!emailSalvo) {
+                    navigate('/Login'); // Se não estiver logado, manda pro login
+                    return;
+                }
 
                 const { data: dadosUsuario, error } = await supabase
                     .from('usuarios')
                     .select('*')
-                    .eq('email', emailProcurado) // Procura a linha com esse e-mail
-                    .single(); // Retorna apenas um registro
+                    .eq('email', emailSalvo)
+                    .single();
 
                 if (error) throw error;
 
@@ -38,13 +42,12 @@ function Perfil() {
                     setUserId(dadosUsuario.id);
                     setNome(dadosUsuario.username);
                     setEmail(dadosUsuario.email);
-                    
-                    // Formata a data de cadastro para o padrão brasileiro (DD/MM/AAAA)
+
                     if (dadosUsuario.registro) {
                         setRegistro(new Date(dadosUsuario.registro).toLocaleDateString('pt-BR'));
                     }
-                    
-                    setFotoUrl(dadosUsuario.foto); // Renderiza a foto se houver link salvo
+
+                    setFotoUrl(dadosUsuario.foto);
                 }
             } catch (error) {
                 console.error('Erro ao buscar usuário:', error.message);
@@ -52,9 +55,18 @@ function Perfil() {
         }
 
         buscarDadosDoBanco();
-    }, []);
+    }, [navigate]);
 
-    // 2. Função para lidar com a troca ou envio da foto de perfil
+    // 3. FUNÇÃO DE SAIR DA CONTA
+    const handleLogout = () => {
+        // Remove os dados salvos no navegador
+        localStorage.removeItem('usuario_email');
+        localStorage.removeItem('usuario_id');
+
+        // Redireciona o usuário para a tela de login
+        navigate('/Login');
+    };
+
     const handleFileChange = async (e) => {
         const arquivo = e.target.files[0];
         if (!arquivo || !userId) return;
@@ -65,21 +77,18 @@ function Perfil() {
             const fileExt = arquivo.name.split('.').pop();
             const nomeDoArquivo = `${userId}_${Date.now()}.${fileExt}`;
 
-            // Envia para o storage 'avatars_usuarios'
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('avatars_usuarios')
                 .upload(nomeDoArquivo, arquivo);
 
             if (uploadError) throw uploadError;
 
-            // Pega a URL pública gerada pelo Storage
             const { data: urlData } = supabase.storage
                 .from('avatars_usuarios')
                 .getPublicUrl(uploadData.path);
 
             const linkDaFoto = urlData.publicUrl;
 
-            // Salva a URL da foto na coluna 'foto' do usuário correspondente no banco
             const { error: dbError } = await supabase
                 .from('usuarios')
                 .update({ foto: linkDaFoto })
@@ -99,7 +108,7 @@ function Perfil() {
 
     return (
         <>
-            <Navbar />
+            <NavbarPesquisa />
 
             <main className="page-wrapper">
                 <div className="profile-container">
@@ -115,13 +124,12 @@ function Perfil() {
                                     )}
                                 </div>
 
-                                {/* Input de arquivo invisível acionado pelo botão */}
-                                <input 
-                                    type="file" 
-                                    id="fileInput" 
-                                    style={{ display: 'none' }} 
-                                    accept="image/*" 
-                                    onChange={handleFileChange} 
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    style={{ display: 'none' }}
+                                    accept="image/*"
+                                    onChange={handleFileChange}
                                 />
                                 <label htmlFor="fileInput" className="edit-photo-btn" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <i className="ph ph-pencil-simple"></i> {carregandoUpload ? 'Enviando...' : 'Editar foto'}
@@ -158,138 +166,67 @@ function Perfil() {
 
                     </div>
 
-                    <section className="preferences-section">
+                    
+                    <section class="preferences-section">
+                        <h2 class="section-title">Preferências de animes</h2>
+                        <p class="section-subtitle">Personalize sua experiência no site</p>
 
-                        <h2 className="section-title">Preferências de animes</h2>
+                        <div class="prefs-grid">
 
-                        <p className="section-subtitle">Personalize sua experiência no site</p>
-
-
-
-                        <div className="prefs-grid">
-
-
-
-                            <div className="pref-col">
-
-                                <h3 className="pref-title">Animes favoritos</h3>
-
-                                <p className="pref-desc">Adicione os animes que você mais gosta.</p>
-
-                                <div className="tags-container">
-
-                                    <span className="tag">Naruto <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">One Piece <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Attack on Titan <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Haikyuu <button className="tag-remove">&times;</button></span>
-
+                            <div class="pref-col">
+                                <h3 class="pref-title">Animes favoritos</h3>
+                                <p class="pref-desc">Adicione os animes que você mais gosta.</p>
+                                <div class="tags-container">
+                                    <span class="tag">Naruto <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">One Piece <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Attack on Titan <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Haikyuu <button class="tag-remove">&times;</button></span>
                                 </div>
-
-                                <button className="btn-add">+ Adicionar</button>
-
+                                <button class="btn-add">+ Adicionar</button>
                             </div>
 
-
-
-                            <div className="pref-col">
-
-                                <h3 className="pref-title">Gêneros favoritos</h3>
-
-                                <p className="pref-desc">Selecione seus gêneros favoritos.</p>
-
-                                <div className="tags-container">
-
-                                    <span className="tag">Ação <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Aventura <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Drama <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Fantasia <button className="tag-remove">&times;</button></span>
-
+                            <div class="pref-col">
+                                <h3 class="pref-title">Gêneros favoritos</h3>
+                                <p class="pref-desc">Selecione seus gêneros favoritos.</p>
+                                <div class="tags-container">
+                                    <span class="tag">Ação <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Aventura <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Drama <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Fantasia <button class="tag-remove">&times;</button></span>
                                 </div>
-
-                                <button className="btn-add">+ Adicionar</button>
-
+                                <button class="btn-add">+ Adicionar</button>
                             </div>
 
-
-
-                            <div className="pref-col">
-
-                                <h3 className="pref-title">Tags de interesse</h3>
-
-                                <p className="pref-desc">Escolha as tags que mais te interessam.</p>
-
-                                <div className="tags-container">
-
-                                    <span className="tag">Shounen <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Séries longas <button className="tag-remove">&times;</button></span>
-
-                                    <span className="tag">Mundos fantásticos <button className="tag-remove">&times;</button></span>
-
+                            <div class="pref-col">
+                                <h3 class="pref-title">Tags de interesse</h3>
+                                <p class="pref-desc">Escolha as tags que mais te interessam.</p>
+                                <div class="tags-container">
+                                    <span class="tag">Shounen <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Séries longas <button class="tag-remove">&times;</button></span>
+                                    <span class="tag">Mundos fantásticos <button class="tag-remove">&times;</button></span>
                                 </div>
-
-                                <button className="btn-add">+ Adicionar</button>
-
+                                <button class="btn-add">+ Adicionar</button>
                             </div>
-
-
 
                         </div>
-
                     </section>
 
-
-
-
-
+                    {/* Seção de Segurança com o Botão de Logout Funcional */}
                     <section className="security-section">
-
                         <h2 className="section-title"><i className="ph ph-shield-check"></i> Segurança da conta</h2>
-
                         <p className="pref-desc" style={{ marginBottom: 0 }}>Mantenha sua conta segura.</p>
 
-
-
                         <div className="sec-buttons">
-
                             <button className="btn-sec btn-password">
-
                                 <i className="ph ph-lock-key"></i> Alterar Senha
-
                             </button>
-
-                            <button className="btn-sec btn-logout">
-
+                            {/* 4. ADICIONADO O onClick AQUI */}
+                            <button className="btn-sec btn-logout" onClick={handleLogout}>
                                 <i className="ph ph-door-open"></i> Sair da conta
-
                             </button>
-
                         </div>
-
                     </section>
 
-
-
-
-
-                    <footer className="actions-footer">
-
-                        <button className="btn-action btn-cancel">Cancelar</button>
-
-                        <button className="btn-action btn-save">Salvar alterações</button>
-
-                    </footer>
-
-
-
-               
-                    
                 </div>
             </main>
         </>
