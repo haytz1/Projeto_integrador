@@ -27,7 +27,12 @@ export default function Cadastro() {
         if (authData?.user) {
             // 2. Insere dados adicionais na tabela 'usuarios'
             const { error: dbError } = await supabase.from('usuarios').insert([
-                { id: authData.user.id, username: username, email: email, moedas: 0 }
+                {
+                    id: authData.user.id, 
+                    username: username,
+                    email: email,
+                    moedas: 0
+                }
             ]);
 
             if (dbError) {
@@ -59,7 +64,7 @@ export default function Cadastro() {
 
                     <div className="avatar-wrapper">
                         <div className="avatar-circle" id="avatar-circle" title="Clique para adicionar uma foto de perfil">
-                            <img src="" alt="Foto de perfil" className="avatar-img" id="avatar-img" />
+                            {/* <img src="" alt="Foto de perfil" className="avatar-img" id="avatar-img" /> */}
                             <div className="avatar-placeholder" id="avatar-placeholder">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="8" r="4" />
