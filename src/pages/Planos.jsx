@@ -7,10 +7,10 @@ function Planos() {
 
         <>
     <Navbar/>
-            <nav class="navbar">
-                <div class="nav-left">
-                    <a href="#" class="notification-icon" aria-label="Notificações">
-                        <i class="ph ph-bell"></i>
+            <nav className="navbar">
+                <div className="nav-left">
+                    <a href="#" className="notification-icon" aria-label="Notificações">
+                        <i className="ph ph-bell"></i>
                     </a>
                     <Link to="/" className="site-logo">Anime Spot</Link>
                     <Link to="/" className="nav-link">Início</Link>

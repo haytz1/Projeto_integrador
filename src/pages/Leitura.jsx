@@ -8,7 +8,7 @@ function Leitura() {
     <Navbar/>
             <Link to="/ObrasMangas" className="btn btn-voltar">⭠ Voltar</Link>
 
-            <div class="header">
+            <div className="header">
                 <h1>Sombras do Vazio</h1>
                 {/* Definimos o valor inicial no defaultValue do select */}
                 <select className="capitulos" defaultValue="3">
