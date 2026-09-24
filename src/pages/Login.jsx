@@ -9,7 +9,7 @@ function Login() {
     return (
 
         <>
-        <Navbar/>
+            <Navbar />
             <div className="stars" id="stars" aria-hidden="true"></div>
 
 
@@ -71,7 +71,7 @@ function Login() {
                         <div className="form-group">
                             <div className="senha-row">
                                 <label className="form-label" htmlFor="input-senha" style={{ marginBottom: 0 }}>Senha</label>
-{/* Criar uma página ou modal para isso */} <a href="#" className="forgot-link" id="link-esqueceu-senha">Esqueceu sua senha?</a>
+                                {/* Criar uma página ou modal para isso */} <a href="#" className="forgot-link" id="link-esqueceu-senha">Esqueceu sua senha?</a>
                             </div>
                             <div className="input-wrapper">
                                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -1,8 +1,27 @@
 import Navbar from '../components/Navbar';
 import '../css/historico.css'
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../supabase';
 
-function Historico() {
+export default function Historico() {
+    const [historico, setHistorico] = useState([]);
+
+    async function buscarHistorico() {
+        const userId = "COLOQUE_AQUI_O_ID_LOGADO";
+
+        const { data } = await supabase
+            .from('leitura')
+            .select(`*, capitulos ( titulo_capitulo, numero_capitulo, obras ( titulo ) )`)
+            .eq('id_usuario', userId);
+
+        if (data) setHistorico(data);
+    }
+
+    useEffect(() => {
+        buscarHistorico();
+    }, []);
+
     return (
 
         <>
@@ -77,7 +96,3 @@ function Historico() {
 
     );
 }
-
-export default Historico;
-
-
