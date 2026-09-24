@@ -19,8 +19,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<PaginaInicial />} />
                     <Route path="/ObrasMangas" element={<ObrasMangas />} />
-                    <Route path="/Historico" element={<Historico />} />
                     <Route path="/Leitura" element={<Leitura />} />
+                    <Route path="/Historico" element={<Historico />} />
                     <Route path="/Login" element={<Login />} />
                     <Route path="/Cadastro" element={<Cadastro />} />
                     <Route path="/Moedas" element={<Moedas />} />

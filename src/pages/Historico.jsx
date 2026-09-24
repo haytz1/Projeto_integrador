@@ -1,29 +1,57 @@
-import Navbar from '../components/Navbar';
-import '../css/historico.css'
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
 import { supabase } from '../../supabase';
+import '../css/historico.css';
 
 export default function Historico() {
     const [historico, setHistorico] = useState([]);
-
-    async function buscarHistorico() {
-        const userId = "COLOQUE_AQUI_O_ID_LOGADO";
-
-        const { data } = await supabase
-            .from('leitura')
-            .select(`*, capitulos ( titulo_capitulo, numero_capitulo, obras ( titulo ) )`)
-            .eq('id_usuario', userId);
-
-        if (data) setHistorico(data);
-    }
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        buscarHistorico();
+        carregarHistorico();
     }, []);
 
-    return (
+    async function carregarHistorico() {
+        // 1. Obtém o utilizador atualmente logado no Supabase
+        const { data: { user } } = await supabase.auth.getUser();
 
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
+        // 2. Busca na tabela 'leitura' filtrando pelo email_usuario do utilizador
+        const { data, error } = await supabase
+            .from('leitura')
+            .select('*')
+            .eq('email_usuario', user.email);
+
+        if (error) {
+            console.error("Erro ao carregar o histórico:", error.message);
+        } else {
+            setHistorico(data || []);
+        }
+
+        setLoading(false);
+    }
+
+    // Função para definir a classe CSS de acordo com o status
+    function getStatusClass(status) {
+        switch (status?.toLowerCase()) {
+            case 'concluído':
+            case 'concluido':
+                return 'status-concluido';
+            case 'em andamento':
+                return 'status-andamento';
+            case 'abandonado':
+                return 'status-abandonado';
+            default:
+                return 'status-andamento';
+        }
+    }
+
+    return (
         <>
             <Navbar />
             <Link to="/ObrasMangas" className="btn-voltar">← Voltar</Link>
@@ -35,64 +63,33 @@ export default function Historico() {
                 </header>
 
                 <section className="lista-historico" aria-label="Histórico de leituras">
-                    <article className="item-historico">
-                        <div className="item-esquerda">
-                            <div className="capa capa-1">S</div>
-                            <div className="informacoes">
-                                <h2>Sombras do Vazio</h2>
-                                <p>Último capítulo: 48</p>
-                            </div>
-                        </div>
-                        <div className="status status-concluido"><span className="icone">✓</span>Concluído</div>
-                    </article>
-
-                    <article className="item-historico">
-                        <div className="item-esquerda">
-                            <div className="capa capa-2">L</div>
-                            <div className="informacoes">
-                                <h2>Luz Eterna</h2>
-                                <p>Último capítulo: 112</p>
-                            </div>
-                        </div>
-                        <div className="status status-andamento">Em andamento</div>
-                    </article>
-
-                    <article className="item-historico">
-                        <div className="item-esquerda">
-                            <div className="capa capa-3">F</div>
-                            <div className="informacoes">
-                                <h2>Fênix Rebelde</h2>
-                                <p>Último capítulo: 19</p>
-                            </div>
-                        </div>
-                        <div className="status status-abandonado">Abandonado</div>
-                    </article>
-
-                    <article className="item-historico">
-                        <div className="item-esquerda">
-                            <div className="capa capa-4">R</div>
-                            <div className="informacoes">
-                                <h2>Reino dos Ventos</h2>
-                                <p>Último capítulo: 140</p>
-                            </div>
-                        </div>
-                        <div className="status status-andamento">Em andamento</div>
-                    </article>
-
-                    <article className="item-historico">
-                        <div className="item-esquerda">
-                            <div className="capa capa-5">A</div>
-                            <div className="informacoes">
-                                <h2>Abismo Infinito</h2>
-                                <p>Último capítulo: 33</p>
-                            </div>
-                        </div>
-                        <div className="status status-concluido"><span className="icone">✓</span>Concluído</div>
-                    </article>
+                    {loading ? (
+                        <p style={{ color: '#fff', textAlign: 'center' }}>A carregar histórico...</p>
+                    ) : historico.length === 0 ? (
+                        <p style={{ color: '#fff', textAlign: 'center' }}>Nenhuma história encontrada no seu histórico.</p>
+                    ) : (
+                        historico.map((item) => (
+                            <article className="item-historico" key={item.id}>
+                                <div className="item-esquerda">
+                                    <div className="capa capa-1">
+                                        {item.obra_titulo ? item.obra_titulo.charAt(0).toUpperCase() : 'M'}
+                                    </div>
+                                    <div className="informacoes">
+                                        <h2>{item.obra_titulo}</h2>
+                                        <p>Último capítulo: {item.ultimo_capitulo}</p>
+                                    </div>
+                                </div>
+                                <div className={`status ${getStatusClass(item.status)}`}>
+                                    {(item.status === 'Concluído' || item.status === 'concluido') && (
+                                        <span className="icone">✓</span>
+                                    )}
+                                    {item.status}
+                                </div>
+                            </article>
+                        ))
+                    )}
                 </section>
             </main>
-
         </>
-
     );
 }

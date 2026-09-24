@@ -14,13 +14,8 @@ export default function Cadastro() {
         e.preventDefault();
 
         // VALIDACAO ANTES DE ENVIAR (Adicione isso no início da sua função de cadastro)
-        if (!email || !senha) {
+        if (!username || !email || !senha) {
             alert("Por favor, preencha todos os campos.");
-            return;
-        }
-
-        if (senha.length < 6) {
-            alert("A senha deve ter pelo menos 6 caracteres.");
             return;
         }
 
@@ -39,7 +34,7 @@ export default function Cadastro() {
             // 2. Insere dados adicionais na tabela 'usuarios'
             const { error: dbError } = await supabase.from('usuarios').insert([
                 {
-                    id: authData.user.id,
+                    // REMOVIDO: id: authData.user.id
                     username: username,
                     email: email,
                     moedas: 0
@@ -50,7 +45,7 @@ export default function Cadastro() {
                 alert("Erro ao salvar dados do perfil: " + dbError.message);
             } else {
                 alert("Cadastro realizado com sucesso!");
-                navigate('/Login'); // Redireciona para o login após cadastrar
+                navigate('/Login');
             }
         }
     }
