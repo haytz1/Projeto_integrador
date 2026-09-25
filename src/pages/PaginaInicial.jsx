@@ -5,6 +5,7 @@ import '../css/paginainicial.css';
 import { Link } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import '../css/modal-eventos.css';
+import MiniMapaSP from '../components/MiniMapaSP';
 
 const IMAGEM_POST_PADRAO = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop';
 const AVATAR_PADRAO = 'https://api.dicebear.com/7.x/bottts/svg?seed=DefaultUser';
@@ -29,6 +30,7 @@ function PaginaInicial() {
 
     const [slideAtual, setSlideAtual] = useState(0);
     const [carregando, setCarregando] = useState(true);
+    const [filtroAtivo, setFiltroAtivo] = useState('Todos');
 
     useEffect(() => {
         async function buscarDadosIniciais() {
@@ -300,49 +302,68 @@ function PaginaInicial() {
                     </section>
 
                     <section className="posts-section" aria-labelledby="posts-titulo">
-                        <h2 id="posts-titulo" className="section-title">🔥 Posts em destaque</h2>
+                        <div className="posts-section-header">
+                            <h2 id="posts-titulo" className="section-title">🔥 Posts em destaque</h2>
+                            <div className="filtros-posts">
+                                {['Todos', 'Anime', 'Mangá', 'Cosplay', 'Arte', 'Geral'].map(filtro => (
+                                    <button
+                                        key={filtro}
+                                        className={`filtro-btn ${filtroAtivo === filtro ? 'ativo' : ''}`}
+                                        onClick={() => setFiltroAtivo(filtro)}
+                                    >
+                                        {filtro}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
                         <div className="posts-grid">
                             {carregando ? (
                                 <p style={{ color: '#fff' }}>Carregando postagens...</p>
-                            ) : posts.length > 0 ? (
-                                posts.map((post) => {
-                                    const imagemPost = post.imagem ? post.imagem : IMAGEM_POST_PADRAO;
-                                    const fotoPerfil = post.usuarios?.foto ? post.usuarios.foto : AVATAR_PADRAO;
-                                    const totalComentarios = post.comentarios?.[0]?.count || 0;
+                            ) : (() => {
+                                const postsFiltrados = filtroAtivo === 'Todos'
+                                    ? posts
+                                    : posts.filter(p => (p.categoria || 'Geral').toLowerCase() === filtroAtivo.toLowerCase());
 
-                                    return (
-                                        <article className="post-card" key={post.id} onClick={() => abrirDetalhesPost(post)} style={{ cursor: 'pointer' }}>
-                                            <div className="post-image" style={{ backgroundImage: `url(${imagemPost})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#2a2a2a' }}>
-                                                <span className="post-tag">{post.categoria || 'GERAL'}</span>
-                                            </div>
+                                return postsFiltrados.length > 0 ? (
+                                    postsFiltrados.map((post) => {
+                                        const imagemPost = post.imagem ? post.imagem : IMAGEM_POST_PADRAO;
+                                        const fotoPerfil = post.usuarios?.foto ? post.usuarios.foto : AVATAR_PADRAO;
+                                        const totalComentarios = post.comentarios?.[0]?.count || 0;
 
-                                            <div className="post-body">
-                                                <h3 className="post-title">{post.titulo}</h3>
+                                        return (
+                                            <article className="post-card" key={post.id} onClick={() => abrirDetalhesPost(post)} style={{ cursor: 'pointer' }}>
+                                                <div className="post-image" style={{ backgroundImage: `url(${imagemPost})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#2a2a2a' }}>
+                                                    <span className="post-tag">{post.categoria || 'GERAL'}</span>
+                                                </div>
 
-                                                <div className="post-author">
-                                                    <div className="author-avatar" style={{ backgroundImage: `url(${fotoPerfil})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
-                                                    <div className="author-info">
-                                                        <span className="author-name">@{post.usuarios?.username || 'Usuário'}</span>
-                                                        <span className="author-time">{formatarData(post.criado_em)}</span>
+                                                <div className="post-body">
+                                                    <h3 className="post-title">{post.titulo}</h3>
+
+                                                    <div className="post-author">
+                                                        <div className="author-avatar" style={{ backgroundImage: `url(${fotoPerfil})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                                                        <div className="author-info">
+                                                            <span className="author-name">@{post.usuarios?.username || 'Usuário'}</span>
+                                                            <span className="author-time">{formatarData(post.criado_em)}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
+                                                        {post.conteudo.length > 80 ? post.conteudo.substring(0, 80) + '...' : post.conteudo}
+                                                    </p>
+
+                                                    <div className="post-stats">
+                                                        <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 0</span>
+                                                        <span className="stat"><i className="ph ph-chat-circle"></i> {totalComentarios}</span>
                                                     </div>
                                                 </div>
-
-                                                <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
-                                                    {post.conteudo.length > 80 ? post.conteudo.substring(0, 80) + '...' : post.conteudo}
-                                                </p>
-
-                                                <div className="post-stats">
-                                                    <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 0</span>
-                                                    <span className="stat"><i className="ph ph-chat-circle"></i> {totalComentarios}</span>
-                                                </div>
-                                            </div>
-                                        </article>
-                                    );
-                                })
-                            ) : (
-                                <p style={{ color: '#fff' }}>Nenhuma postagem encontrada no momento.</p>
-                            )}
+                                            </article>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="filtro-vazio">Nenhuma postagem encontrada para <strong>"{filtroAtivo}"</strong>.</p>
+                                );
+                            })()}
                         </div>
                     </section>
                 </main>
@@ -351,35 +372,8 @@ function PaginaInicial() {
                 <aside className="sidebar-right" aria-label="Informações adicionais">
                     <span className="widget-title">Mapa do Site</span>
 
-                    <div className="mapa-eventos">
-                        <div className="pin pin-1">
-                            <span className="pin-icon">📍</span>
-                            <div className="map-evento-info">
-                                <strong>Anime Friends</strong>
-                                <span>📍 São Paulo Expo</span>
-                                <span>📅 18 de julho</span>
-                                <small>Animes</small>
-                            </div>
-                        </div>
-                        <div className="pin pin-2">
-                            <span className="pin-icon">📍</span>
-                            <div className="map-evento-info">
-                                <strong>Festival de Mangás</strong>
-                                <span>📍 Liberdade</span>
-                                <span>📅 25 de julho</span>
-                                <small>Mangás</small>
-                            </div>
-                        </div>
-                        <div className="pin pin-3">
-                            <span className="pin-icon">📍</span>
-                            <div className="map-evento-info">
-                                <strong>Encontro Otaku</strong>
-                                <span>📍 Centro de São Paulo</span>
-                                <span>📅 2 de agosto</span>
-                                <small>Comunidade</small>
-                            </div>
-                        </div>
-                    </div>
+                    {/* MINI MAPA INTERATIVO DE SÃO PAULO */}
+                    <MiniMapaSP />
 
                     <div className="sidebar-widget" id="widget-eventos">
                         <div className="widget-header">

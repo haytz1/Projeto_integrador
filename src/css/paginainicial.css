@@ -550,6 +550,7 @@ img { max-width: 100%; display: block; }
     width: fit-content;
     transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
     margin-top: 0.4rem;
+    border: none;
 }
 
 .btn-ver-mais:hover {
@@ -1458,4 +1459,67 @@ img { max-width: 100%; display: block; }
     font-size: 0.9rem;
     cursor: pointer;
     padding: 0 8px;
+}
+
+/* ==========================================================================
+   Filtros de Posts
+   ========================================================================== */
+
+.posts-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.posts-section-header .section-title {
+    margin-bottom: 0;
+}
+
+.filtros-posts {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.filtro-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.filtro-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple-hover);
+    background: var(--purple-glow);
+}
+
+.filtro-btn.ativo {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+.filtro-vazio {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 2rem 0;
+    grid-column: 1 / -1;
+}
+
+.filtro-vazio strong {
+    color: var(--purple-hover);
 }
