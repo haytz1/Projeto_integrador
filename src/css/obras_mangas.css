@@ -1,26 +1,21 @@
 /* =====================
-   FONTE & RESET
+   ESCOPO DA PÁGINA OBRAS & MANGÁS
    ===================== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
+/* 1. Estilos gerais aplicados somente à casca da página */
+.pagina-obras-mangas {
     font-family: 'Inter', sans-serif;
     background-color: #0d1117;
     color: #8b5cf6;
     min-height: 100vh;
+    padding-top: 50px; /* 👈 Espaço reservado para a Navbar não cobrir o topo */
 }
 
 /* =====================
-   BOTÃO VOLTAR
+   BOTÕES DE NAVEGAÇÃO
    ===================== */
-.btn-voltar,
-.btn-historico-link {
+.pagina-obras-mangas .btn-voltar,
+.pagina-obras-mangas .btn-historico-link {
     display: inline-block;
     position: fixed;
     top: 16px;
@@ -35,11 +30,11 @@ body {
     transition: all 0.2s ease;
 }
 
-.btn-voltar {
+.pagina-obras-mangas .btn-voltar {
     left: 16px;
 }
 
-.btn-historico-link {
+.pagina-obras-mangas .btn-historico-link {
     left: 210px;
     background-color: #c384ff;
     border-color: #c384ff;
@@ -47,17 +42,17 @@ body {
     font-weight: 700;
 }
 
-.btn-voltar:hover,
-.btn-historico-link:hover {
+.pagina-obras-mangas .btn-voltar:hover,
+.pagina-obras-mangas .btn-historico-link:hover {
     background-color: #8b5cf6;
     color: #0d1117;
     transform: translateY(-1px);
 }
 
 /* =====================
-   CABEÇALHO / BARRA DE PESQUISA
+   CABEÇALHO LOCAL / PESQUISA
    ===================== */
-.cabecalho {
+.pagina-obras-mangas .cabecalho {
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -69,7 +64,7 @@ body {
     z-index: 50;
 }
 
-.icone-perfil{
+.pagina-obras-mangas .icone-perfil {
     width: 20px;
     align-items: center;   
     display: inline-flex;
@@ -77,13 +72,13 @@ body {
     vertical-align: middle;
 }
 
-.barra-pesquisa-wrapper {
+.pagina-obras-mangas .barra-pesquisa-wrapper {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.barra-pesquisa {
+.pagina-obras-mangas .barra-pesquisa {
     background-color: #0d1117;
     border: 1px solid #8b5cf6;
     color: #8b5cf6;
@@ -95,28 +90,28 @@ body {
     outline: none;
 }
 
-.barra-pesquisa::placeholder {
+.pagina-obras-mangas .barra-pesquisa::placeholder {
     color: rgba(139, 92, 246, 0.5);
 }
 
-.barra-pesquisa:focus {
+.pagina-obras-mangas .barra-pesquisa:focus {
     border-color: #fff;
 }
 
-.resultado-pesquisa {
+.pagina-obras-mangas .resultado-pesquisa {
     font-size: 0.85rem;
     color: rgba(139, 92, 246, 0.7);
     min-width: 80px;
 }
 
 /* =====================
-   FILTRO DE GÊNEROS (tag <details>)
+   FILTRO DE GÊNEROS
    ===================== */
-.filtro-container {
+.pagina-obras-mangas .filtro-container {
     position: relative;
 }
 
-.filtro-icone {
+.pagina-obras-mangas .filtro-icone {
     cursor: pointer;
     background-color: #8b5cf6;
     color: #0d1117;
@@ -129,21 +124,21 @@ body {
     transition: 0.2s;
 }
 
-.filtro-icone::-webkit-details-marker {
+.pagina-obras-mangas .filtro-icone::-webkit-details-marker {
     display: none;
 }
 
-.filtro-icone:hover {
+.pagina-obras-mangas .filtro-icone:hover {
     background-color: #a78bfa;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
 }
 
-.filtro-generos {
+.pagina-obras-mangas .filtro-generos {
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    width:220px;
+    width: 220px;
     background-color: #161b22;
     border: 1px solid #8b5cf6;
     border-radius: 12px;
@@ -154,12 +149,10 @@ body {
     gap: 5px;
     min-width: 180px;
     z-index: 1000;
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.45),
-        0 0 20px rgba(139, 92, 246, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.12);
 }
 
-.filtro-generos label {
+.pagina-obras-mangas .filtro-generos label {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -171,15 +164,15 @@ body {
     transition: all 0.2s ease;
 }
 
-.filtro-generos label:hover {
+.pagina-obras-mangas .filtro-generos label:hover {
     background-color: rgba(139, 92, 246, 0.12);
     color: #c4b5fd;
     transform: translateX(3px);
 }
 
-.filtro-generos input[type="checkbox"] {
+.pagina-obras-mangas .filtro-generos input[type="checkbox"] {
     appearance: none;
-    width: 16px;                                              
+    width: 16px;                                                
     height: 16px;
     margin: 0;
     flex-shrink: 0;
@@ -191,12 +184,12 @@ body {
     transition: all 0.2s ease;
 }
 
-.filtro-generos input[type="checkbox"]:checked {
+.pagina-obras-mangas .filtro-generos input[type="checkbox"]:checked {
     background-color: #8b5cf6;
     border-color: #8b5cf6;
 }
 
-.filtro-generos input[type="checkbox"]:checked::after {
+.pagina-obras-mangas .filtro-generos input[type="checkbox"]:checked::after {
     content: "✓";
     position: absolute;
     top: 50%;
@@ -208,19 +201,16 @@ body {
 }
 
 /* =====================
-   ÁREA PRINCIPAL
+   ÁREA PRINCIPAL & PAINEL
    ===================== */
-.conteudo-principal {
+.pagina-obras-mangas .conteudo-principal {
     display: flex;
     gap: 24px;
     padding: 24px;
     align-items: flex-start;
 }
 
-/* =====================
-   PAINEL DO USUÁRIO (aside)
-   ===================== */
-.painel-usuario {
+.pagina-obras-mangas .painel-usuario {
     position: fixed;
     top: 80px;
     left: 20px;
@@ -236,11 +226,11 @@ body {
     justify-content: center;
 }
 
-.cabecalho-perfil{
+.pagina-obras-mangas .cabecalho-perfil {
     margin-bottom: 8px;
 }
 
-.usuario-foto {
+.pagina-obras-mangas .usuario-foto {
     width: 150px;
     height: 150px;
     aspect-ratio: 1 / 1.4;
@@ -250,37 +240,36 @@ body {
     align-items: center;
 }
 
-.usuario-foto img {
+.pagina-obras-mangas .usuario-foto img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     box-shadow: 0 0 20px rgba(139, 92, 246, 0.12);
 }
 
-.usuario-nome {
+.pagina-obras-mangas .usuario-nome {
     font-size: 20px;
     color: #8b5cf6;
     text-align: center;
     margin-bottom: 10px;
-    margin-top:15px;
+    margin-top: 15px;
     font-weight: bold;
 }
 
-.obras-lidas {
+.pagina-obras-mangas .obras-lidas {
     width: 100%;
     margin-top: 10px;
 }
 
-.obras-lidas-titulo {
+.pagina-obras-mangas .obras-lidas-titulo {
     font-size: 20px;
     color: rgba(139, 92, 246, 0.7);
-    margin-bottom: 25px;
     margin: 0 0 30px;
     text-align: center;
     font-weight: bold;
 }
 
-.obras-lidas ul {
+.pagina-obras-mangas .obras-lidas ul {
     list-style: none;
     display: flex;
     flex-direction: column;
@@ -289,13 +278,7 @@ body {
     padding: 0;
 }
 
-.obras-lidas li:hover{
-    border-color: #a78bfa;
-    background: #1c2128;
-    transform: translateX(-2px);
-}
-
-.obras-lidas ul li {
+.pagina-obras-mangas .obras-lidas ul li {
     font-size: 15px;
     color: #8b5cf6;
     text-align: center;
@@ -310,7 +293,13 @@ body {
     transition: 0.2s;
 }
 
-.btn-historico {
+.pagina-obras-mangas .obras-lidas li:hover {
+    border-color: #a78bfa;
+    background: #1c2128;
+    transform: translateX(-2px);
+}
+
+.pagina-obras-mangas .btn-historico {
     display: block;
     width: 100%;
     text-align: center;
@@ -324,26 +313,23 @@ body {
     margin-top: 30px;
 }
 
-.btn-historico:hover {
+.pagina-obras-mangas .btn-historico:hover {
     background-color: #a78bfa;
 }
 
 /* =====================
    GRADE DE CARDS
    ===================== */
-.grade-obras {
+.pagina-obras-mangas .grade-obras {
     display: grid;
     grid-template-columns: repeat(4, 260px);
     gap: 20px;
     flex: 1;
     justify-content: center;
-    margin-left:120px;
+    margin-left: 120px;
 }
 
-/* =====================
-   CARD
-   ===================== */
-.card {
+.pagina-obras-mangas .card {
     background-color: #161b22;
     border: 1px solid #8b5cf6;
     border-radius: 10px;
@@ -357,34 +343,33 @@ body {
     height: 420px;
 }
 
-.card:hover {
+.pagina-obras-mangas .card:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
 }
 
-.card-imagem {
+.pagina-obras-mangas .card-imagem {
     width: 100%;
     aspect-ratio: 3 / 4;
     object-fit: cover;
     display: block;
 }
 
-.card-nome {
-    font-size: 0.9rem;
+.pagina-obras-mangas .card-nome {
+    font-size: 0.95rem;
     color: #8b5cf6;
     text-align: center;
     margin: 10px 10px 4px;
-    font-size: 0.95rem;
 }
 
-.card-autor {
+.pagina-obras-mangas .card-autor {
     font-size: 0.78rem;
     color: rgba(139, 92, 246, 0.7);
     text-align: center;
     padding: 0 8px;
 }
 
-.card-capitulos {
+.pagina-obras-mangas .card-capitulos {
     font-size: 0.78rem;
     color: rgba(139, 92, 246, 0.5);
     text-align: center;
@@ -392,29 +377,145 @@ body {
 }
 
 /* =====================
-   RESPONSIVIDADE BÁSICA
+   BOTÃO NOVA OBRA & MODAL
+   ===================== */
+.pagina-obras-mangas .btn-add-obra {
+    background: linear-gradient(135deg, #8a2be2, #c384ff);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagina-obras-mangas .btn-add-obra:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 4px 12px rgba(195, 132, 255, 0.4);
+}
+
+.pagina-obras-mangas .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.pagina-obras-mangas .modal-content {
+    background-color: #1a0b36;
+    border: 1px solid #c384ff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+}
+
+.pagina-obras-mangas .modal-content h2 {
+    margin-top: 0;
+    color: #c384ff;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.pagina-obras-mangas .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.pagina-obras-mangas .form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    color: #ddd;
+}
+
+.pagina-obras-mangas .form-group input,
+.pagina-obras-mangas .form-group textarea {
+    background-color: #0f0521;
+    border: 1px solid #4a277a;
+    border-radius: 6px;
+    padding: 10px;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.pagina-obras-mangas .form-group input:focus,
+.pagina-obras-mangas .form-group textarea:focus {
+    outline: none;
+    border-color: #c384ff;
+}
+
+.pagina-obras-mangas .modal-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.pagina-obras-mangas .btn-cancelar {
+    background: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pagina-obras-mangas .btn-cancelar:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pagina-obras-mangas .btn-salvar {
+    background: #c384ff;
+    color: #0f0521;
+    font-weight: bold;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pagina-obras-mangas .btn-salvar:hover {
+    background: #d4a3ff;
+}
+
+/* =====================
+   RESPONSIVIDADE
    ===================== */
 @media (max-width: 1200px) {
-    .grade-obras {
+    .pagina-obras-mangas .grade-obras {
         grid-template-columns: repeat(4, 1fr);
     }
 }
 
 @media (max-width: 900px) {
-    .grade-obras {
+    .pagina-obras-mangas .grade-obras {
         grid-template-columns: repeat(3, 1fr);
     }
 }
 
 @media (max-width: 640px) {
-    .conteudo-principal {
+    .pagina-obras-mangas .conteudo-principal {
         flex-direction: column;
     }
-    .painel-usuario {
+    .pagina-obras-mangas .painel-usuario {
         width: 100%;
         position: static;
     }
-    .grade-obras {
+    .pagina-obras-mangas .grade-obras {
         grid-template-columns: repeat(2, 1fr);
+        margin-left: 0;
     }
 }

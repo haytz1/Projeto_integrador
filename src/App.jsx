@@ -19,7 +19,13 @@ function App() {
                 <Routes>
                     <Route path="/" element={<PaginaInicial />} />
                     <Route path="/ObrasMangas" element={<ObrasMangas />} />
+
+                    <Route path='/Leitura/:tituloObra' element={<Leitura />} />
                     <Route path="/Leitura" element={<Leitura />} />
+
+                    <Route path='/leitura/:tituloObra' element={<Leitura/>} />
+                    <Route path='/leitura' element={<Leitura/>} />
+
                     <Route path="/Historico" element={<Historico />} />
                     <Route path="/Login" element={<Login />} />
                     <Route path="/Cadastro" element={<Cadastro />} />

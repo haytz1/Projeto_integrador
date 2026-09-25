@@ -22,7 +22,7 @@ Estas sao a telas do projeto integrador do grupo amarelo.
 
 - **Obra** - Gilerme
   - Interface geral de obras
-    - Listagem de todas as obras (busca no banco **obras** )
+    - Listagem de todas as obras (busca no banco **obras** )   **FEITO**
     - Botão de criar nova obra (inserir no banco)
   - Interface de visualização de uma única obra
     - Listagem da obra selecionada (buscar id 33 de **capitulos**)
