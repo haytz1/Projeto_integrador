@@ -1,0 +1,122 @@
+.navbar-testezin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 3rem;
+  background-color: #0a0c10;
+  border-bottom: 1px solid #1a1d2d;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.navbar-testezin-logo-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.logo-text {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.logo-kanji {
+  font-size: 1.8rem;
+  color: #9e8cfc;
+  font-weight: 400;
+}
+
+.navbar-testezin-links {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.nav-link-teste {
+  text-decoration: none;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.nav-link-teste i {
+  font-size: 1.2rem;
+  color: #6e56cf;
+}
+
+.nav-link-teste:hover, .nav-link-teste.active {
+  color: #fff;
+}
+
+.navbar-testezin-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-action-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-action-btn:hover {
+  color: #fff;
+}
+
+.nav-bell .notification-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #0a0c10;
+}
+
+.nav-profile-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: color 0.2s;
+}
+
+.nav-profile-dropdown:hover {
+  color: #fff;
+}
+
+.nav-profile-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1a1d2d;
+}
+
+@media (max-width: 900px) {
+  .navbar-testezin {
+    padding: 1rem;
+  }
+  .navbar-testezin-links {
+    display: none;
+  }
+}
