@@ -10,16 +10,42 @@ function Login() {
     const [carregando, setCarregando] = useState(false);
     const navigate = useNavigate();
 
+<<<<<<< Updated upstream
     const handleLogin = async (e) => {
         e.preventDefault();
         
         if (!email || !senha) {
             alert('Preencha o e-mail e a senha!');
+=======
+    // Função executada ao enviar o formulário de login
+const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if (!email || !senha) {
+        alert('Preencha o e-mail e a senha!');
+        return;
+    }
+
+    setCarregando(true);
+
+    try {
+        const { data: usuario, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .eq('senha', senha)
+            .single();
+
+        if (error || !usuario) {
+            alert('E-mail ou senha incorretos!');
+>>>>>>> Stashed changes
             return;
         }
 
-        setCarregando(true);
+        localStorage.setItem('usuario_email', usuario.email);
+        localStorage.setItem('usuario_id', usuario.id);
 
+<<<<<<< Updated upstream
         try {
             // Procura o utilizador na tabela personalizada 'usuarios' do Supabase
             const { data: usuario, error } = await supabase
@@ -50,7 +76,18 @@ function Login() {
             setCarregando(false);
         }
     };
+=======
+        navigate('/Perfil');
 
+    } catch (err) {
+        console.error('Erro no login:', err.message);
+        alert('Ocorreu um erro ao tentar fazer login.');
+>>>>>>> Stashed changes
+
+    } finally {
+        setCarregando(false);
+    }
+};
     return (
         <>
             <Navbar />

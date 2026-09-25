@@ -7,31 +7,7 @@ function Planos() {
 
         <>
     <Navbar/>
-            <nav className="navbar">
-                <div className="nav-left">
-                    <a href="#" className="notification-icon" aria-label="Notificações">
-                        <i className="ph ph-bell"></i>
-                    </a>
-                    <Link to="/" className="site-logo">Anime Spot</Link>
-                    <Link to="/" className="nav-link">Início</Link>
-                    <Link to="/Planos" className="nav-link active">Planos</Link>
-                    <Link to="/Moedas" className="nav-link">Moedas</Link>
-                </div>
-
-                <div className="nav-center">
-                    <div className="search-bar">
-                        <i className="ph ph-magnifying-glass"></i>
-                        <input type="text" placeholder="Pesquisar animes, autores..."/>
-                    </div>
-                </div>
-
-                <div className="nav-right">
-                    <Link to="/Login" className="nav-link">Login / Cadastro</Link>
-                    <Link to="/Perfil" className="nav-link profile-link">
-                        <i className="ph ph-user-circle"></i> Perfil
-                    </Link>
-                </div>
-            </nav>
+            
 
             
             <main className="container">
