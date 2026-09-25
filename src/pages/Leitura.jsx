@@ -5,6 +5,28 @@ import { Link, useParams } from 'react-router-dom';
 import { supabase } from '../../supabase';
 
 function Leitura() {
+    // Captura o parâmetro enviado pela URL (ex: /Leitura/Chama%20Negra)
+    const { tituloObra } = useParams();
+
+    // Define o título inicial com base na URL ou num valor padrão
+    const nomeInicial = tituloObra ? decodeURIComponent(tituloObra) : "Sombras do Vazio";
+
+    // Estados necessários para renderizar o JSX sem erros
+    const [obraTitulo, setObraTitulo] = useState(nomeInicial);
+    const [capituloAtual, setCapituloAtual] = useState(1);
+    const [dadosObra, setDadosObra] = useState(null);
+
+    // Atualiza o título caso a URL mude
+    useEffect(() => {
+        if (tituloObra) {
+            setObraTitulo(decodeURIComponent(tituloObra));
+        }
+    }, [tituloObra]);
+
+    // Função para alterar o capítulo no elemento <select>
+    function handleCapituloChange(e) {
+        setCapituloAtual(Number(e.target.value));
+    }
 
     return (
         <>
