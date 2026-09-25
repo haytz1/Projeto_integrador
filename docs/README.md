@@ -23,10 +23,12 @@ Estas sao a telas do projeto integrador do grupo amarelo.
 - **Obra** - Gilerme
   - Interface geral de obras
     - Listagem de todas as obras (busca no banco **obras** )   **FEITO**
-    - Botão de criar nova obra (inserir no banco)
+    - Botão de criar nova obra (inserir no banco)   **FEITO**
+
   - Interface de visualização de uma única obra
-    - Listagem da obra selecionada (buscar id 33 de **capitulos**)
-    - Clicar no botão buscar o próximo capítulo da mesma obra (busca no banco **capitulos** filtragem por coluna numero + 1)
+
+    - Listagem da obra selecionada (buscar id 33 de **capitulos**)   **FEITO**
+    - Clicar no botão buscar o próximo capítulo da mesma obra (busca no banco **capitulos** filtragem por coluna numero + 1) **FEITO**
     - Botão de criar novo capítulo
   - Histórico _(localStorage)_
 

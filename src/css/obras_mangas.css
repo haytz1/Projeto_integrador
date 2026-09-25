@@ -203,6 +203,9 @@
 /* =====================
    ÁREA PRINCIPAL & PAINEL
    ===================== */
+/* =====================
+   ÁREA PRINCIPAL & PAINEL
+   ===================== */
 .pagina-obras-mangas .conteudo-principal {
     display: flex;
     gap: 24px;
@@ -223,21 +226,23 @@
     padding: 20px;
     border: 1px solid #8b5cf6;
     border-radius: 14px;
-    justify-content: center;
+    background-color: #161b22; /* 👈 Adicionado para o painel não ficar transparente sobre as obras */
+    overflow: hidden;          /* 👈 Impede que elementos vazem para fora da caixa do perfil */
 }
 
 .pagina-obras-mangas .cabecalho-perfil {
     margin-bottom: 8px;
+    flex-shrink: 0;
 }
 
 .pagina-obras-mangas .usuario-foto {
-    width: 150px;
-    height: 150px;
-    aspect-ratio: 1 / 1.4;
+    width: 120px;              /* 👈 Reduzido ligeiramente para poupar espaço vertical */
+    height: 120px;
+    aspect-ratio: 1 / 1;
     border-radius: 12px;
     overflow: hidden;
     border: 2px solid #8b5cf6;
-    align-items: center;
+    flex-shrink: 0;
 }
 
 .pagina-obras-mangas .usuario-foto img {
@@ -248,23 +253,36 @@
 }
 
 .pagina-obras-mangas .usuario-nome {
-    font-size: 20px;
+    font-size: 18px;
     color: #8b5cf6;
     text-align: center;
     margin-bottom: 10px;
-    margin-top: 15px;
+    margin-top: 10px;
     font-weight: bold;
+    flex-shrink: 0;
 }
 
 .pagina-obras-mangas .obras-lidas {
     width: 100%;
-    margin-top: 10px;
+    margin-top: 5px;
+    flex: 1;                   /* 👈 Faz a caixa ocupar o espaço disponível */
+    overflow-y: auto;          /* 👈 CRUCIAL: Adiciona barra de rolagem se a lista for grande */
+    padding-right: 4px;        /* Espaço para a scrollbar */
+}
+
+/* Estilização suave para a barra de rolagem interna */
+.pagina-obras-mangas .obras-lidas::-webkit-scrollbar {
+    width: 6px;
+}
+.pagina-obras-mangas .obras-lidas::-webkit-scrollbar-thumb {
+    background-color: rgba(139, 92, 246, 0.3);
+    border-radius: 4px;
 }
 
 .pagina-obras-mangas .obras-lidas-titulo {
-    font-size: 20px;
+    font-size: 16px;            /* 👈 Ajustado para harmonizar com o painel */
     color: rgba(139, 92, 246, 0.7);
-    margin: 0 0 30px;
+    margin: 0 0 10px;
     text-align: center;
     font-weight: bold;
 }
@@ -273,30 +291,28 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     margin: 0;
     padding: 0;
 }
 
 .pagina-obras-mangas .obras-lidas ul li {
-    font-size: 15px;
+    font-size: 14px;
     color: #8b5cf6;
     text-align: center;
     background-color: rgba(139, 92, 246, 0.1);
     border-radius: 6px;
     border: 1px solid transparent;
-    padding: 4px 8px;
-    margin-bottom: 8px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     transition: 0.2s;
 }
 
 .pagina-obras-mangas .obras-lidas li:hover {
     border-color: #a78bfa;
     background: #1c2128;
-    transform: translateX(-2px);
 }
 
 .pagina-obras-mangas .btn-historico {
@@ -310,11 +326,8 @@
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
     font-size: 15px;
-    margin-top: 30px;
-}
-
-.pagina-obras-mangas .btn-historico:hover {
-    background-color: #a78bfa;
+    margin-top: 15px;          /* 👈 Reduzido para não forçar o botão para fora da tela */
+    flex-shrink: 0;
 }
 
 /* =====================
