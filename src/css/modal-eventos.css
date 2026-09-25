@@ -1,0 +1,144 @@
+/* src/css/modal-eventos.css */
+
+.eventos-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.eventos-modal-container {
+    background: #18181b;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 16px;
+    border: 1px solid #27272a;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.eventos-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #27272a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.eventos-modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.eventos-modal-title i {
+    color: #a855f7;
+}
+
+.eventos-modal-close {
+    background: transparent;
+    border: none;
+    color: #a1a1aa;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.eventos-modal-close:hover {
+    color: #fff;
+}
+
+.eventos-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Scrollbar personalizada */
+.eventos-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.eventos-modal-body::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 3px;
+}
+
+.evento-card-modal {
+    background: #202024;
+    padding: 14px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.evento-card-modal:hover {
+    background: #27272a;
+    border-color: #3f3f46;
+}
+
+.evento-card-data {
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 55px;
+}
+
+.evento-card-dia {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.evento-card-mes {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #a855f7;
+    margin-top: 4px;
+}
+
+.evento-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.evento-card-nome {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.evento-card-local {
+    font-size: 0.85rem;
+    color: #a1a1aa;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}

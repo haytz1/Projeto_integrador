@@ -43,7 +43,7 @@ function Rodape() {
                     </div>
                 </div>
                 <div className="footer-bottom">
-                    <p>&copy; 2026 Anime Spot — PI_UC3. Todos os direitos reservados.</p>
+                    <p>&copy; 2026 Anime Spot . Todos os direitos reservados.</p>
                 </div>
             </footer>
 

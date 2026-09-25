@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
+import Rodape from '../components/Rodape'
 import '../css/paginainicial.css';
 import { Link } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
+import '../css/modal-eventos.css';
+
+const IMAGEM_POST_PADRAO = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop';
+const AVATAR_PADRAO = 'https://api.dicebear.com/7.x/bottts/svg?seed=DefaultUser';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -11,14 +16,25 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 function PaginaInicial() {
     const [posts, setPosts] = useState([]);
-    const [postsHero, setPostsHero] = useState([]); // Posts aleatórios para o carrossel
-    const [slideAtual, setSlideAtual] = useState(0); // Índice do slide ativo
+    const [postsHero, setPostsHero] = useState([]);
+    const [eventos, setEventos] = useState([]);
+    const [todosEventos, setTodosEventos] = useState([]);
+    const [modalEventosAberto, setModalEventosAberto] = useState(false);
+
+    // Estados do Modal e Comentários
+    const [postSelecionado, setPostSelecionado] = useState(null);
+    const [comentarios, setComentarios] = useState([]);
+    const [novoComentario, setNovoComentario] = useState('');
+    const [carregandoComentarios, setCarregandoComentarios] = useState(false);
+
+    const [slideAtual, setSlideAtual] = useState(0);
     const [carregando, setCarregando] = useState(true);
 
     useEffect(() => {
-        async function buscarPostagens() {
+        async function buscarDadosIniciais() {
             try {
-                const { data, error } = await supabase
+                // 1. Buscar Postagens com contagem de comentários
+                const { data: dataPosts, error: errorPosts } = await supabase
                     .from('postagens')
                     .select(`
                         id,
@@ -30,30 +46,134 @@ function PaginaInicial() {
                         usuarios (
                             username,
                             foto
-                        )
+                        ),
+                        comentarios (count)
                     `)
                     .order('criado_em', { ascending: false });
 
-                if (error) throw error;
+                if (errorPosts) throw errorPosts;
 
-                if (data && data.length > 0) {
-                    setPosts(data);
-
-                    // Seleciona até 3 posts aleatórios para o carrossel do Hero
-                    const postsEmbaralhados = [...data].sort(() => 0.5 - Math.random());
+                if (dataPosts && dataPosts.length > 0) {
+                    setPosts(dataPosts);
+                    const postsEmbaralhados = [...dataPosts].sort(() => 0.5 - Math.random());
                     setPostsHero(postsEmbaralhados.slice(0, 3));
                 }
+
+                // 2. Buscar Eventos para a Sidebar
+                const { data: dataEventos, error: errorEventos } = await supabase
+                    .from('eventos')
+                    .select('*')
+                    .order('data_evento', { ascending: true })
+                    .limit(3);
+
+                if (errorEventos) throw errorEventos;
+                if (dataEventos) setEventos(dataEventos);
+
+                // 3. Buscar Todos os Eventos para o Modal
+                const { data: dataTodosEventos, error: errorTodosEventos } = await supabase
+                    .from('eventos')
+                    .select('*')
+                    .order('data_evento', { ascending: true });
+
+                if (errorTodosEventos) throw errorTodosEventos;
+                if (dataTodosEventos) setTodosEventos(dataTodosEventos);
+
             } catch (error) {
-                console.error('Erro ao buscar postagens:', error.message);
+                console.error('Erro ao buscar dados:', error.message);
             } finally {
                 setCarregando(false);
             }
         }
 
-        buscarPostagens();
+        buscarDadosIniciais();
     }, []);
 
-    // Efeito para trocar o slide do carrossel automaticamente a cada 5 segundos
+    // Função para abrir o post e carregar os comentários vinculados
+    const abrirDetalhesPost = async (post) => {
+        setPostSelecionado(post);
+        setCarregandoComentarios(true);
+        try {
+            const { data, error } = await supabase
+                .from('comentarios')
+                .select(`
+                    id,
+                    conteudo,
+                    criado_em,
+                    usuarios (
+                        username,
+                        foto
+                    )
+                `)
+                .eq('id_postagem', post.id)
+                .order('criado_em', { ascending: false });
+
+            if (error) throw error;
+            setComentarios(data || []);
+        } catch (error) {
+            console.error('Erro ao buscar comentários:', error.message);
+        } finally {
+            setCarregandoComentarios(false);
+        }
+    };
+
+    // Função para enviar o comentário utilizando o usuario_id gravado no login
+    const enviarComentario = async (e) => {
+        e.preventDefault();
+        if (!novoComentario.trim() || !postSelecionado) return;
+
+        const usuarioId = localStorage.getItem('usuario_id');
+
+        if (!usuarioId) {
+            alert('Você precisa estar logado para comentar!');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('comentarios')
+                .insert([
+                    {
+                        id_postagem: postSelecionado.id,
+                        id_usuario: usuarioId,
+                        conteudo: novoComentario.trim()
+                    }
+                ])
+                .select(`
+                    id,
+                    conteudo,
+                    criado_em,
+                    usuarios (
+                        username,
+                        foto
+                    )
+                `);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                setComentarios([data[0], ...comentarios]);
+                setNovoComentario('');
+
+                setPosts(prevPosts =>
+                    prevPosts.map(p => {
+                        if (p.id === postSelecionado.id) {
+                            const contadorAtual = p.comentarios?.[0]?.count || 0;
+                            return {
+                                ...p,
+                                comentarios: [{ count: contadorAtual + 1 }]
+                            };
+                        }
+                        return p;
+                    })
+                );
+            }
+        } catch (error) {
+            console.error('Erro ao enviar comentário:', error.message);
+            alert('Erro ao enviar comentário. Verifique sua conexão ou as políticas do banco (RLS).');
+        }
+    };
+
+    // Timer do carrossel
     useEffect(() => {
         if (postsHero.length === 0) return;
 
@@ -67,7 +187,16 @@ function PaginaInicial() {
     const formatarData = (dataIso) => {
         if (!dataIso) return '';
         const data = new Date(dataIso);
-        return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const formatarDataEvento = (dataIso) => {
+        if (!dataIso) return { dia: '', mes: '', completo: '' };
+        const data = new Date(dataIso);
+        const dia = data.toLocaleDateString('pt-BR', { day: '2-digit' });
+        const mes = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
+        const completo = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        return { dia, mes, completo };
     };
 
     return (
@@ -75,43 +204,21 @@ function PaginaInicial() {
             <NavbarPesquisa />
 
             <div className="page-layout">
-                
                 {/* SIDEBAR ESQUERDA */}
                 <aside className="sidebar-left" aria-label="Menu lateral">
                     <Link to="/ObrasMangas" className="sidebar-notif" id="link-notificacoes">
                         <i className="ph-fill ph-bell notif-bell"></i>
-                        <span>Notificações<br/><span className="notif-sub">de histórias</span> 🔥</span>
+                        <span>Notificações<br /><span className="notif-sub">de histórias</span> 🔥</span>
                     </Link>
 
                     <nav className="sidebar-nav">
-                        <a href="#" className="sidebar-link active" id="nav-para-voce">
-                            <i className="ph-fill ph-house"></i>
-                            <span>Para você</span>
-                        </a>
-                        <a href="#" className="sidebar-link" id="nav-seguindo">
-                            <i className="ph ph-user-circle-plus"></i>
-                            <span>Seguindo</span>
-                        </a>
-                        <a href="#" className="sidebar-link" id="nav-explorar">
-                            <i className="ph ph-compass"></i>
-                            <span>Explorar</span>
-                        </a>
-                        <a href="#" className="sidebar-link" id="nav-novidades">
-                            <i className="ph ph-star"></i>
-                            <span>Novidades</span>
-                        </a>
-                        <a href="#" className="sidebar-link" id="nav-eventos">
-                            <i className="ph ph-calendar"></i>
-                            <span>Eventos</span>
-                        </a>
-                        <a href="#" className="sidebar-link" id="nav-favoritos">
-                            <i className="ph ph-heart"></i>
-                            <span>Favoritos</span>
-                        </a>
-                        <Link to="/Historico" className="sidebar-link" id="nav-historico">
-                            <i className="ph ph-clock-counter-clockwise"></i>
-                            <span>Histórico</span>
-                        </Link>
+                        <a href="#" className="sidebar-link active"><i className="ph-fill ph-house"></i><span>Para você</span></a>
+                        <a href="#" className="sidebar-link"><i className="ph ph-user-circle-plus"></i><span>Seguindo</span></a>
+                        <a href="#" className="sidebar-link"><i className="ph ph-compass"></i><span>Explorar</span></a>
+                        <a href="#" className="sidebar-link"><i className="ph ph-star"></i><span>Novidades</span></a>
+                        <a href="#" className="sidebar-link"><i className="ph ph-calendar"></i><span>Eventos</span></a>
+                        <a href="#" className="sidebar-link"><i className="ph ph-heart"></i><span>Favoritos</span></a>
+                        <Link to="/Historico" className="sidebar-link"><i className="ph ph-clock-counter-clockwise"></i><span>Histórico</span></Link>
                     </nav>
 
                     <div className="sidebar-character" aria-hidden="true">
@@ -121,69 +228,77 @@ function PaginaInicial() {
                     <div className="sidebar-apoiador">
                         <p className="apoiador-title">Seja um <strong>apoiador!</strong></p>
                         <p className="apoiador-desc">Apoie criadores independentes e receba benefícios exclusivos!</p>
-                        <Link to="/Planos" className="btn-assinar" id="btn-assinar">
-                            <i className="ph-fill ph-crown"></i> Assinar
-                        </Link>
+                        <Link to="/Planos" className="btn-assinar"><i className="ph-fill ph-crown"></i> Assinar</Link>
                     </div>
                 </aside>
 
                 {/* CONTEÚDO PRINCIPAL */}
                 <main className="main-content" id="main-content">
-
-                    {/* HERO BANNER DINÂMICO E AUTOMÁTICO */}
                     <section className="hero-banner" aria-label="Destaque principal">
                         <div className="hero-slides">
                             {postsHero.length > 0 ? (
-                                postsHero.map((post, index) => (
-                                    <div 
-                                        className={`hero-slide ${index === slideAtual ? 'active' : ''}`} 
-                                        key={post.id}
-                                    >
-                                        <div 
-                                            className="hero-bg" 
-                                            style={{ 
-                                                backgroundImage: post.imagem ? `url(${post.imagem})` : undefined,
-                                                backgroundColor: '#1f1c2c'
-                                            }}
-                                        ></div>
-                                        <div className="hero-overlay"></div>
-                                        <div className="hero-content">
-                                            <span className="hero-badge">{post.categoria || 'DESTAQUE'}</span>
-                                            <h1 className="hero-title">{post.titulo}</h1>
-                                            <p className="hero-desc">
-                                                {post.conteudo.length > 100 ? post.conteudo.substring(0, 100) + '...' : post.conteudo}
-                                            </p>
-                                            <Link to={`/post/${post.id}`} className="btn-ver-mais">Ver mais</Link>
+                                postsHero.map((post, index) => {
+                                    const imagemHero = post.imagem ? post.imagem : IMAGEM_POST_PADRAO;
+                                    return (
+                                        <div className={`hero-slide ${index === slideAtual ? 'active' : ''}`} key={post.id}>
+                                            <div className="hero-bg" style={{ backgroundImage: `url(${imagemHero})` }}></div>
+                                            <div className="hero-overlay"></div>
+                                            <div className="hero-content">
+                                                <span className="hero-badge">{post.categoria || 'DESTAQUE'}</span>
+                                                <h1 className="hero-title">{post.titulo}</h1>
+                                                <p className="hero-desc">
+                                                    {post.conteudo.length > 100 ? post.conteudo.substring(0, 100) + '...' : post.conteudo}
+                                                </p>
+                                                <button onClick={() => abrirDetalhesPost(post)} className="btn-ver-mais">
+                                                    Ver mais <i className="ph ph-arrow-right"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="hero-slide active">
                                     <div className="hero-bg" style={{ backgroundColor: '#1f1c2c' }}></div>
                                     <div className="hero-overlay"></div>
                                     <div className="hero-content">
                                         <span className="hero-badge">DESTAQUE</span>
-                                        <h1 className="hero-title">CARREGANDO<br/>DESTAQUES...</h1>
-                                        <p className="hero-desc">Aguarde enquanto buscamos as melhores histórias.</p>
+                                        <h1 className="hero-title">CARREGANDO<br />DESTAQUES...</h1>
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        {/* Indicadores (Bolinhas) dinâmicos */}
-                        <div className="hero-dots" aria-label="Indicadores do carrossel">
-                            {postsHero.map((_, index) => (
-                                <button 
-                                    key={index}
-                                    className={`hero-dot ${index === slideAtual ? 'active' : ''}`} 
-                                    onClick={() => setSlideAtual(index)}
-                                    aria-label={`Slide ${index + 1}`}
-                                ></button>
-                            ))}
-                        </div>
+                        {/* Controles manuais do carrossel */}
+                        {postsHero.length > 1 && (
+                            <div className="hero-controls">
+                                <button
+                                    className="hero-arrow"
+                                    onClick={() => setSlideAtual((prev) => (prev === 0 ? postsHero.length - 1 : prev - 1))}
+                                    aria-label="Slide anterior"
+                                >
+                                    <i className="ph ph-caret-left"></i>
+                                </button>
+                                <div className="hero-dots">
+                                    {postsHero.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            className={`hero-dot ${idx === slideAtual ? 'active' : ''}`}
+                                            onClick={() => setSlideAtual(idx)}
+                                            aria-label={`Ir para slide ${idx + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                                <button
+                                    className="hero-arrow"
+                                    onClick={() => setSlideAtual((prev) => (prev + 1) % postsHero.length)}
+                                    aria-label="Próximo slide"
+                                >
+                                    <i className="ph ph-caret-right"></i>
+                                </button>
+                            </div>
+                        )}
                     </section>
 
-                    {/* SEÇÃO DE POSTS DINÂMICOS DO BANCO */}
                     <section className="posts-section" aria-labelledby="posts-titulo">
                         <h2 id="posts-titulo" className="section-title">🔥 Posts em destaque</h2>
 
@@ -191,63 +306,51 @@ function PaginaInicial() {
                             {carregando ? (
                                 <p style={{ color: '#fff' }}>Carregando postagens...</p>
                             ) : posts.length > 0 ? (
-                                posts.map((post) => (
-                                    <article className="post-card" key={post.id}>
-                                        <div 
-                                            className="post-image" 
-                                            style={{ 
-                                                backgroundImage: post.imagem ? `url(${post.imagem})` : 'none',
-                                                backgroundColor: '#2a2a2a' 
-                                            }}
-                                        >
-                                            <span className="post-tag">{post.categoria || 'GERAL'}</span>
-                                        </div>
+                                posts.map((post) => {
+                                    const imagemPost = post.imagem ? post.imagem : IMAGEM_POST_PADRAO;
+                                    const fotoPerfil = post.usuarios?.foto ? post.usuarios.foto : AVATAR_PADRAO;
+                                    const totalComentarios = post.comentarios?.[0]?.count || 0;
 
-                                        <div className="post-body">
-                                            <h3 className="post-title">{post.titulo}</h3>
-                                            
-                                            <div className="post-author">
-                                                <div 
-                                                    className="author-avatar" 
-                                                    style={{ 
-                                                        backgroundImage: post.usuarios?.foto ? `url(${post.usuarios.foto})` : 'none',
-                                                        backgroundSize: 'cover',
-                                                        backgroundColor: '#444'
-                                                    }}
-                                                ></div>
-                                                
-                                                <div className="author-info">
-                                                    <span className="author-name">
-                                                        @{post.usuarios?.username || 'Usuário'}
-                                                    </span>
-                                                    <span className="author-time">{formatarData(post.criado_em)}</span>
+                                    return (
+                                        <article className="post-card" key={post.id} onClick={() => abrirDetalhesPost(post)} style={{ cursor: 'pointer' }}>
+                                            <div className="post-image" style={{ backgroundImage: `url(${imagemPost})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#2a2a2a' }}>
+                                                <span className="post-tag">{post.categoria || 'GERAL'}</span>
+                                            </div>
+
+                                            <div className="post-body">
+                                                <h3 className="post-title">{post.titulo}</h3>
+
+                                                <div className="post-author">
+                                                    <div className="author-avatar" style={{ backgroundImage: `url(${fotoPerfil})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                                                    <div className="author-info">
+                                                        <span className="author-name">@{post.usuarios?.username || 'Usuário'}</span>
+                                                        <span className="author-time">{formatarData(post.criado_em)}</span>
+                                                    </div>
                                                 </div>
-                                                <button className="post-more-btn" aria-label="Mais opções">···</button>
-                                            </div>
 
-                                            <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
-                                                {post.conteudo.length > 80 ? post.conteudo.substring(0, 80) + '...' : post.conteudo}
-                                            </p>
+                                                <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
+                                                    {post.conteudo.length > 80 ? post.conteudo.substring(0, 80) + '...' : post.conteudo}
+                                                </p>
 
-                                            <div className="post-stats">
-                                                <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 0</span>
-                                                <span className="stat"><i className="ph ph-chat-circle"></i> 0</span>
+                                                <div className="post-stats">
+                                                    <span className="stat"><i className="ph-fill ph-heart stat-heart"></i> 0</span>
+                                                    <span className="stat"><i className="ph ph-chat-circle"></i> {totalComentarios}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </article>
-                                ))
+                                        </article>
+                                    );
+                                })
                             ) : (
                                 <p style={{ color: '#fff' }}>Nenhuma postagem encontrada no momento.</p>
                             )}
                         </div>
                     </section>
-
                 </main>
 
                 {/* SIDEBAR DIREITA */}
                 <aside className="sidebar-right" aria-label="Informações adicionais">
                     <span className="widget-title">Mapa do Site</span>
-                    
+
                     <div className="mapa-eventos">
                         <div className="pin pin-1">
                             <span className="pin-icon">📍</span>
@@ -281,31 +384,35 @@ function PaginaInicial() {
                     <div className="sidebar-widget" id="widget-eventos">
                         <div className="widget-header">
                             <h3 className="widget-title"><i className="ph ph-calendar-blank"></i> Próximos eventos</h3>
-                            <a href="#" className="widget-ver-todos" id="link-ver-todos-eventos">Ver todos</a>
+                            <button
+                                onClick={() => setModalEventosAberto(true)}
+                                className="widget-ver-todos"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a855f7' }}
+                            >
+                                Ver todos
+                            </button>
                         </div>
                         <div className="eventos-list">
-                            <div className="evento-item" id="evento-1">
-                                <div className="evento-data">
-                                    <span className="evento-dia">25</span>
-                                    <span className="evento-mes">MAI</span>
-                                </div>
-                                <div className="evento-info">
-                                    <span className="evento-nome">Anime Summit 2025</span>
-                                    <span className="evento-local">São Paulo, SP</span>
-                                </div>
-                                <span className="evento-badge badge-presencial">Presencial</span>
-                            </div>
-                            <div className="evento-item" id="evento-2">
-                                <div className="evento-data">
-                                    <span className="evento-dia">07</span>
-                                    <span className="evento-mes">JUN</span>
-                                </div>
-                                <div className="evento-info">
-                                    <span className="evento-nome">Japan Expo 2025</span>
-                                    <span className="evento-local">Rio de Janeiro, RJ</span>
-                                </div>
-                                <span className="evento-badge badge-presencial">Presencial</span>
-                            </div>
+                            {eventos.length > 0 ? (
+                                eventos.map((evento) => {
+                                    const { dia, mes } = formatarDataEvento(evento.data_evento);
+                                    return (
+                                        <div className="evento-item" key={evento.id}>
+                                            <div className="evento-data">
+                                                <span className="evento-dia">{dia}</span>
+                                                <span className="evento-mes">{mes}</span>
+                                            </div>
+                                            <div className="evento-info">
+                                                <span className="evento-nome">{evento.nome}</span>
+                                                <span className="evento-local">{evento.local}</span>
+                                            </div>
+                                            <span className="evento-badge badge-presencial">{evento.tipo || 'Presencial'}</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p style={{ color: '#aaa', fontSize: '0.85rem', padding: '10px 0' }}>Nenhum evento cadastrado.</p>
+                            )}
                         </div>
                     </div>
 
@@ -327,45 +434,113 @@ function PaginaInicial() {
                 </aside>
             </div>
 
-            {/* FOOTER */}
-            <footer className="site-footer">
-                <div className="footer-container">
-                    <div className="footer-about">
-                        <h3 className="footer-logo"><span className="logo-highlight">Anime</span>Spot</h3>
-                        <p>O seu destino final para ler e descobrir os melhores animes, mangás e autores em um só lugar.</p>
-                    </div>
-                    <div className="footer-links">
-                        <h4>Navegação</h4>
-                        <ul>
-                            <li><Link to="/">Início</Link></li>
-                            <li><Link to="/Planos">Planos</Link></li>
-                            <li><a href="#">Explorar</a></li>
-                            <li><a href="#">Eventos</a></li>
-                        </ul>
-                    </div>
-                    <div className="footer-links">
-                        <h4>Suporte</h4>
-                        <ul>
-                            <li><a href="#">FAQ</a></li>
-                            <li><a href="#">Termos de Uso</a></li>
-                            <li><a href="#">Privacidade</a></li>
-                            <li><a href="#">Contato</a></li>
-                        </ul>
-                    </div>
-                    <div className="footer-social">
-                        <h4>Redes Sociais</h4>
-                        <div className="social-icons">
-                            <a href="#" aria-label="Instagram"><i className="ph ph-instagram-logo"></i></a>
-                            <a href="#" aria-label="Twitter"><i className="ph ph-twitter-logo"></i></a>
-                            <a href="#" aria-label="Discord"><i className="ph ph-discord-logo"></i></a>
-                            <a href="#" aria-label="YouTube"><i className="ph ph-youtube-logo"></i></a>
+            {/* MODAL DE TODOS OS EVENTOS (VER TODOS) */}
+            {modalEventosAberto && (
+                <div className="eventos-modal-overlay" onClick={() => setModalEventosAberto(false)}>
+                    <div className="eventos-modal-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="eventos-modal-header">
+                            <h2 className="eventos-modal-title">
+                                <i className="ph ph-calendar-blank"></i> Todos os Próximos Eventos
+                            </h2>
+                            <button onClick={() => setModalEventosAberto(false)} className="eventos-modal-close">&times;</button>
+                        </div>
+                        <div className="eventos-modal-body">
+                            {todosEventos.length > 0 ? (
+                                todosEventos.map((evento) => {
+                                    const { dia, mes, completo } = formatarDataEvento(evento.data_evento);
+                                    return (
+                                        <div className="evento-card-modal" key={evento.id}>
+                                            <div className="evento-card-data">
+                                                <span className="evento-card-dia">{dia}</span>
+                                                <span className="evento-card-mes">{mes}</span>
+                                            </div>
+                                            <div className="evento-card-info">
+                                                <span className="evento-card-nome">{evento.nome}</span>
+                                                <span className="evento-card-local">{evento.local} • {completo}</span>
+                                            </div>
+                                            <span className="evento-badge badge-presencial">{evento.tipo || 'Presencial'}</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p style={{ color: '#a1a1aa', textAlign: 'center', padding: '20px' }}>Nenhum evento encontrado.</p>
+                            )}
                         </div>
                     </div>
                 </div>
-                <div className="footer-bottom">
-                    <p>&copy; 2026 Anime Spot — PI_UC3. Todos os direitos reservados.</p>
+            )}
+
+            {/* MODAL ESTILO INSTAGRAM PARA O POST E COMENTÁRIOS */}
+            {postSelecionado && (
+                <div className="instagram-modal-overlay">
+                    <button onClick={() => setPostSelecionado(null)} className="instagram-modal-close">&times;</button>
+
+                    <div className="instagram-modal-container">
+                        {/* Lado Esquerdo: Imagem */}
+                        <div className="instagram-modal-image-side">
+                            <div className="instagram-modal-image" style={{ backgroundImage: `url(${postSelecionado.imagem || IMAGEM_POST_PADRAO})` }}></div>
+                        </div>
+
+                        {/* Lado Direito: Informações e Comentários */}
+                        <div className="instagram-modal-info-side">
+                            <div className="instagram-modal-header">
+                                <div className="instagram-modal-avatar" style={{ backgroundImage: `url(${postSelecionado.usuarios?.foto || AVATAR_PADRAO})` }}></div>
+                                <div>
+                                    <span className="instagram-modal-username">@{postSelecionado.usuarios?.username || 'Usuário'}</span>
+                                    <span className="instagram-modal-category">{postSelecionado.categoria || 'GERAL'}</span>
+                                </div>
+                            </div>
+
+                            <div className="instagram-modal-scroll">
+                                <div>
+                                    <h2 className="instagram-modal-title">{postSelecionado.titulo}</h2>
+                                    <p className="instagram-modal-content-text">{postSelecionado.conteudo}</p>
+                                    <span className="instagram-modal-date">{formatarData(postSelecionado.criado_em)}</span>
+                                </div>
+
+                                <hr className="instagram-modal-divider" />
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <h3 className="instagram-comments-title">Comentários</h3>
+
+                                    {carregandoComentarios ? (
+                                        <p style={{ color: '#888', fontSize: '0.85rem' }}>Carregando comentários...</p>
+                                    ) : comentarios.length > 0 ? (
+                                        comentarios.map((comentario) => (
+                                            <div key={comentario.id} className="instagram-comment-item">
+                                                <div className="instagram-comment-avatar" style={{ backgroundImage: `url(${comentario.usuarios?.foto || AVATAR_PADRAO})` }}></div>
+                                                <div className="instagram-comment-bubble">
+                                                    <div className="instagram-comment-header">
+                                                        <span className="instagram-comment-user">@{comentario.usuarios?.username || 'Usuário'}</span>
+                                                        <span className="instagram-comment-time">{formatarData(comentario.criado_em)}</span>
+                                                    </div>
+                                                    <p className="instagram-comment-text">{comentario.conteudo}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p style={{ color: '#777', fontSize: '0.85rem', fontStyle: 'italic' }}>Nenhum comentário ainda. Seja o primeiro!</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="instagram-modal-footer">
+                                <form onSubmit={enviarComentario} className="instagram-comment-form">
+                                    <input
+                                        type="text"
+                                        placeholder="Adicione um comentário..."
+                                        value={novoComentario}
+                                        onChange={(e) => setNovoComentario(e.target.value)}
+                                        className="instagram-comment-input"
+                                    />
+                                    <button type="submit" className="instagram-comment-submit">Publicar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </footer>
+            )}
+            <Rodape/>
         </>
     );
 }
