@@ -4,8 +4,58 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import '../css/login.css';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 function Login() {
-    
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
+    const [carregando, setCarregando] = useState(false);
+    const navigate = useNavigate();
+
+    // Função executada ao enviar o formulário de login
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        
+        if (!email || !senha) {
+            alert('Preencha o e-mail e a senha!');
+            return;
+        }
+
+        setCarregando(true);
+
+        try {
+            // Procura na tabela 'usuarios' se existe um registro com esse e-mail e senha
+            const { data: usuario, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('email', email)
+                .eq('senha', senha)
+                .single();
+
+            if (error || !usuario) {
+                alert('E-mail ou senha incorretos!');
+                setCarregando(false);
+                return;
+            }
+
+            // Salva no localStorage para a Navbar e o Perfil reconhecerem quem está logado
+            localStorage.setItem('usuario_email', usuario.email);
+            localStorage.setItem('usuario_id', usuario.id);
+
+            // Redireciona para a página de perfil
+            navigate('/Perfil');
+
+        } catch (err) {
+            console.error('Erro no login:', err.message);
+            alert('Ocorreu um erro ao tentar fazer login.');
+        } finally {
+            setCarregando(false);
+        }
+    };
+
     return (
         <>
             <Navbar />
@@ -17,7 +67,6 @@ function Login() {
                     <h1 className="welcome-title">Boas vindas ao AnimeSpot</h1>
                     <p className="subtitle">Faça login para continuar:</p>
 
-                    {/* Adicionado o evento onSubmit e os valores nos inputs */}
                     <form id="login-form" onSubmit={handleLogin} noValidate>
 
                         <div className="form-group">

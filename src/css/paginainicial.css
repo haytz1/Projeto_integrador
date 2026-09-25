@@ -1241,3 +1241,221 @@ img { max-width: 100%; display: block; }
         width: 180px;
     }
 }
+
+/* =========================================
+   MODAL ESTILO INSTAGRAM (PC)
+   ========================================= */
+
+.instagram-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+    backdrop-filter: blur(8px);
+    padding: 20px;
+}
+
+.instagram-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 2.5rem;
+    cursor: pointer;
+    z-index: 1200;
+}
+
+.instagram-modal-container {
+    display: flex;
+    width: 100%;
+    max-width: 1000px;
+    height: 80vh;
+    max-height: 650px;
+    background-color: #121019;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+/* Lado Esquerdo: Imagem */
+.instagram-modal-image-side {
+    flex: 1.3;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.instagram-modal-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Lado Direito: Painel de Informações */
+.instagram-modal-info-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #1a1824;
+}
+
+.instagram-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.instagram-modal-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: #444;
+}
+
+.instagram-modal-username {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.instagram-modal-category {
+    font-size: 0.7rem;
+    color: #888;
+}
+
+/* Área de Rolagem (Conteúdo + Comentários) */
+.instagram-modal-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.instagram-modal-title {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.instagram-modal-content-text {
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.instagram-modal-date {
+    display: block;
+    font-size: 0.7rem;
+    color: #777;
+    margin-top: 8px;
+}
+
+.instagram-modal-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 5px 0;
+}
+
+.instagram-comments-title {
+    font-size: 0.85rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.instagram-comment-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.instagram-comment-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.instagram-comment-bubble {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.instagram-comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.instagram-comment-user {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.instagram-comment-time {
+    font-size: 0.65rem;
+    color: #666;
+}
+
+.instagram-comment-text {
+    font-size: 0.85rem;
+    color: #ddd;
+}
+
+/* Rodapé do Modal (Formulário de Comentário) */
+.instagram-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.instagram-comment-form {
+    display: flex;
+    gap: 10px;
+}
+
+.instagram-comment-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.instagram-comment-submit {
+    background: transparent;
+    border: none;
+    color: #a855f7;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0 8px;
+}
