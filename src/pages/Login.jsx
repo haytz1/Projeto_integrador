@@ -4,60 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import '../css/login.css';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-const supabase = createClient( supabaseUrl, supabaseKey )
-
 function Login() {
-    const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
-    const [carregando, setCarregando] = useState(false);
-    const navigate = useNavigate();
-
-    // Função executada ao enviar o formulário de login
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        
-        if (!email || !senha) {
-            alert('Preencha o e-mail e a senha!');
-            return;
-        }
-
-        setCarregando(true);
-
-        try {
-            // Procura na tabela 'usuarios' se existe um registro com esse e-mail e senha
-            const { data: usuario, error } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('email', email)
-                .eq('senha', senha) // Nota: Em produção é ideal usar criptografia, mas seguindo sua tabela atual:
-                .single();
-
-            if (error || !usuario) {
-                alert('E-mail ou senha incorretos!');
-                setCarregando(false);
-                return;
-            }
-
-            // SALVA NO LOCALSTORAGE para a Navbar e o Perfil reconhecerem quem está logado
-            localStorage.setItem('usuario_email', usuario.email);
-            localStorage.setItem('usuario_id', usuario.id);
-
-            
-            
-            // Redireciona para a página de perfil (ou home)
-            navigate('/Perfil');
-
-        } catch (err) {
-            console.error('Erro no login:', err.message);
-            alert('Ocorreu um erro ao tentar fazer login.');
-        } finally {
-            setCarregando(false);
-        }
-    };
-
+    
     return (
         <>
             <Navbar />

@@ -4,52 +4,8 @@ import Navbar from '../components/Navbar';
 import { supabase } from '../../supabase';
 import '../css/cadastro.css';
 
-export default function Cadastro() {
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
-    const navigate = useNavigate();
-
-    async function fazerCadastro(e) {
-        e.preventDefault();
-
-        // VALIDACAO ANTES DE ENVIAR (Adicione isso no início da sua função de cadastro)
-        if (!username || !email || !senha) {
-            alert("Por favor, preencha todos os campos.");
-            return;
-        }
-
-        // 1. Cria a conta no Supabase Auth (Seu código continua aqui abaixo...)
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: email,
-            password: senha,
-        });
-
-        if (authError) {
-            alert("Erro ao cadastrar: " + authError.message);
-            return;
-        }
-
-        if (authData?.user) {
-            // 2. Insere dados adicionais na tabela 'usuarios'
-            const { error: dbError } = await supabase.from('usuarios').insert([
-                {
-                    // REMOVIDO: id: authData.user.id
-                    username: username,
-                    email: email,
-                    moedas: 0
-                }
-            ]);
-
-            if (dbError) {
-                alert("Erro ao salvar dados do perfil: " + dbError.message);
-            } else {
-                alert("Cadastro realizado com sucesso!");
-                navigate('/Login');
-            }
-        }
-    }
-
+function Cadastro() {
+    
     return (
         <>
             <Navbar />
@@ -148,3 +104,5 @@ export default function Cadastro() {
         </>
     );
 }
+
+export default Cadastro;

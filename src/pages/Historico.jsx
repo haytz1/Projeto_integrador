@@ -4,52 +4,7 @@ import Navbar from '../components/Navbar';
 import { supabase } from '../../supabase';
 import '../css/historico.css';
 
-export default function Historico() {
-    const [historico, setHistorico] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        carregarHistorico();
-    }, []);
-
-    async function carregarHistorico() {
-        // 1. Obtém o utilizador atualmente logado no Supabase
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
-            setLoading(false);
-            return;
-        }
-
-        // 2. Busca na tabela 'leitura' filtrando pelo email_usuario do utilizador
-        const { data, error } = await supabase
-            .from('leitura')
-            .select('*')
-            .eq('email_usuario', user.email);
-
-        if (error) {
-            console.error("Erro ao carregar o histórico:", error.message);
-        } else {
-            setHistorico(data || []);
-        }
-
-        setLoading(false);
-    }
-
-    // Função para definir a classe CSS de acordo com o status
-    function getStatusClass(status) {
-        switch (status?.toLowerCase()) {
-            case 'concluído':
-            case 'concluido':
-                return 'status-concluido';
-            case 'em andamento':
-                return 'status-andamento';
-            case 'abandonado':
-                return 'status-abandonado';
-            default:
-                return 'status-andamento';
-        }
-    }
+function Historico() {
 
     return (
         <>
@@ -93,3 +48,5 @@ export default function Historico() {
         </>
     );
 }
+
+export default Historico;
