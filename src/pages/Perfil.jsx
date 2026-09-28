@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import '../css/perfil.css';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -49,6 +49,9 @@ function Perfil() {
     const [activeTab, setActiveTab] = useState('perfil');
 
     const navigate = useNavigate();
+    const { id: routeId } = useParams();
+
+    const isMeuPerfil = !routeId || routeId === localStorage.getItem('usuario_id');
 
 
     useEffect(() => {
@@ -56,25 +59,20 @@ function Perfil() {
         async function buscarDadosDoBanco() {
 
             try {
+                let query = supabase.from('usuarios').select('*');
 
-                const emailSalvo = localStorage.getItem('usuario_email');
-
-                if (!emailSalvo) {
-
-                    navigate('/Login');
-
-                    return;
-
+                if (routeId) {
+                    query = query.eq('id', routeId);
+                } else {
+                    const emailSalvo = localStorage.getItem('usuario_email');
+                    if (!emailSalvo) {
+                        navigate('/Login');
+                        return;
+                    }
+                    query = query.eq('email', emailSalvo);
                 }
 
-
-                // Busca os dados do usuário
-                const { data: dadosUsuario, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('email', emailSalvo)
-                    .single();
-
+                const { data: dadosUsuario, error } = await query.single();
 
                 if (error) throw error;
 
@@ -337,7 +335,7 @@ function Perfil() {
 
 
                     {/* SIDEBAR */}
-
+                    {isMeuPerfil && (
                     <aside className="profile-sidebar">
 
                         <nav className="sidebar-nav">
@@ -393,6 +391,7 @@ function Perfil() {
                         <div className="sidebar-art"></div>
 
                     </aside>
+                    )}
 
 
                     {/* CONTEÚDO PRINCIPAL */}
@@ -445,37 +444,31 @@ function Perfil() {
                                             </div>
 
 
-                                            <input
-                                                type="file"
-                                                id="fileInput"
-                                                style={{
-                                                    display: 'none'
-                                                }}
-                                                accept="image/*"
-                                                onChange={
-                                                    handleFileChange
-                                                }
-                                            />
+                                            {isMeuPerfil && (
+                                            <>
+                                                <input
+                                                    type="file"
+                                                    id="fileInput"
+                                                    style={{ display: 'none' }}
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                />
 
-
-                                            <label
-                                                htmlFor="fileInput"
-                                                className="edit-photo-btn"
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center'
-                                                }}
-                                            >
-
-                                                <i className="ph ph-pencil-simple"></i>
-
-                                                {carregandoUpload
-                                                    ? 'Enviando...'
-                                                    : 'Editar foto'}
-
-                                            </label>
+                                                <label
+                                                    htmlFor="fileInput"
+                                                    className="edit-photo-btn"
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    <i className="ph ph-pencil-simple"></i>
+                                                    {carregandoUpload ? 'Enviando...' : 'Editar foto'}
+                                                </label>
+                                            </>
+                                            )}
 
                                         </div>
 
@@ -876,7 +869,7 @@ function Perfil() {
 
                                         <i className="ph-fill ph-article"></i>
 
-                                        Minhas Publicações
+                                        {isMeuPerfil ? 'Minhas Publicações' : `Publicações de ${nome}`}
 
                                     </h2>
 
@@ -890,6 +883,7 @@ function Perfil() {
 
                                     {/* FORMULÁRIO */}
 
+                                    {isMeuPerfil && (
                                     <div className="criar-post-card">
 
                                         <h3>
@@ -954,6 +948,7 @@ function Perfil() {
                                         </button>
 
                                     </div>
+                                    )}
 
 
                                     {/* PUBLICAÇÕES */}
@@ -961,7 +956,7 @@ function Perfil() {
                                     <div className="publicacoes-usuario">
 
                                         <h3 className="subtitulo-publicacoes">
-                                            Minhas publicações
+                                            {isMeuPerfil ? 'Minhas publicações' : `Publicações de ${nome}`}
                                         </h3>
 
 
@@ -1041,12 +1036,12 @@ function Perfil() {
 
 
                                                 <h3>
-                                                    Você ainda não publicou nada
+                                                    {isMeuPerfil ? 'Você ainda não publicou nada' : `${nome} ainda não publicou nada`}
                                                 </h3>
 
 
                                                 <p>
-                                                    Crie sua primeira publicação usando o formulário acima.
+                                                    {isMeuPerfil ? 'Crie sua primeira publicação usando o formulário acima.' : ''}
                                                 </p>
 
                                             </div>

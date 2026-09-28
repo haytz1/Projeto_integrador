@@ -51,6 +51,7 @@ function PaginaInicial() {
                         criado_em,
                         id_usuario,
                         usuarios (
+                            id,
                             username,
                             foto
                         ),
@@ -104,6 +105,7 @@ function PaginaInicial() {
                     conteudo,
                     criado_em,
                     usuarios (
+                        id,
                         username,
                         foto
                     )
@@ -576,9 +578,13 @@ function PaginaInicial() {
                                                         ></div>
 
                                                         <div className="author-info">
-                                                            <span className="author-name">
+                                                            <Link 
+                                                                to={`/Perfil/${post.usuarios?.id}`}
+                                                                className="author-name"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
                                                                 @{post.usuarios?.username || 'Usuário'}
-                                                            </span>
+                                                            </Link>
 
                                                             <span className="author-time">
                                                                 {formatarData(post.criado_em)}
@@ -784,9 +790,13 @@ function PaginaInicial() {
                                 ></div>
 
                                 <div>
-                                    <span className="instagram-modal-username">
+                                    <Link 
+                                        to={`/Perfil/${postSelecionado.usuarios?.id}`}
+                                        className="instagram-modal-username"
+                                        style={{ textDecoration: 'none' }}
+                                    >
                                         @{postSelecionado.usuarios?.username || 'Usuário'}
-                                    </span>
+                                    </Link>
 
                                     <span className="instagram-modal-category">
                                         {postSelecionado.categoria || 'GERAL'}
@@ -832,9 +842,13 @@ function PaginaInicial() {
 
                                                 <div className="instagram-comment-bubble">
                                                     <div className="instagram-comment-header">
-                                                        <span className="instagram-comment-user">
+                                                        <Link 
+                                                            to={`/Perfil/${comentario.usuarios?.id}`}
+                                                            className="instagram-comment-user"
+                                                            style={{ textDecoration: 'none' }}
+                                                        >
                                                             @{comentario.usuarios?.username || 'Usuário'}
-                                                        </span>
+                                                        </Link>
 
                                                         <span className="instagram-comment-time">
                                                             {formatarData(comentario.criado_em)}

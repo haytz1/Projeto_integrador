@@ -48,3 +48,8 @@
 - As categorias no modal foram limitadas a (Geral, Anime, Mangá, Cosplay, Arte) para manter consistência com o filtro.
 - Integrada a funcionalidade de submit com a tabela `postagens` do Supabase.
 - Adicionados os estilos para o modal e botões no arquivo `paginainicial.css`.
+
+## 👤 Visualização de Perfis Públicos (App.jsx, Perfil.jsx, PaginaInicial.jsx)
+- **App.jsx:** Adicionada a rota dinâmica `/Perfil/:username` para permitir acessar o perfil de outros usuários através do link na URL.
+- **Perfil.jsx:** Integrado `useParams` para ler o usuário da URL. Adicionada a flag `isMeuPerfil` para ocultar o menu lateral (Configurações, Sair) e o botão "Editar foto" quando se está visitando o perfil de outra pessoa.
+- **PaginaInicial.jsx:** Transformados os nomes de usuário no feed, no modal da postagem e nos comentários em links (`<Link>`) que direcionam para o perfil daquele usuário. Adicionado `e.stopPropagation()` para impedir que ao clicar no nome, o modal abra simultaneamente.

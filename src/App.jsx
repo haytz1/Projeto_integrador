@@ -32,6 +32,7 @@ function App() {
                     <Route path="/Moedas" element={<Moedas />} />
                     <Route path="/Planos" element={<Planos />} />
                     <Route path="/Perfil" element={<Perfil />} />
+                    <Route path="/Perfil/:id" element={<Perfil />} />
                 </Routes>
             </BrowserRouter>
         </>
