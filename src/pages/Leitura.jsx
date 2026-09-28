@@ -2,30 +2,135 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import '../css/leitura.css';
 import { Link, useParams } from 'react-router-dom';
-import { supabase } from '../../supabase';
+import { supabase } from '/supabase';
 
 function Leitura() {
-    // Captura o parâmetro enviado pela URL (ex: /Leitura/Chama%20Negra)
-    const { tituloObra } = useParams();
+    const params = useParams();
+    const identificador = params.id || params.tituloObra;
 
-    // Define o título inicial com base na URL ou num valor padrão
-    const nomeInicial = tituloObra ? decodeURIComponent(tituloObra) : "Sombras do Vazio";
-
-    // Estados necessários para renderizar o JSX sem erros
-    const [obraTitulo, setObraTitulo] = useState(nomeInicial);
+    const [obraTitulo, setObraTitulo] = useState("Carregando...");
     const [capituloAtual, setCapituloAtual] = useState(1);
     const [dadosObra, setDadosObra] = useState(null);
+    const [listaCapitulos, setListaCapitulos] = useState([]);
+    const [conteudoCapitulo, setConteudoCapitulo] = useState('');
 
-    // Atualiza o título caso a URL mude
+    // 1. Carrega os dados da obra e os capítulos
     useEffect(() => {
-        if (tituloObra) {
-            setObraTitulo(decodeURIComponent(tituloObra));
-        }
-    }, [tituloObra]);
+        async function carregarObraECapitulos() {
+            if (!identificador) return;
 
-    // Função para alterar o capítulo no elemento <select>
+            let query = supabase.from('obras').select('*');
+
+            if (!isNaN(identificador)) {
+                query = query.eq('id', identificador);
+            } else {
+                const tituloLimpo = decodeURIComponent(identificador).trim();
+                setObraTitulo(tituloLimpo);
+                query = query.ilike('titulo', tituloLimpo);
+            }
+
+            const { data: obraDataList, error: obraError } = await query.limit(1);
+
+            if (obraError || !obraDataList || obraDataList.length === 0) {
+                console.error("Erro ao buscar obra:", obraError?.message);
+                setObraTitulo("Obra não encontrada");
+                return;
+            }
+
+            const obraData = obraDataList[0];
+            setDadosObra(obraData);
+            setObraTitulo(obraData.titulo);
+
+            // CORRIGIDO: Usando 'id_obra' e ordenando por 'numero_capitulo'
+            const { data: capsData, error: capsError } = await supabase
+                .from('capitulos')
+                .select('*')
+                .eq('id_obra', obraData.id)
+                .order('numero_capitulo', { ascending: true });
+
+            if (capsError) {
+                console.error("Erro ao buscar capítulos:", capsError.message);
+            } else {
+                setListaCapitulos(capsData || []);
+                if (capsData && capsData.length > 0) {
+                    setCapituloAtual(capsData[0].numero_capitulo);
+                }
+            }
+        }
+
+        carregarObraECapitulos();
+    }, [identificador]);
+
+    // 2. Carrega o conteúdo do capítulo atual
+    useEffect(() => {
+        async function carregarConteudo() {
+            if (!dadosObra || !dadosObra.id) return;
+
+            // CORRIGIDO: Usando 'id_obra' e 'numero_capitulo'
+            const { data, error } = await supabase
+                .from('capitulos')
+                .select('*')
+                .eq('id_obra', dadosObra.id)
+                .eq('numero_capitulo', capituloAtual)
+                .limit(1);
+
+            if (error || !data || data.length === 0) {
+                setConteudoCapitulo(`Conteúdo do Capítulo ${capituloAtual} ainda não cadastrado.`);
+            } else {
+                const cap = data[0];
+                setConteudoCapitulo(cap.conteudo || cap.titulo_capitulo || `Capítulo ${capituloAtual} carregado.`);
+            }
+        }
+
+        carregarConteudo();
+    }, [capituloAtual, dadosObra]);
+
     function handleCapituloChange(e) {
         setCapituloAtual(Number(e.target.value));
+    }
+
+    // 3. Botão Próximo Capítulo (numero_capitulo + 1)
+    async function handleProximoCapitulo() {
+        if (!dadosObra || !dadosObra.id) {
+            alert("Erro: Obra ainda não foi totalmente carregada. Aguarde um instante.");
+            return;
+        }
+
+        const proximoNumero = capituloAtual + 1;
+
+        // CORRIGIDO: Usando 'id_obra' e 'numero_capitulo'
+        const { data, error } = await supabase
+            .from('capitulos')
+            .select('*')
+            .eq('id_obra', dadosObra.id)
+            .eq('numero_capitulo', proximoNumero)
+            .limit(1);
+
+        if (error || !data || data.length === 0) {
+            alert("Você já está no último capítulo disponível desta obra!");
+        } else {
+            setCapituloAtual(proximoNumero);
+        }
+    }
+
+    // 4. Botão Capítulo Anterior (numero_capitulo - 1)
+    async function handleCapituloAnterior() {
+        if (!dadosObra || !dadosObra.id) return;
+
+        const anteriorNumero = capituloAtual - 1;
+        if (anteriorNumero < 1) return;
+
+        // CORRIGIDO: Usando 'id_obra' e 'numero_capitulo'
+        const { data, error } = await supabase
+            .from('capitulos')
+            .select('*')
+            .eq('id_obra', dadosObra.id)
+            .eq('numero_capitulo', anteriorNumero)
+            .limit(1);
+
+        if (!error && data && data.length > 0) {
+            setCapituloAtual(anteriorNumero);
+        }
     }
 
     return (
@@ -35,41 +140,43 @@ function Leitura() {
 
             <div className="header">
                 <h1>{obraTitulo}</h1>
-                <select 
-                    className="capitulos" 
-                    value={capituloAtual} 
+                <select
+                    className="capitulos"
+                    value={capituloAtual}
                     onChange={handleCapituloChange}
                 >
                     <optgroup label="Capítulos">
-                        <option value={1}>Capítulo 1</option>
-                        <option value={2}>Capítulo 2</option>
-                        <option value={3}>Capítulo 3</option>
-                        <option value={4}>Capítulo 4</option>
-                        <option value={5}>Capítulo 5</option>
+                        {listaCapitulos.length > 0 ? (
+                            listaCapitulos.map(cap => (
+                                <option key={cap.id} value={cap.numero_capitulo}>
+                                    Capítulo {cap.numero_capitulo} {cap.titulo_capitulo ? `- ${cap.titulo_capitulo}` : ''}
+                                </option>
+                            ))
+                        ) : (
+                            <option value={capituloAtual}>Capítulo {capituloAtual}</option>
+                        )}
                     </optgroup>
                 </select>
             </div>
 
             <div className="info-progresso">
                 <span>Progresso da Obra</span>
-                <span>50% (Página 10/20)</span>
+                <span>Capítulo {capituloAtual}</span>
             </div>
             <div className="progresso-container" title="Progresso da leitura">
-                <div className="progresso-barra"></div>
+                <div className="progresso-barra" style={{ width: '100%' }}></div>
             </div>
 
             <div className="leitura-container">
-                <p>
-                    {dadosObra?.sinopse || `Conteúdo da obra "${obraTitulo}" - Capítulo ${capituloAtual} sendo visualizado aqui...`}
-                </p>
+                <p>{conteudoCapitulo}</p>
             </div>
 
             <div className="controles">
-                <button className="btn" onClick={() => setCapituloAtual(prev => Math.max(prev - 1, 1))}>
-                    Página Anterior
+                <button className="btn" onClick={handleCapituloAnterior}>
+                    Capítulo Anterior
                 </button>
-                <button className="btn" onClick={() => setCapituloAtual(prev => prev + 1)}>
-                    Próxima Página
+                <button className="btn" onClick={handleProximoCapitulo}>
+                    Próximo Capítulo
                 </button>
             </div>
         </>

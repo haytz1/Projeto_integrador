@@ -9,6 +9,7 @@ function ObrasMangas() {
     const [obras, setObras] = useState([]);
     const [historicoLidas, setHistoricoLidas] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [usuarioLogado, setUsuarioLogado] = useState(null);
 
     // Estados para o Modal de Inserção de Obra
     const [modalAberto, setModalAberto] = useState(false);
@@ -17,7 +18,18 @@ function ObrasMangas() {
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
     const [salvando, setSalvando] = useState(false);
 
-    // 1. Busca todas as obras e junta com a tabela capitulos
+    // 1. Lê o utilizador guardado no localStorage ao carregar a página
+    useEffect(() => {
+        const id = localStorage.getItem('usuario_id');
+        const email = localStorage.getItem('usuario_email');
+        const nome = localStorage.getItem('usuario_nome');
+
+        if (id) {
+            setUsuarioLogado({ id, email, nome });
+        }
+    }, []);
+
+    // 2. Busca todas as obras e a contagem de capítulos relacionados
     async function procurar_todas_obras() {
         const { data, error } = await supabase
             .from("obras")
@@ -35,16 +47,15 @@ function ObrasMangas() {
         }
     }
 
-    // 2. Busca o histórico de leituras do usuário autenticado
+    // 3. Busca o histórico de leituras do usuário autenticado
     async function procurar_historico_usuario() {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) return;
+        const email = localStorage.getItem('usuario_email');
+        if (!email) return;
 
         const { data, error } = await supabase
             .from("leitura")
             .select('*')
-            .eq('email_usuario', user.email);
+            .eq('email_usuario', email);
 
         if (error) {
             console.error("Erro ao carregar histórico:", error.message);
@@ -53,7 +64,7 @@ function ObrasMangas() {
         }
     }
 
-    // 3. Função para inserir uma nova obra no banco de dados
+    // 4. Função para inserir uma nova obra no banco vinculada ao usuário logado
     async function handleCadastrarObra(e) {
         e.preventDefault();
 
@@ -62,18 +73,16 @@ function ObrasMangas() {
             return;
         }
 
-        setSalvando(true);
+        const usuarioId = localStorage.getItem('usuario_id');
 
-        // 1. Obtém o utilizador atualmente autenticado no Supabase
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !user) {
-            alert("Sua sessão expirou ou você não está logado. Faça login para cadastrar uma obra.");
-            setSalvando(false);
+        if (!usuarioId) {
+            alert("Você precisa estar logado para cadastrar uma obra. Por favor, faça login.");
             return;
         }
 
-        // 2. Insere a obra no banco incluindo o autor_id
+        setSalvando(true);
+
+        // Insere na tabela 'obras' incluindo o autor_id e o status obrigatório
         const { error } = await supabase
             .from('obras')
             .insert([
@@ -81,14 +90,15 @@ function ObrasMangas() {
                     titulo: novoTitulo.trim(),
                     sinopse: novaSinopse.trim() || null,
                     capa_url: novaCapaUrl.trim() || null,
-                    autor_id: user.id // 👈 Atribui o ID do utilizador logado
+                    autor_id: usuarioId,
+                    status: 'Em andamento' // 👈 Adicionado para satisfazer a restrição do banco
                 }
             ]);
 
         setSalvando(false);
 
         if (error) {
-            console.error("Erro ao inserir obra:", error.message);
+            console.error("Erro ao inserir obra no Supabase:", error.message);
             alert("Erro ao cadastrar obra: " + error.message);
         } else {
             alert("Obra cadastrada com sucesso!");
@@ -121,11 +131,18 @@ function ObrasMangas() {
                         <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
                         <span className="resultado-pesquisa" id="resultado-pesquisa"></span>
 
-                        {/* Botão de Adicionar Nova Obra */}
+                        {/* Botão para abrir modal de adição com validação correta */}
                         <button
                             type="button"
                             className="btn-add-obra"
-                            onClick={() => setModalAberto(true)}
+                            onClick={() => {
+                                const idVerificacao = localStorage.getItem('usuario_id');
+                                if (!idVerificacao) {
+                                    alert("Você precisa estar logado para adicionar uma nova obra!");
+                                    return;
+                                }
+                                setModalAberto(true);
+                            }}
                         >
                             ➕ Nova Obra
                         </button>
@@ -195,7 +212,10 @@ function ObrasMangas() {
                             <img src="https://placehold.co/200x200/15092E/C384FF" alt="Foto do usuário" />
                         </div>
 
-                        <h2 className="usuario-nome">Usuário</h2>
+                        {/* Exibe o nome do utilizador logado corretamente */}
+                        <h2 className="usuario-nome">
+                            {usuarioLogado ? (usuarioLogado.nome || usuarioLogado.email.split('@')[0]) : 'Visitante'}
+                        </h2>
 
                         <div className="obras-lidas">
                             <h3 className="obras-lidas-titulo">📚 Obras lidas:</h3>
@@ -206,7 +226,8 @@ function ObrasMangas() {
                                         <span className="obra-titulo">Nenhuma leitura salva</span>
                                     </li>
                                 ) : (
-                                    historicoLidas.map(item => (
+                                    // 👇 O .slice(0, 4) limita a exibição a apenas 4 obras (mude o número se preferir)
+                                    historicoLidas.slice(0, 7).map(item => (
                                         <li key={item.id}>
                                             <span className="obra-titulo">{item.obra_titulo}</span>
                                             <span className="obra-caps">Cap. {item.ultimo_capitulo} lido</span>

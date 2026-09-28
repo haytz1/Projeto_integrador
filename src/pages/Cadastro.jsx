@@ -5,7 +5,37 @@ import { supabase } from '../../supabase';
 import '../css/cadastro.css';
 
 function Cadastro() {
-    
+
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
+
+async function fazerCadastro(e) {
+    e.preventDefault();
+
+    if (!username || !email || !senha) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+
+    const { error } = await supabase
+        .from('usuarios')
+        .insert({
+            username: username,
+            email: email,
+            senha: senha,
+            foto: ''
+        });
+
+    if (error) {
+        console.log('ERRO DO SUPABASE:', error);
+        alert('Erro ao cadastrar: ' + error.message);
+        return;
+    }
+
+    console.log('USUÁRIO SALVO NO SUPABASE!');
+    alert('Conta criada com sucesso!');
+}
     return (
         <>
             <Navbar />
