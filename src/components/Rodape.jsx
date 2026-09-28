@@ -19,8 +19,8 @@ function Rodape() {
                         <ul>
                             <li><Link to="/">Início</Link></li>
                             <li><Link to ="/Planos">Planos</Link></li>
-                            <li><Link to ="#">Explorar</Link></li>
-                            <li><Link to ="#">Eventos</Link></li>
+                            <li><Link to ="/Moedas">Moedas</Link></li>
+                            
                         </ul>
                     </div>
                     <div className="footer-links">

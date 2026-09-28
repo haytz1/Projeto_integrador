@@ -41,7 +41,7 @@ function NavbarPesquisa() {
         <div>
             <nav className="navbar">
                 <div className="nav-left">
-                    <img src="public/logo_animespot.png" alt="Logo AnimeSpot" className="nav-logo-img" />
+                    <img src="/logo_animespot.png" alt="Logo AnimeSpot" className="nav-logo-img" />
                     <Link to="/" className="nav-logo-text">AnimeSpot</Link>
                 </div>
 
