@@ -15,96 +15,94 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function Perfil() {
-
     const [userId, setUserId] = useState(null);
-
     const [nome, setNome] = useState('');
-
     const [email, setEmail] = useState('');
-
     const [registro, setRegistro] = useState('');
-
     const [fotoUrl, setFotoUrl] = useState('');
-
     const [plano, setPlano] = useState('');
-
     const [moedas, setMoedas] = useState(0);
 
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
     // Estados para os posts do usuário
     const [meusPosts, setMeusPosts] = useState([]);
-
     const [carregandoPosts, setCarregandoPosts] = useState(true);
 
     // Estados para criar publicação
     const [novoTitulo, setNovoTitulo] = useState('');
-
     const [novoConteudo, setNovoConteudo] = useState('');
-
-    const [novaImagem, setNovaImagem] = useState('');
-
+    const [novaImagem, setNovaImagem] = useState(null);
+    const [previewImagem, setPreviewImagem] = useState('');
     const [publicando, setPublicando] = useState(false);
 
     const [activeTab, setActiveTab] = useState('perfil');
 
     const navigate = useNavigate();
+
     const { id: routeId } = useParams();
 
-    const isMeuPerfil = !routeId || routeId === localStorage.getItem('usuario_id');
-
+    const isMeuPerfil =
+        !routeId ||
+        routeId === localStorage.getItem('usuario_id');
 
     useEffect(() => {
-
         async function buscarDadosDoBanco() {
+            setCarregandoPosts(true);
 
             try {
-                let query = supabase.from('usuarios').select('*');
+                let query = supabase
+                    .from('usuarios')
+                    .select('*');
 
                 if (routeId) {
                     query = query.eq('id', routeId);
                 } else {
-                    const emailSalvo = localStorage.getItem('usuario_email');
+                    const emailSalvo =
+                        localStorage.getItem('usuario_email');
+
                     if (!emailSalvo) {
                         navigate('/Login');
                         return;
                     }
+
                     query = query.eq('email', emailSalvo);
                 }
 
-                const { data: dadosUsuario, error } = await query.single();
+                const {
+                    data: dadosUsuario,
+                    error
+                } = await query.single();
 
                 if (error) throw error;
 
-
                 if (dadosUsuario) {
-
                     const idDoUsuario = dadosUsuario.id;
 
                     setUserId(idDoUsuario);
 
-                    setNome(dadosUsuario.username);
+                    // Sua tabela usa "nome"
+                    setNome(dadosUsuario.nome);
 
                     setEmail(dadosUsuario.email);
 
-
                     if (dadosUsuario.registro) {
-
                         setRegistro(
                             new Date(
                                 dadosUsuario.registro
                             ).toLocaleDateString('pt-BR')
                         );
-
                     }
 
+                    setFotoUrl(dadosUsuario.foto || '');
 
-                    setFotoUrl(dadosUsuario.foto);
+                    setPlano(
+                        dadosUsuario.plano || 'Gratuito'
+                    );
 
-                    setPlano(dadosUsuario.plano || 'Gratuito');
-
-                    setMoedas(dadosUsuario.moedas || 0);
-
+                    setMoedas(
+                        dadosUsuario.moedas || 0
+                    );
 
                     // Busca as publicações do usuário
                     const {
@@ -113,157 +111,193 @@ function Perfil() {
                     } = await supabase
                         .from('postagens')
                         .select('*')
-                        .eq('id_usuario', idDoUsuario)
+                        .eq(
+                            'id_usuario',
+                            idDoUsuario
+                        )
                         .order('criado_em', {
                             ascending: false
                         });
 
-
                     if (erroPosts) throw erroPosts;
 
                     setMeusPosts(dadosPosts || []);
-
                 }
-
             } catch (error) {
-
                 console.error(
                     'Erro ao buscar dados do usuário/posts:',
                     error.message
                 );
-
             } finally {
-
                 setCarregandoPosts(false);
-
             }
-
         }
 
-
         buscarDadosDoBanco();
-
-    }, [navigate]);
-
+    }, [navigate, routeId]);
 
     // Logout
     const handleLogout = () => {
-
         localStorage.removeItem('usuario_email');
-
         localStorage.removeItem('usuario_id');
-
         localStorage.removeItem('username');
 
         navigate('/Login');
-
     };
-
 
     // Upload da foto de perfil
     const handleFileChange = async (e) => {
-
         const arquivo = e.target.files[0];
 
         if (!arquivo || !userId) return;
 
-
         setCarregandoUpload(true);
 
-
         try {
-
-            const fileExt = arquivo.name.split('.').pop();
+            const fileExt = arquivo.name
+                .split('.')
+                .pop();
 
             const nomeDoArquivo =
                 `${userId}_${Date.now()}.${fileExt}`;
-
 
             const {
                 data: uploadData,
                 error: uploadError
             } = await supabase.storage
                 .from('avatars_usuarios')
-                .upload(nomeDoArquivo, arquivo);
-
+                .upload(
+                    nomeDoArquivo,
+                    arquivo
+                );
 
             if (uploadError) throw uploadError;
 
+            const { data: urlData } =
+                supabase.storage
+                    .from('avatars_usuarios')
+                    .getPublicUrl(
+                        uploadData.path
+                    );
 
-            const { data: urlData } = supabase.storage
-                .from('avatars_usuarios')
-                .getPublicUrl(uploadData.path);
+            const linkDaFoto =
+                urlData.publicUrl;
 
-
-            const linkDaFoto = urlData.publicUrl;
-
-
-            const { error: dbError } = await supabase
+            const {
+                error: dbError
+            } = await supabase
                 .from('usuarios')
                 .update({
                     foto: linkDaFoto
                 })
                 .eq('id', userId);
 
-
             if (dbError) throw dbError;
-
 
             setFotoUrl(linkDaFoto);
 
-
-            alert('Foto de perfil atualizada com sucesso!');
-
-
+            alert(
+                'Foto de perfil atualizada com sucesso!'
+            );
         } catch (error) {
-
             console.error(
                 'Erro no upload:',
                 error.message
             );
 
-            alert('Não foi possível atualizar a foto.');
-
+            alert(
+                'Não foi possível atualizar a foto.'
+            );
         } finally {
-
             setCarregandoUpload(false);
-
         }
-
     };
 
+    // Escolher imagem da publicação
+    const handleImagemPublicacao = (e) => {
+        const arquivo = e.target.files[0];
+
+        if (!arquivo) return;
+
+        if (!arquivo.type.startsWith('image/')) {
+            alert(
+                'Escolha apenas arquivos de imagem.'
+            );
+            return;
+        }
+
+        if (arquivo.size > 5 * 1024 * 1024) {
+            alert(
+                'A imagem deve ter no máximo 5 MB.'
+            );
+            return;
+        }
+
+        setNovaImagem(arquivo);
+
+        const imagemPreview =
+            URL.createObjectURL(arquivo);
+
+        setPreviewImagem(imagemPreview);
+    };
 
     // Criar uma nova publicação
     const handlePublicar = async () => {
-
         if (!userId) {
-
             alert('Usuário não encontrado.');
-
             return;
-
         }
-
 
         if (
             !novoTitulo.trim() ||
             !novoConteudo.trim()
         ) {
-
             alert(
                 'Preencha o título e o conteúdo da publicação.'
             );
-
             return;
-
         }
-
 
         setPublicando(true);
 
-
         try {
+            let linkImagem = null;
 
+            // Faz upload da imagem para o Storage
+            if (novaImagem) {
+                const extensao = novaImagem.name
+                    .split('.')
+                    .pop();
+
+                const nomeDoArquivo =
+                    `${userId}_${Date.now()}.${extensao}`;
+
+                const {
+                    data: uploadData,
+                    error: uploadError
+                } = await supabase.storage
+                    .from('postagens')
+                    .upload(
+                        nomeDoArquivo,
+                        novaImagem
+                    );
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: urlData } =
+                    supabase.storage
+                        .from('postagens')
+                        .getPublicUrl(
+                            uploadData.path
+                        );
+
+                linkImagem =
+                    urlData.publicUrl;
+            }
+
+            // Salva a publicação na tabela
             const {
                 data,
                 error
@@ -272,38 +306,38 @@ function Perfil() {
                 .insert([
                     {
                         id_usuario: userId,
-                        titulo: novoTitulo,
-                        conteudo: novoConteudo,
-                        imagem: novaImagem || null
+                        titulo:
+                            novoTitulo.trim(),
+                        conteudo:
+                            novoConteudo.trim(),
+                        imagem: linkImagem
                     }
                 ])
                 .select()
                 .single();
 
+            if (error) {
+                throw error;
+            }
 
-            if (error) throw error;
-
-
-            // Coloca a nova publicação no começo da lista
-            setMeusPosts((postsAtuais) => [
-                data,
-                ...postsAtuais
-            ]);
-
+            // Coloca a nova publicação no começo
+            setMeusPosts(
+                (postsAtuais) => [
+                    data,
+                    ...postsAtuais
+                ]
+            );
 
             // Limpa o formulário
             setNovoTitulo('');
-
             setNovoConteudo('');
+            setNovaImagem(null);
+            setPreviewImagem('');
 
-            setNovaImagem('');
-
-
-            alert('Publicação criada com sucesso!');
-
-
+            alert(
+                'Publicação criada com sucesso!'
+            );
         } catch (error) {
-
             console.error(
                 'Erro ao publicar:',
                 error
@@ -312,106 +346,80 @@ function Perfil() {
             alert(
                 'Não foi possível criar a publicação.'
             );
-
         } finally {
-
             setPublicando(false);
-
         }
-
     };
 
-
     return (
-
         <>
-
             <NavbarPesquisa />
-
 
             <main className="page-wrapper">
 
                 <div className="profile-layout">
 
-
                     {/* SIDEBAR */}
                     {isMeuPerfil && (
-                    <aside className="profile-sidebar">
+                        <aside className="profile-sidebar">
 
-                        <nav className="sidebar-nav">
+                            <nav className="sidebar-nav">
 
-                            <button
-                                className={`sidebar-link ${activeTab === 'perfil'
-                                        ? 'active'
-                                        : ''
+                                <button
+                                    className={`sidebar-link ${
+                                        activeTab === 'perfil'
+                                            ? 'active'
+                                            : ''
                                     }`}
-                                onClick={() =>
-                                    setActiveTab('perfil')
-                                }
-                            >
+                                    onClick={() =>
+                                        setActiveTab('perfil')
+                                    }
+                                >
+                                    <i className="ph-fill ph-user"></i>
+                                    Meu Perfil
+                                </button>
 
-                                <i className="ph-fill ph-user"></i>
-
-                                Meu Perfil
-
-                            </button>
-
-
-                            <button
-                                className={`sidebar-link ${activeTab === 'configuracoes'
-                                        ? 'active'
-                                        : ''
+                                <button
+                                    className={`sidebar-link ${
+                                        activeTab === 'configuracoes'
+                                            ? 'active'
+                                            : ''
                                     }`}
-                                onClick={() =>
-                                    setActiveTab('configuracoes')
-                                }
-                            >
+                                    onClick={() =>
+                                        setActiveTab(
+                                            'configuracoes'
+                                        )
+                                    }
+                                >
+                                    <i className="ph ph-gear"></i>
+                                    Configurações
+                                </button>
 
-                                <i className="ph ph-gear"></i>
+                                <button
+                                    className="sidebar-link"
+                                    onClick={handleLogout}
+                                >
+                                    <i className="ph ph-sign-out"></i>
+                                    Sair
+                                </button>
 
-                                Configurações
+                            </nav>
 
-                            </button>
+                            <div className="sidebar-art"></div>
 
-
-                            <button
-                                className="sidebar-link"
-                                onClick={handleLogout}
-                            >
-
-                                <i className="ph ph-sign-out"></i>
-
-                                Sair
-
-                            </button>
-
-                        </nav>
-
-
-                        <div className="sidebar-art"></div>
-
-                    </aside>
+                        </aside>
                     )}
 
-
                     {/* CONTEÚDO PRINCIPAL */}
-
                     <div className="profile-container">
 
-
-                        {/* ========================= */}
                         {/* PERFIL */}
-                        {/* ========================= */}
-
                         {activeTab === 'perfil' && (
-
                             <>
 
                                 <div className="profile-header-row">
 
-
                                     {/* DADOS DO USUÁRIO */}
-
                                     <section className="user-info-section">
 
                                         <div className="avatar-col">
@@ -419,59 +427,67 @@ function Perfil() {
                                             <div
                                                 className="avatar-circle"
                                                 style={{
-                                                    overflow: 'hidden'
+                                                    overflow:
+                                                        'hidden'
                                                 }}
                                             >
-
                                                 {fotoUrl ? (
-
                                                     <img
                                                         src={fotoUrl}
                                                         alt="Avatar"
                                                         style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover'
+                                                            width:
+                                                                '100%',
+                                                            height:
+                                                                '100%',
+                                                            objectFit:
+                                                                'cover'
                                                         }}
                                                     />
-
                                                 ) : (
-
                                                     <i className="ph ph-user"></i>
-
                                                 )}
-
                                             </div>
 
-
                                             {isMeuPerfil && (
-                                            <>
-                                                <input
-                                                    type="file"
-                                                    id="fileInput"
-                                                    style={{ display: 'none' }}
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                />
+                                                <>
+                                                    <input
+                                                        type="file"
+                                                        id="fileInput"
+                                                        style={{
+                                                            display:
+                                                                'none'
+                                                        }}
+                                                        accept="image/*"
+                                                        onChange={
+                                                            handleFileChange
+                                                        }
+                                                    />
 
-                                                <label
-                                                    htmlFor="fileInput"
-                                                    className="edit-photo-btn"
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    <i className="ph ph-pencil-simple"></i>
-                                                    {carregandoUpload ? 'Enviando...' : 'Editar foto'}
-                                                </label>
-                                            </>
+                                                    <label
+                                                        htmlFor="fileInput"
+                                                        className="edit-photo-btn"
+                                                        style={{
+                                                            cursor:
+                                                                'pointer',
+                                                            display:
+                                                                'inline-flex',
+                                                            alignItems:
+                                                                'center',
+                                                            justifyContent:
+                                                                'center'
+                                                        }}
+                                                    >
+                                                        <i className="ph ph-pencil-simple"></i>
+
+                                                        {carregandoUpload
+                                                            ? 'Enviando...'
+                                                            : 'Editar foto'}
+                                                    </label>
+                                                </>
                                             )}
 
                                         </div>
-
 
                                         <div className="info-col">
 
@@ -479,59 +495,53 @@ function Perfil() {
                                                 Perfil de usuário
                                             </h2>
 
-
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-user info-icon"></i>
 
                                                 <div>
-
                                                     <span className="info-label">
                                                         NOME DO USUÁRIO
                                                     </span>
 
                                                     <span className="info-value">
-                                                        @{nome || 'Carregando...'}
+                                                        {nome ||
+                                                            'Carregando...'}
                                                     </span>
-
                                                 </div>
 
                                             </div>
-
 
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-envelope-simple info-icon"></i>
 
                                                 <div>
-
                                                     <span className="info-label">
                                                         E-MAIL
                                                     </span>
 
                                                     <span className="info-value">
-                                                        {email || 'Carregando...'}
+                                                        {email ||
+                                                            'Carregando...'}
                                                     </span>
-
                                                 </div>
 
                                             </div>
-
 
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-calendar-blank info-icon"></i>
 
                                                 <div>
-
                                                     <span className="info-label">
                                                         DATA DE CADASTRO
                                                     </span>
 
                                                     <span className="info-value">
-                                                        {registro || 'Carregando...'}
+                                                        {registro ||
+                                                            'Carregando...'}
                                                     </span>
-
                                                 </div>
 
                                             </div>
@@ -540,35 +550,23 @@ function Perfil() {
 
                                     </section>
 
-
                                     {/* PLANO */}
-
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
-
                                             <i className="ph-fill ph-crown"></i>
-
                                             Plano atual
-
                                         </h2>
 
-
                                         <div className="plan-badge">
-
                                             <i className="ph-fill ph-coin"></i>
-
-                                            {plano || 'Gratuito'}
-
+                                            {plano ||
+                                                'Gratuito'}
                                         </div>
 
-
                                         <p className="plan-desc">
-
-                                            Aproveite os recursos mais populares da nossa site.
-
+                                            Aproveite os recursos mais populares do nosso site.
                                         </p>
-
 
                                         <Link
                                             to="/Planos"
@@ -579,35 +577,22 @@ function Perfil() {
 
                                     </section>
 
-
                                     {/* MOEDAS */}
-
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
-
                                             <i className="ph-fill ph-coins"></i>
-
                                             Minhas moedas
-
                                         </h2>
 
-
                                         <div className="plan-badge">
-
                                             <i className="ph-fill ph-coin"></i>
-
                                             {moedas} moedas
-
                                         </div>
 
-
                                         <p className="plan-desc">
-
                                             Você pode ter até 150 moedas.
-
                                         </p>
-
 
                                         <Link
                                             to="/Moedas"
@@ -620,34 +605,21 @@ function Perfil() {
 
                                 </div>
 
-
-                                {/* ========================= */}
                                 {/* PREFERÊNCIAS */}
-                                {/* ========================= */}
-
                                 <section className="preferences-section">
 
                                     <h2 className="section-title">
-
                                         <i className="ph-fill ph-star"></i>
-
                                         Preferências de animes
-
                                     </h2>
 
-
                                     <p className="section-subtitle">
-
                                         Personalize suas experiências no site.
-
                                     </p>
-
 
                                     <div className="prefs-grid">
 
-
                                         {/* ANIMES FAVORITOS */}
-
                                         <div className="pref-col">
 
                                             <i
@@ -657,58 +629,45 @@ function Perfil() {
                                                 }}
                                             ></i>
 
-
                                             <h3 className="pref-title">
                                                 Animes favoritos
                                             </h3>
-
 
                                             <p className="pref-desc">
                                                 Adicione os animes que você mais gosta.
                                             </p>
 
-
                                             <div className="tags-container">
 
                                                 <span className="tag">
                                                     Naruto
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     One Piece
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Attack on Titan
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Haikyuu
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
 
-
-                                                    
                                             </div>
-
 
                                             <button className="btn-add">
                                                 + Adicionar
@@ -716,9 +675,7 @@ function Perfil() {
 
                                         </div>
 
-
                                         {/* GÊNEROS */}
-
                                         <div className="pref-col">
 
                                             <i
@@ -728,49 +685,39 @@ function Perfil() {
                                                 }}
                                             ></i>
 
-
                                             <h3 className="pref-title">
                                                 Gêneros favoritos
                                             </h3>
-
 
                                             <p className="pref-desc">
                                                 Escolha os gêneros que você mais gosta.
                                             </p>
 
-
                                             <div className="tags-container">
 
                                                 <span className="tag">
                                                     Ação
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Aventura
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Drama
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
 
-
                                                 <span className="tag">
                                                     Fantasia
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
@@ -778,16 +725,13 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="btn-add">
                                                 + Adicionar
                                             </button>
 
                                         </div>
 
-
                                         {/* TAGS */}
-
                                         <div className="pref-col">
 
                                             <i
@@ -797,56 +741,45 @@ function Perfil() {
                                                 }}
                                             ></i>
 
-
                                             <h3 className="pref-title">
                                                 Tags de interesse
                                             </h3>
-
 
                                             <p className="pref-desc">
                                                 Escolha as tags que mais te interessam.
                                             </p>
 
-
                                             <div className="tags-container">
 
                                                 <span className="tag">
                                                     Shounen
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Seinen
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
-
 
                                                 <span className="tag">
                                                     Slice of Life
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
 
-
                                                 <span className="tag">
                                                     Comédia
-
                                                     <button className="tag-remove">
                                                         &times;
                                                     </button>
                                                 </span>
 
                                             </div>
-
 
                                             <button className="btn-add">
                                                 + Adicionar
@@ -858,107 +791,126 @@ function Perfil() {
 
                                 </section>
 
-
-                                {/* ========================= */}
                                 {/* MINHAS PUBLICAÇÕES */}
-                                {/* ========================= */}
-
                                 <div className="meus-posts-secao">
 
                                     <h2 className="section-title">
 
                                         <i className="ph-fill ph-article"></i>
 
-                                        {isMeuPerfil ? 'Minhas Publicações' : `Publicações de ${nome}`}
+                                        {isMeuPerfil
+                                            ? 'Minhas Publicações'
+                                            : `Publicações de ${nome}`}
 
                                     </h2>
 
-
                                     <p className="section-subtitle">
-
                                         Compartilhe suas opiniões e fale sobre seus animes favoritos.
-
                                     </p>
 
-
                                     {/* FORMULÁRIO */}
-
                                     {isMeuPerfil && (
-                                    <div className="criar-post-card">
+                                        <div className="criar-post-card">
 
-                                        <h3>
+                                            <h3>
+                                                <i className="ph-fill ph-pencil-simple"></i>
+                                                Criar publicação
+                                            </h3>
 
-                                            <i className="ph-fill ph-pencil-simple"></i>
+                                            <input
+                                                type="text"
+                                                placeholder="Título da publicação"
+                                                value={novoTitulo}
+                                                onChange={(e) =>
+                                                    setNovoTitulo(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="post-input"
+                                            />
 
-                                            Criar publicação
+                                            {/* ESCOLHER IMAGEM */}
+                                            <div className="campo-imagem-post">
 
-                                        </h3>
+                                                <label
+                                                    htmlFor="imagemPublicacao"
+                                                    className="botao-escolher-imagem"
+                                                >
+                                                    <i className="ph-fill ph-image"></i>
+                                                    Escolher imagem
+                                                </label>
 
+                                                <input
+                                                    type="file"
+                                                    id="imagemPublicacao"
+                                                    accept="image/*"
+                                                    onChange={
+                                                        handleImagemPublicacao
+                                                    }
+                                                    style={{
+                                                        display:
+                                                            'none'
+                                                    }}
+                                                />
 
-                                        <input
-                                            type="text"
-                                            placeholder="Título da publicação"
-                                            value={novoTitulo}
-                                            onChange={(e) =>
-                                                setNovoTitulo(
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="post-input"
-                                        />
+                                                {novaImagem && (
+                                                    <span className="nome-imagem">
+                                                        {novaImagem.name}
+                                                    </span>
+                                                )}
 
+                                            </div>
 
-                                        <input
-                                            type="text"
-                                            placeholder="URL da imagem (opcional)"
-                                            value={novaImagem}
-                                            onChange={(e) =>
-                                                setNovaImagem(
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="post-input"
-                                        />
+                                            {/* PRÉ-VISUALIZAÇÃO */}
+                                            {previewImagem && (
+                                                <div className="preview-imagem-post">
 
+                                                    <img
+                                                        src={previewImagem}
+                                                        alt="Prévia da publicação"
+                                                    />
 
-                                        <textarea
-                                            placeholder="Escreva sua publicação..."
-                                            value={novoConteudo}
-                                            onChange={(e) =>
-                                                setNovoConteudo(
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="post-textarea"
-                                        ></textarea>
+                                                </div>
+                                            )}
 
+                                            <textarea
+                                                placeholder="Escreva sua publicação..."
+                                                value={novoConteudo}
+                                                onChange={(e) =>
+                                                    setNovoConteudo(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="post-textarea"
+                                            ></textarea>
 
-                                        <button
-                                            className="btn-publicar"
-                                            onClick={handlePublicar}
-                                            disabled={publicando}
-                                        >
+                                            <button
+                                                className="btn-publicar"
+                                                onClick={handlePublicar}
+                                                disabled={
+                                                    publicando
+                                                }
+                                            >
 
-                                            <i className="ph-fill ph-paper-plane-tilt"></i>
+                                                <i className="ph-fill ph-paper-plane-tilt"></i>
 
-                                            {publicando
-                                                ? 'Publicando...'
-                                                : 'Publicar'}
+                                                {publicando
+                                                    ? 'Publicando...'
+                                                    : 'Publicar'}
 
-                                        </button>
+                                            </button>
 
-                                    </div>
+                                        </div>
                                     )}
 
-
                                     {/* PUBLICAÇÕES */}
-
                                     <div className="publicacoes-usuario">
 
                                         <h3 className="subtitulo-publicacoes">
-                                            {isMeuPerfil ? 'Minhas publicações' : `Publicações de ${nome}`}
+                                            {isMeuPerfil
+                                                ? 'Minhas publicações'
+                                                : `Publicações de ${nome}`}
                                         </h3>
-
 
                                         {carregandoPosts ? (
 
@@ -970,61 +922,54 @@ function Perfil() {
 
                                             <div className="meus-posts-grid">
 
-                                                {meusPosts.map((post) => (
+                                                {meusPosts.map(
+                                                    (post) => (
 
-                                                    <div
-                                                        key={post.id}
-                                                        className="meu-post-card"
-                                                    >
+                                                        <div
+                                                            key={
+                                                                post.id
+                                                            }
+                                                            className="meu-post-card"
+                                                        >
 
-                                                        {post.imagem && (
-
-                                                            <div
-                                                                className="meu-post-imagem"
-                                                                style={{
-                                                                    backgroundImage:
-                                                                        `url(${post.imagem})`
-                                                                }}
-                                                            />
-
-                                                        )}
-
-
-                                                        <div className="meu-post-conteudo-area">
-
-                                                            <h4 className="meu-post-titulo-card">
-
-                                                                {post.titulo}
-
-                                                            </h4>
-
-
-                                                            <p className="meu-post-conteudo">
-
-                                                                {post.conteudo}
-
-                                                            </p>
-
-
-                                                            {post.criado_em && (
-
-                                                                <small className="post-data">
-
-                                                                    {new Date(
-                                                                        post.criado_em
-                                                                    ).toLocaleDateString(
-                                                                        'pt-BR'
-                                                                    )}
-
-                                                                </small>
-
+                                                            {post.imagem && (
+                                                                <div
+                                                                    className="meu-post-imagem"
+                                                                    style={{
+                                                                        backgroundImage:
+                                                                            `url(${post.imagem})`
+                                                                    }}
+                                                                />
                                                             )}
+
+                                                            <div className="meu-post-conteudo-area">
+
+                                                                <h4 className="meu-post-titulo-card">
+                                                                    {post.titulo}
+                                                                </h4>
+
+                                                                <p className="meu-post-conteudo">
+                                                                    {post.conteudo}
+                                                                </p>
+
+                                                                {post.criado_em && (
+                                                                    <small className="post-data">
+
+                                                                        {new Date(
+                                                                            post.criado_em
+                                                                        ).toLocaleDateString(
+                                                                            'pt-BR'
+                                                                        )}
+
+                                                                    </small>
+                                                                )}
+
+                                                            </div>
 
                                                         </div>
 
-                                                    </div>
-
-                                                ))}
+                                                    )
+                                                )}
 
                                             </div>
 
@@ -1034,15 +979,17 @@ function Perfil() {
 
                                                 <i className="ph ph-article"></i>
 
-
                                                 <h3>
-                                                    {isMeuPerfil ? 'Você ainda não publicou nada' : `${nome} ainda não publicou nada`}
+                                                    {isMeuPerfil
+                                                        ? 'Você ainda não publicou nada'
+                                                        : `${nome} ainda não publicou nada`}
                                                 </h3>
 
-
-                                                <p>
-                                                    {isMeuPerfil ? 'Crie sua primeira publicação usando o formulário acima.' : ''}
-                                                </p>
+                                                {isMeuPerfil && (
+                                                    <p>
+                                                        Crie sua primeira publicação usando o formulário acima.
+                                                    </p>
+                                                )}
 
                                             </div>
 
@@ -1053,31 +1000,19 @@ function Perfil() {
                                 </div>
 
                             </>
-
                         )}
 
-
-                        {/* ========================= */}
                         {/* CONFIGURAÇÕES */}
-                        {/* ========================= */}
-
                         {activeTab === 'configuracoes' && (
-
                             <div className="settings-container">
 
-
                                 {/* DADOS PESSOAIS */}
-
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
-
                                         <i className="ph-fill ph-user-list"></i>
-
                                         Dados Pessoais
-
                                     </h2>
-
 
                                     <div className="settings-group">
 
@@ -1095,13 +1030,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Editar
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1117,13 +1050,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Editar
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1139,7 +1070,6 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Editar
                                             </button>
@@ -1150,19 +1080,13 @@ function Perfil() {
 
                                 </div>
 
-
                                 {/* SEGURANÇA */}
-
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
-
                                         <i className="ph-fill ph-lock-key"></i>
-
                                         Segurança
-
                                     </h2>
-
 
                                     <div className="settings-group">
 
@@ -1180,13 +1104,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Mudar senha
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1202,13 +1124,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Ativar
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1224,7 +1144,6 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Visualizar
                                             </button>
@@ -1235,19 +1154,13 @@ function Perfil() {
 
                                 </div>
 
-
                                 {/* PREFERÊNCIAS */}
-
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
-
                                         <i className="ph-fill ph-gear"></i>
-
                                         Preferências
-
                                     </h2>
-
 
                                     <div className="settings-group">
 
@@ -1265,13 +1178,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Alterar
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1287,13 +1198,11 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Ajustar
                                             </button>
 
                                         </div>
-
 
                                         <div className="settings-item">
 
@@ -1309,7 +1218,6 @@ function Perfil() {
 
                                             </div>
 
-
                                             <button className="settings-btn">
                                                 Configurar
                                             </button>
@@ -1321,7 +1229,6 @@ function Perfil() {
                                 </div>
 
                             </div>
-
                         )}
 
                     </div>
@@ -1329,11 +1236,8 @@ function Perfil() {
                 </div>
 
             </main>
-
         </>
-
     );
-
 }
 
 export default Perfil;

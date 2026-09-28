@@ -951,3 +951,44 @@ body {
     height: 160px;
   }
 }
+
+.campo-imagem-post {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.botao-escolher-imagem {
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: #7D66DA;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nome-imagem {
+    color: #94a3b8;
+}
+
+.preview-imagem-post {
+    width: 100%;
+    height: 250px;
+    border: 2px dashed #7D66DA;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #13151f;
+}
+
+.preview-imagem-post img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
