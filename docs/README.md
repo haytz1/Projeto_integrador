@@ -29,7 +29,7 @@ Estas sao a telas do projeto integrador do grupo amarelo.
 
     - Listagem da obra selecionada (buscar id 33 de **capitulos**)   **FEITO**
     - Clicar no botão buscar o próximo capítulo da mesma obra (busca no banco **capitulos** filtragem por coluna numero + 1) **FEITO**
-    - Botão de criar novo capítulo
+    - Botão de criar novo capítulo   **FEITO**
   - Histórico _(localStorage)_
 
 - Trabalhar em conjunto:

@@ -10,6 +10,7 @@ function ObrasMangas() {
     const [historicoLidas, setHistoricoLidas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [usuarioLogado, setUsuarioLogado] = useState(null);
+    const [fotoPerfil, setFotoPerfil] = useState('');
 
     // Estados para o Modal de Inserção de Obra
     const [modalAberto, setModalAberto] = useState(false);
@@ -18,15 +19,35 @@ function ObrasMangas() {
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
     const [salvando, setSalvando] = useState(false);
 
-    // 1. Lê o utilizador guardado no localStorage ao carregar a página
+    // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase se houver email
     useEffect(() => {
-        const id = localStorage.getItem('usuario_id');
-        const email = localStorage.getItem('usuario_email');
-        const nome = localStorage.getItem('usuario_nome');
+        async function verificarSessaoUsuario() {
+            const id = localStorage.getItem('usuario_id');
+            const email = localStorage.getItem('usuario_email');
+            const nome = localStorage.getItem('usuario_nome');
 
-        if (id) {
-            setUsuarioLogado({ id, email, nome });
+            if (email || id) {
+                setUsuarioLogado({ id, email, nome });
+
+                // Opcional: busca a foto do perfil na tabela 'usuarios' do Supabase
+                if (email) {
+                    const { data } = await supabase
+                        .from('usuarios')
+                        .select('foto, nome')
+                        .eq('email', email)
+                        .single();
+
+                    if (data) {
+                        if (data.foto) setFotoPerfil(data.foto);
+                        if (data.nome) {
+                            setUsuarioLogado(prev => ({ ...prev, nome: data.nome }));
+                        }
+                    }
+                }
+            }
         }
+
+        verificarSessaoUsuario();
     }, []);
 
     // 2. Busca todas as obras e a contagem de capítulos relacionados
@@ -47,20 +68,19 @@ function ObrasMangas() {
         }
     }
 
-    // 3. Busca o histórico de leituras do usuário autenticado
-    async function procurar_historico_usuario() {
-        const email = localStorage.getItem('usuario_email');
-        if (!email) return;
-
-        const { data, error } = await supabase
-            .from("leitura")
-            .select('*')
-            .eq('email_usuario', email);
-
-        if (error) {
-            console.error("Erro ao carregar histórico:", error.message);
-        } else {
-            setHistoricoLidas(data || []);
+    // 3. Carrega o histórico de leituras diretamente do localStorage (mesma fonte da aba Historico)
+    function procurar_historico_local() {
+        try {
+            const dadosSalvos = localStorage.getItem('manga_historico');
+            if (dadosSalvos) {
+                const listaParseada = JSON.parse(dadosSalvos);
+                setHistoricoLidas(listaParseada);
+            } else {
+                setHistoricoLidas([]);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar histórico local:", error);
+            setHistoricoLidas([]);
         }
     }
 
@@ -82,7 +102,6 @@ function ObrasMangas() {
 
         setSalvando(true);
 
-        // Insere na tabela 'obras' incluindo o autor_id e o status obrigatório
         const { error } = await supabase
             .from('obras')
             .insert([
@@ -91,7 +110,7 @@ function ObrasMangas() {
                     sinopse: novaSinopse.trim() || null,
                     capa_url: novaCapaUrl.trim() || null,
                     autor_id: usuarioId,
-                    status: 'Em andamento' // 👈 Adicionado para satisfazer a restrição do banco
+                    status: 'Em andamento'
                 }
             ]);
 
@@ -106,7 +125,7 @@ function ObrasMangas() {
             setNovaSinopse('');
             setNovaCapaUrl('');
             setModalAberto(false);
-            procurar_todas_obras(); // Atualiza a lista no ecrã
+            procurar_todas_obras();
         }
     }
 
@@ -114,7 +133,7 @@ function ObrasMangas() {
         async function loadData() {
             setLoading(true);
             await procurar_todas_obras();
-            await procurar_historico_usuario();
+            procurar_historico_local();
             setLoading(false);
         }
 
@@ -131,7 +150,6 @@ function ObrasMangas() {
                         <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
                         <span className="resultado-pesquisa" id="resultado-pesquisa"></span>
 
-                        {/* Botão para abrir modal de adição com validação correta */}
                         <button
                             type="button"
                             className="btn-add-obra"
@@ -204,17 +222,21 @@ function ObrasMangas() {
                     <aside className="painel-usuario">
 
                         <div className="cabecalho-perfil">
-                            <img className="icone-perfil" src="./person.png" alt="Perfil" />
+                            <img className="icone-perfil" src="/person.png" alt="Perfil" />
                             <span> PERFIL</span>
                         </div>
 
                         <div className="usuario-foto">
-                            <img src="https://placehold.co/200x200/15092E/C384FF" alt="Foto do usuário" />
+                            {fotoPerfil ? (
+                                <img src={fotoPerfil} alt="Foto do usuário" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <img src="https://placehold.co/200x200/15092E/C384FF" alt="Foto padrão" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            )}
                         </div>
 
-                        {/* Exibe o nome do utilizador logado corretamente */}
+                        {/* Exibe o nome correto do utilizador logado */}
                         <h2 className="usuario-nome">
-                            {usuarioLogado ? (usuarioLogado.nome || usuarioLogado.email.split('@')[0]) : 'Visitante'}
+                            {usuarioLogado ? (usuarioLogado.nome || usuarioLogado.email?.split('@')[0]) : 'Visitante'}
                         </h2>
 
                         <div className="obras-lidas">
@@ -226,11 +248,11 @@ function ObrasMangas() {
                                         <span className="obra-titulo">Nenhuma leitura salva</span>
                                     </li>
                                 ) : (
-                                    // 👇 O .slice(0, 4) limita a exibição a apenas 4 obras (mude o número se preferir)
-                                    historicoLidas.slice(0, 7).map(item => (
-                                        <li key={item.id}>
-                                            <span className="obra-titulo">{item.obra_titulo}</span>
-                                            <span className="obra-caps">Cap. {item.ultimo_capitulo} lido</span>
+                                    // Exibe de forma resumida as últimas leituras gravadas no localStorage
+                                    historicoLidas.slice(0, 4).map((item, index) => (
+                                        <li key={item.id_obra || index} style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                                            <span className="obra-titulo" style={{ fontWeight: 'bold' }}>{item.obra_titulo}</span>
+                                            <span className="obra-caps" style={{ fontSize: '0.75rem', opacity: 0.8 }}>Cap. {item.ultimo_capitulo} - {item.status}</span>
                                         </li>
                                     ))
                                 )}

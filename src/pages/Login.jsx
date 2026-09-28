@@ -44,6 +44,7 @@ function Login() {
             // Salva no localStorage para a Navbar e o Perfil reconhecerem quem está logado
             localStorage.setItem('usuario_email', usuario.email);
             localStorage.setItem('usuario_id', usuario.id);
+            localStorage.setItem('username', usuario.username);
 
             // Redireciona para a página de perfil
             navigate('/Perfil');
@@ -54,6 +55,16 @@ function Login() {
         } finally {
             setCarregando(false);
         }
+    };
+
+    const handleLogout = () => {
+        // Remove todos os dados de sessão salvos no localStorage
+        localStorage.removeItem('usuario_id');
+        localStorage.removeItem('usuario_email');
+        localStorage.removeItem('username'); // 👈 Adicione esta linha para limpar o username
+
+        // Redireciona para a página de login
+        navigate('/Login');
     };
 
     return (

@@ -155,6 +155,8 @@ function Perfil() {
 
         localStorage.removeItem('usuario_id');
 
+        localStorage.removeItem('username');
+
         navigate('/Login');
 
     };
@@ -341,11 +343,10 @@ function Perfil() {
                         <nav className="sidebar-nav">
 
                             <button
-                                className={`sidebar-link ${
-                                    activeTab === 'perfil'
+                                className={`sidebar-link ${activeTab === 'perfil'
                                         ? 'active'
                                         : ''
-                                }`}
+                                    }`}
                                 onClick={() =>
                                     setActiveTab('perfil')
                                 }
@@ -359,11 +360,10 @@ function Perfil() {
 
 
                             <button
-                                className={`sidebar-link ${
-                                    activeTab === 'configuracoes'
+                                className={`sidebar-link ${activeTab === 'configuracoes'
                                         ? 'active'
                                         : ''
-                                }`}
+                                    }`}
                                 onClick={() =>
                                     setActiveTab('configuracoes')
                                 }
