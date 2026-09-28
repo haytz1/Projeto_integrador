@@ -24,24 +24,21 @@ function ObrasMangas() {
         async function verificarSessaoUsuario() {
             const id = localStorage.getItem('usuario_id');
             const email = localStorage.getItem('usuario_email');
-            const nome = localStorage.getItem('usuario_nome');
+            const usernameSalvo = localStorage.getItem('username'); // 👈 Lê o username correto do localStorage
 
             if (email || id) {
-                setUsuarioLogado({ id, email, nome });
+                setUsuarioLogado({ id, email, nome: usernameSalvo });
 
-                // Opcional: busca a foto do perfil na tabela 'usuarios' do Supabase
+                // Opcional: busca apenas a foto do perfil na tabela 'usuarios' do Supabase
                 if (email) {
                     const { data } = await supabase
                         .from('usuarios')
-                        .select('foto, nome')
+                        .select('foto') // 👈 Removido o 'nome' daqui para não sobrescrever
                         .eq('email', email)
                         .single();
 
-                    if (data) {
-                        if (data.foto) setFotoPerfil(data.foto);
-                        if (data.nome) {
-                            setUsuarioLogado(prev => ({ ...prev, nome: data.nome }));
-                        }
+                    if (data && data.foto) {
+                        setFotoPerfil(data.foto);
                     }
                 }
             }
@@ -146,6 +143,7 @@ function ObrasMangas() {
 
             <div className="pagina-obras-mangas">
                 <header className="cabecalho">
+                    <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
                     <div className="barra-pesquisa-wrapper">
                         <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
                         <span className="resultado-pesquisa" id="resultado-pesquisa"></span>
@@ -164,8 +162,6 @@ function ObrasMangas() {
                         >
                             ➕ Nova Obra
                         </button>
-
-                        <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
 
                         <details className="filtro-container">
                             <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
