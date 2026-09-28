@@ -40,3 +40,11 @@
 - Inclui o logotipo estilizado com Kanji ("ANIME 夢").
 - Links de navegação (Início, Eventos, Mapa, Comunidade) com ícones.
 - Criação do arquivo de estilo `navbartestezin.css` exclusivo, aplicando o design dark e responsividade da navbar.
+
+## 📝 Botão e Modal de Criar Post (PaginaInicial.jsx)
+- Adicionado botão "Criar Post" ao lado dos filtros na tela principal.
+- Melhorada a aparência dos filtros para integrar visualmente o botão "Criar Post" em um contêiner `.filtros-wrapper`.
+- Adicionado estado e modal para inserção de Título, Conteúdo, URL de Imagem e Categoria.
+- As categorias no modal foram limitadas a (Geral, Anime, Mangá, Cosplay, Arte) para manter consistência com o filtro.
+- Integrada a funcionalidade de submit com a tabela `postagens` do Supabase.
+- Adicionados os estilos para o modal e botões no arquivo `paginainicial.css`.
