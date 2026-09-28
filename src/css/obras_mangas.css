@@ -31,7 +31,8 @@
 }
 
 .pagina-obras-mangas .btn-voltar {
-    left: 16px;
+    left: 320px;
+    top: 30px;
 }
 
 .pagina-obras-mangas .btn-historico-link {
@@ -62,6 +63,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    margin-top: 20px;
 }
 
 .pagina-obras-mangas .icone-perfil {
@@ -203,22 +205,20 @@
 /* =====================
    ÁREA PRINCIPAL & PAINEL
    ===================== */
-/* =====================
-   ÁREA PRINCIPAL & PAINEL
-   ===================== */
+
 .pagina-obras-mangas .conteudo-principal {
-    display: flex;
-    gap: 24px;
+    display: block; /* Removemos o flex para dar liberdade total ao posicionamento fixo */
     padding: 24px;
-    align-items: flex-start;
+    position: relative;
+    min-height: 100vh;
 }
 
 .pagina-obras-mangas .painel-usuario {
-    position: fixed;
-    top: 80px;
-    left: 20px;
+    position: fixed !important; /* Força absoluta contra qualquer herança de transform */
+    top: 90px !important;       /* Distância exata do topo da janela do navegador */
+    left: 20px !important;      /* Distância fixa na lateral esquerda */
     width: 280px;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 110px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -226,8 +226,9 @@
     padding: 20px;
     border: 1px solid #8b5cf6;
     border-radius: 14px;
-    background-color: #161b22; /* 👈 Adicionado para o painel não ficar transparente sobre as obras */
-    overflow: hidden;          /* 👈 Impede que elementos vazem para fora da caixa do perfil */
+    background-color: #161b22;
+    z-index: 100;
+    overflow: hidden;
 }
 
 .pagina-obras-mangas .cabecalho-perfil {
@@ -337,9 +338,10 @@
     display: grid;
     grid-template-columns: repeat(4, 260px);
     gap: 20px;
-    flex: 1;
     justify-content: center;
-    margin-left: 120px;
+    /* Deixa margem à esquerda para os cards não ficarem debaixo do painel fixo */
+    margin-left: 310px; 
+    margin-right: 20px;
 }
 
 .pagina-obras-mangas .card {

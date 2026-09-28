@@ -1,14 +1,69 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { supabase } from '../../supabase';
 import '../css/historico.css';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 function Historico() {
+    const [historico, setHistorico] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        function carregarHistoricoLocal() {
+            setLoading(true);
+            try {
+                // Lê o histórico guardado no localStorage (ex: chave 'manga_historico')
+                const dadosSalvos = localStorage.getItem('manga_historico');
+
+                if (dadosSalvos) {
+                    const listaParseada = JSON.parse(dadosSalvos);
+                    const agora = new Date().getTime();
+                    const umAnoEmMs = 365 * 24 * 60 * 60 * 1000; // 1 ano em milissegundos
+
+                    // Processa cada item para verificar o status com base no tempo e capítulos
+                    const historicoProcessado = listaParseada.map(item => {
+                        const ultimaLeitura = new Date(item.ultima_atualizacao || item.dataCriacao || agora).getTime();
+                        const tempoInativo = agora - ultimaLeitura;
+
+                        let statusAtual = item.status || 'Lendo';
+
+                        // Se o utilizador não lê há mais de 1 ano e não concluiu, marca como 'Abandonado'
+                        if (tempoInativo > umAnoEmMs && statusAtual !== 'Concluído') {
+                            statusAtual = 'Abandonado';
+                        }
+
+                        return {
+                            ...item,
+                            status: statusAtual
+                        };
+                    });
+
+                    setHistorico(historicoProcessado);
+                } else {
+                    setHistorico([]);
+                }
+            } catch (error) {
+                console.error("Erro ao carregar o histórico do localStorage:", error);
+                setHistorico([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        carregarHistoricoLocal();
+    }, []);
+
+    // Função auxiliar para definir a classe CSS com base no status
+    function getStatusClass(status) {
+        if (!status) return 'lendo';
+        const s = status.toLowerCase();
+        if (s.includes('concluído') || s.includes('concluido')) return 'concluido';
+        if (s.includes('abandonado')) return 'abandonado';
+        return 'lendo';
+    }
 
     return (
         <>
-            <Navbar />
+            <NavbarPesquisa />
             <Link to="/ObrasMangas" className="btn-voltar">← Voltar</Link>
 
             <main className="container">
@@ -23,20 +78,20 @@ function Historico() {
                     ) : historico.length === 0 ? (
                         <p style={{ color: '#fff', textAlign: 'center' }}>Nenhuma história encontrada no seu histórico.</p>
                     ) : (
-                        historico.map((item) => (
-                            <article className="item-historico" key={item.id}>
+                        historico.map((item, index) => (
+                            <article className="item-historico" key={item.id || index}>
                                 <div className="item-esquerda">
-                                    <div className="capa capa-1">
-                                        {item.obra_titulo ? item.obra_titulo.charAt(0).toUpperCase() : 'M'}
+                                    <div className="capa capa-1" style={item.capa_url ? { backgroundImage: `url(${item.capa_url})`, backgroundSize: 'cover' } : {}}>
+                                        {!item.capa_url && (item.obra_titulo ? item.obra_titulo.charAt(0).toUpperCase() : 'M')}
                                     </div>
                                     <div className="informacoes">
-                                        <h2>{item.obra_titulo}</h2>
-                                        <p>Último capítulo: {item.ultimo_capitulo}</p>
+                                        <h2>{item.obra_titulo || 'Obra sem título'}</h2>
+                                        <p>Último capítulo: {item.ultimo_capitulo || 1}</p>
                                     </div>
                                 </div>
                                 <div className={`status ${getStatusClass(item.status)}`}>
                                     {(item.status === 'Concluído' || item.status === 'concluido') && (
-                                        <span className="icone">✓</span>
+                                        <span className="icone">✓ </span>
                                     )}
                                     {item.status}
                                 </div>
