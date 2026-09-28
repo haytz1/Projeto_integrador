@@ -1,4 +1,4 @@
-import '../css/moedas.css';
+import '../css/moedas.css'
 
 import { Link } from 'react-router-dom';
 
@@ -37,7 +37,19 @@ function Moedas() {
             return;
         }
 
-        const novasMoedas = usuario.moedas + quantidade;
+        const moedasAtuais = usuario.moedas || 0;
+
+        if (moedasAtuais >= 150) {
+            alert('Você já possui o máximo de 150 moedas.');
+            return;
+        }
+
+        if (moedasAtuais + quantidade > 150) {
+            alert('Você pode ter no máximo 150 moedas.');
+            return;
+        }
+
+        const novasMoedas = moedasAtuais + quantidade;
 
         const { error } = await supabase
             .from('usuarios')
@@ -53,28 +65,23 @@ function Moedas() {
         alert(`Você recebeu ${quantidade} moedas!`);
     };
 
-
     return (
+
         <>
+
             <Navbar />
 
             <main className="container">
 
                 <header className="coins-header">
 
-                    <h1 className="main-title">
-                        Comprar moedas
-                    </h1>
+                    <h1 className="main-title">Comprar moedas</h1>
 
-                    <p>
-                        Adquira suas moedas e aproveite mais vantagens no site
-                    </p>
+                    <p>Adquira suas moedas e aproveite mais vantagens no site</p>
 
                 </header>
 
-
                 <section className="coins-grid">
-
 
                     <article className="coin-card">
 
@@ -92,7 +99,6 @@ function Moedas() {
                             </div>
 
                         </div>
-
 
                         <div className="coin-body">
 
@@ -115,7 +121,6 @@ function Moedas() {
 
                             </ul>
 
-
                             <button
                                 className="btn-cta btn-coin"
                                 onClick={() => comprarMoedas(50)}
@@ -126,7 +131,6 @@ function Moedas() {
                         </div>
 
                     </article>
-
 
 
                     <article className="coin-card coin-featured">
@@ -150,7 +154,6 @@ function Moedas() {
 
                         </div>
 
-
                         <div className="coin-body">
 
                             <ul className="coin-features">
@@ -172,7 +175,6 @@ function Moedas() {
 
                             </ul>
 
-
                             <button
                                 className="btn-cta btn-coin"
                                 onClick={() => comprarMoedas(100)}
@@ -183,7 +185,6 @@ function Moedas() {
                         </div>
 
                     </article>
-
 
 
                     <article className="coin-card">
@@ -202,7 +203,6 @@ function Moedas() {
                             </div>
 
                         </div>
-
 
                         <div className="coin-body">
 
@@ -229,7 +229,6 @@ function Moedas() {
                                 </li>
 
                             </ul>
-
 
                             <button
                                 className="btn-cta btn-coin"
@@ -261,12 +260,11 @@ function Moedas() {
                         </h3>
 
                         <p>
-                            O seu destino final para ler e descobrir os melhores
-                            animes, mangás e autores em um só lugar.
+                            O seu destino final para ler e descobrir os
+                            melhores animes, mangás e autores em um só lugar.
                         </p>
 
                     </div>
-
 
                     <div className="footer-links">
 
@@ -290,7 +288,6 @@ function Moedas() {
 
                     </div>
 
-
                     <div className="footer-bottom">
 
                         <p>
@@ -305,7 +302,9 @@ function Moedas() {
             </footer>
 
         </>
+
     );
+
 }
 
 export default Moedas;
