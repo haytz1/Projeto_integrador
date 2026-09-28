@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '/supabase'; 
+import { createClient } from '@supabase/supabase-js';
 import '../css/login.css';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -10,44 +15,19 @@ function Login() {
     const [carregando, setCarregando] = useState(false);
     const navigate = useNavigate();
 
-<<<<<<< Updated upstream
+    // Função executada ao enviar o formulário de login
     const handleLogin = async (e) => {
         e.preventDefault();
-        
+
         if (!email || !senha) {
             alert('Preencha o e-mail e a senha!');
-=======
-    // Função executada ao enviar o formulário de login
-const handleLogin = async (e) => {
-    e.preventDefault();
-
-    if (!email || !senha) {
-        alert('Preencha o e-mail e a senha!');
-        return;
-    }
-
-    setCarregando(true);
-
-    try {
-        const { data: usuario, error } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', email)
-            .eq('senha', senha)
-            .single();
-
-        if (error || !usuario) {
-            alert('E-mail ou senha incorretos!');
->>>>>>> Stashed changes
             return;
         }
 
-        localStorage.setItem('usuario_email', usuario.email);
-        localStorage.setItem('usuario_id', usuario.id);
+        setCarregando(true);
 
-<<<<<<< Updated upstream
         try {
-            // Procura o utilizador na tabela personalizada 'usuarios' do Supabase
+            // Procura na tabela 'usuarios' se existe um registro com esse e-mail e senha
             const { data: usuario, error } = await supabase
                 .from('usuarios')
                 .select('*')
@@ -61,13 +41,12 @@ const handleLogin = async (e) => {
                 return;
             }
 
-            // Guarda os dados no localStorage para o site reconhecer quem está logado
+            // Salva no localStorage para a Navbar e o Perfil reconhecerem quem está logado
             localStorage.setItem('usuario_email', usuario.email);
             localStorage.setItem('usuario_id', usuario.id);
-            localStorage.setItem('usuario_nome', usuario.username); // Opcional para exibir o nome
 
-            alert('Login efetuado com sucesso!');
-            navigate('/ObrasMangas'); // Redireciona para a página de obras
+            // Redireciona para a página de perfil
+            navigate('/Perfil');
 
         } catch (err) {
             console.error('Erro no login:', err.message);
@@ -76,18 +55,7 @@ const handleLogin = async (e) => {
             setCarregando(false);
         }
     };
-=======
-        navigate('/Perfil');
 
-    } catch (err) {
-        console.error('Erro no login:', err.message);
-        alert('Ocorreu um erro ao tentar fazer login.');
->>>>>>> Stashed changes
-
-    } finally {
-        setCarregando(false);
-    }
-};
     return (
         <>
             <Navbar />
@@ -104,14 +72,20 @@ const handleLogin = async (e) => {
                         <div className="form-group">
                             <label className="form-label" htmlFor="input-email">E-mail</label>
                             <div className="input-wrapper">
-                                <input 
-                                    type="email" 
-                                    id="input-email" 
-                                    className="form-input" 
-                                    placeholder="seu@email.com" 
+                                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                                    <path d="m2 7 10 7 10-7" />
+                                </svg>
+                                <input
+                                    type="email"
+                                    id="input-email"
+                                    name="email"
+                                    className="form-input"
+                                    placeholder="seu@email.com"
+                                    autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    required 
+                                    required
                                 />
                             </div>
                         </div>
@@ -119,16 +93,23 @@ const handleLogin = async (e) => {
                         <div className="form-group">
                             <div className="senha-row">
                                 <label className="form-label" htmlFor="input-senha" style={{ marginBottom: 0 }}>Senha</label>
+                                <a href="#" className="forgot-link" id="link-esqueceu-senha">Esqueceu sua senha?</a>
                             </div>
                             <div className="input-wrapper">
-                                <input 
-                                    type="password" 
-                                    id="input-senha" 
-                                    className="form-input" 
-                                    placeholder="••••••••" 
+                                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                <input
+                                    type="password"
+                                    id="input-senha"
+                                    name="senha"
+                                    className="form-input"
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
                                     value={senha}
                                     onChange={(e) => setSenha(e.target.value)}
-                                    required 
+                                    required
                                 />
                             </div>
                         </div>
