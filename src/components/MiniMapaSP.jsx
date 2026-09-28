@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Ícone customizado roxo para os pins de evento
+// Ícone customizado para os pins de evento
 const criarIconePin = (cor = '#7c3aed') => L.divIcon({
     className: '',
     html: `
@@ -30,17 +30,24 @@ const criarIconePin = (cor = '#7c3aed') => L.divIcon({
     popupAnchor: [0, -42],
 });
 
-// Componente para mudar o zoom ao expandir
-function MapaControlador({ expandido }) {
+// Componente para controlar o zoom e centralização dinamicamente
+function MapaControlador({ expandido, eventoAtivo }) {
     const map = useMap();
+    
     React.useEffect(() => {
         setTimeout(() => map.invalidateSize(), 300);
-        if (expandido) {
+        
+        if (eventoAtivo) {
+            map.flyTo([eventoAtivo.lat, eventoAtivo.lng], 15, {
+                duration: 1.2
+            });
+        } else if (expandido) {
             map.setView([-23.5505, -46.6333], 12);
         } else {
             map.setView([-23.5505, -46.6333], 11);
         }
-    }, [expandido, map]);
+    }, [expandido, eventoAtivo, map]);
+
     return null;
 }
 
@@ -121,8 +128,9 @@ function MiniMapaSP() {
                         style={{ height: '100%', width: '100%', borderRadius: '12px' }}
                         attributionControl={false}
                     >
+                        {/* URL alterada para OpenStreetMap livre */}
                         <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                         {EVENTOS_MAPA.map(ev => (
                             <Marker
@@ -166,9 +174,10 @@ function MiniMapaSP() {
                                     style={{ height: '100%', width: '100%' }}
                                     attributionControl={false}
                                 >
-                                    <MapaControlador expandido={expandido} />
+                                    <MapaControlador expandido={expandido} eventoAtivo={eventoAtivo} />
+                                    {/* URL alterada para OpenStreetMap livre */}
                                     <TileLayer
-                                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                     />
                                     {EVENTOS_MAPA.map(ev => (
                                         <Marker
