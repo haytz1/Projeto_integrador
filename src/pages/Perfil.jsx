@@ -9,13 +9,17 @@ import { createClient } from '@supabase/supabase-js';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+    supabaseUrl,
+    supabaseKey
+);
 
 function Perfil() {
+
     const [userId, setUserId] = useState(null);
+
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [registro, setRegistro] = useState('');
@@ -25,11 +29,12 @@ function Perfil() {
 
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
-    // Estados para os posts do usuário
     const [meusPosts, setMeusPosts] = useState([]);
     const [carregandoPosts, setCarregandoPosts] = useState(true);
 
-    // Estados para criar publicação
+    const [minhasObras, setMinhasObras] = useState([]);
+    const [carregandoObras, setCarregandoObras] = useState(true);
+
     const [novoTitulo, setNovoTitulo] = useState('');
     const [novoConteudo, setNovoConteudo] = useState('');
     const [novaImagem, setNovaImagem] = useState(null);
@@ -46,27 +51,39 @@ function Perfil() {
         !routeId ||
         routeId === localStorage.getItem('usuario_id');
 
+
     useEffect(() => {
+
         async function buscarDadosDoBanco() {
+
             setCarregandoPosts(true);
 
             try {
+
                 let query = supabase
                     .from('usuarios')
                     .select('*');
 
                 if (routeId) {
+
                     query = query.eq('id', routeId);
+
                 } else {
+
                     const emailSalvo =
                         localStorage.getItem('usuario_email');
 
                     if (!emailSalvo) {
+
                         navigate('/Login');
+
                         return;
                     }
 
-                    query = query.eq('email', emailSalvo);
+                    query = query.eq(
+                        'email',
+                        emailSalvo
+                    );
                 }
 
                 const {
@@ -74,37 +91,51 @@ function Perfil() {
                     error
                 } = await query.single();
 
-                if (error) throw error;
+                if (error) {
+                    throw error;
+                }
 
                 if (dadosUsuario) {
-                    const idDoUsuario = dadosUsuario.id;
+
+                    const idDoUsuario =
+                        dadosUsuario.id;
 
                     setUserId(idDoUsuario);
 
-                    // Sua tabela usa "nome"
-                    setNome(dadosUsuario.nome);
+                    setNome(
+                        dadosUsuario.username || ''
+                    );
 
-                    setEmail(dadosUsuario.email);
+                    setEmail(
+                        dadosUsuario.email || ''
+                    );
 
                     if (dadosUsuario.registro) {
+
                         setRegistro(
                             new Date(
                                 dadosUsuario.registro
-                            ).toLocaleDateString('pt-BR')
+                            ).toLocaleDateString(
+                                'pt-BR'
+                            )
                         );
+
                     }
 
-                    setFotoUrl(dadosUsuario.foto || '');
+                    setFotoUrl(
+                        dadosUsuario.foto || ''
+                    );
 
                     setPlano(
-                        dadosUsuario.plano || 'Gratuito'
+                        dadosUsuario.plano ||
+                        'Gratuito'
                     );
 
                     setMoedas(
                         dadosUsuario.moedas || 0
                     );
 
-                    // Busca as publicações do usuário
+
                     const {
                         data: dadosPosts,
                         error: erroPosts
@@ -115,51 +146,246 @@ function Perfil() {
                             'id_usuario',
                             idDoUsuario
                         )
-                        .order('criado_em', {
-                            ascending: false
-                        });
+                        .order(
+                            'criado_em',
+                            {
+                                ascending: false
+                            }
+                        );
 
-                    if (erroPosts) throw erroPosts;
+                    if (erroPosts) {
+                        throw erroPosts;
+                    }
 
-                    setMeusPosts(dadosPosts || []);
+                    setMeusPosts(
+                        dadosPosts || []
+                    );
                 }
+
             } catch (error) {
+
                 console.error(
                     'Erro ao buscar dados do usuário/posts:',
                     error.message
                 );
+
             } finally {
+
                 setCarregandoPosts(false);
+
             }
         }
 
         buscarDadosDoBanco();
+
     }, [navigate, routeId]);
 
-    // Logout
+
+    useEffect(() => {
+
+        async function buscarMinhaLista() {
+
+            if (!userId) {
+                return;
+            }
+
+            setCarregandoObras(true);
+
+            try {
+
+                const {
+                    data: biblioteca,
+                    error
+                } = await supabase
+                    .from('biblioteca')
+                    .select('anime_id')
+                    .eq(
+                        'usuario_id',
+                        userId
+                    )
+                    .order(
+                        'criado_em',
+                        {
+                            ascending: false
+                        }
+                    );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (
+                    !biblioteca ||
+                    biblioteca.length === 0
+                ) {
+
+                    setMinhasObras([]);
+
+                    return;
+                }
+
+
+                const ids = biblioteca.map(
+                    (item) => item.anime_id
+                );
+
+
+                const query = `
+                    query ($ids: [Int]) {
+
+                        Page(
+                            page: 1,
+                            perPage: 50
+                        ) {
+
+                            media(
+                                id_in: $ids,
+                                type: ANIME
+                            ) {
+
+                                id
+
+                                title {
+                                    romaji
+                                    english
+                                    native
+                                }
+
+                                coverImage {
+                                    large
+                                    extraLarge
+                                }
+
+                                startDate {
+                                    year
+                                }
+                            }
+                        }
+                    }
+                `;
+
+
+                const resposta = await fetch(
+                    'https://graphql.anilist.co',
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+
+                            'Accept':
+                                'application/json'
+                        },
+
+                        body: JSON.stringify({
+                            query: query,
+
+                            variables: {
+                                ids: ids
+                            }
+                        })
+                    }
+                );
+
+
+                const dados =
+                    await resposta.json();
+
+
+                if (
+                    !resposta.ok ||
+                    !dados.data ||
+                    !dados.data.Page
+                ) {
+
+                    throw new Error(
+                        'Não foi possível buscar as obras.'
+                    );
+                }
+
+
+                const obras =
+                    dados.data.Page.media || [];
+
+
+                const obrasOrdenadas =
+                    ids
+                        .map(
+                            (animeId) =>
+                                obras.find(
+                                    (obra) =>
+                                        obra.id === animeId
+                                )
+                        )
+                        .filter(Boolean);
+
+
+                setMinhasObras(
+                    obrasOrdenadas
+                );
+
+            } catch (error) {
+
+                console.error(
+                    'Erro ao buscar minha lista:',
+                    error
+                );
+
+                setMinhasObras([]);
+
+            } finally {
+
+                setCarregandoObras(false);
+
+            }
+        }
+
+        buscarMinhaLista();
+
+    }, [userId]);
+
+
     const handleLogout = () => {
-        localStorage.removeItem('usuario_email');
-        localStorage.removeItem('usuario_id');
-        localStorage.removeItem('username');
+
+        localStorage.removeItem(
+            'usuario_email'
+        );
+
+        localStorage.removeItem(
+            'usuario_id'
+        );
+
+        localStorage.removeItem(
+            'username'
+        );
 
         navigate('/Login');
+
     };
 
-    // Upload da foto de perfil
-    const handleFileChange = async (e) => {
-        const arquivo = e.target.files[0];
 
-        if (!arquivo || !userId) return;
+    const handleFileChange = async (e) => {
+
+        const arquivo =
+            e.target.files[0];
+
+        if (!arquivo || !userId) {
+            return;
+        }
 
         setCarregandoUpload(true);
 
         try {
-            const fileExt = arquivo.name
-                .split('.')
-                .pop();
+
+            const fileExt =
+                arquivo.name
+                    .split('.')
+                    .pop();
 
             const nomeDoArquivo =
                 `${userId}_${Date.now()}.${fileExt}`;
+
 
             const {
                 data: uploadData,
@@ -171,7 +397,11 @@ function Perfil() {
                     arquivo
                 );
 
-            if (uploadError) throw uploadError;
+
+            if (uploadError) {
+                throw uploadError;
+            }
+
 
             const { data: urlData } =
                 supabase.storage
@@ -180,8 +410,10 @@ function Perfil() {
                         uploadData.path
                     );
 
+
             const linkDaFoto =
                 urlData.publicUrl;
+
 
             const {
                 error: dbError
@@ -190,16 +422,28 @@ function Perfil() {
                 .update({
                     foto: linkDaFoto
                 })
-                .eq('id', userId);
+                .eq(
+                    'id',
+                    userId
+                );
 
-            if (dbError) throw dbError;
 
-            setFotoUrl(linkDaFoto);
+            if (dbError) {
+                throw dbError;
+            }
+
+
+            setFotoUrl(
+                linkDaFoto
+            );
+
 
             alert(
                 'Foto de perfil atualizada com sucesso!'
             );
+
         } catch (error) {
+
             console.error(
                 'Erro no upload:',
                 error.message
@@ -208,69 +452,110 @@ function Perfil() {
             alert(
                 'Não foi possível atualizar a foto.'
             );
+
         } finally {
+
             setCarregandoUpload(false);
+
         }
     };
 
-    // Escolher imagem da publicação
+
     const handleImagemPublicacao = (e) => {
-        const arquivo = e.target.files[0];
 
-        if (!arquivo) return;
+        const arquivo =
+            e.target.files[0];
 
-        if (!arquivo.type.startsWith('image/')) {
+        if (!arquivo) {
+            return;
+        }
+
+        if (
+            !arquivo.type.startsWith(
+                'image/'
+            )
+        ) {
+
             alert(
                 'Escolha apenas arquivos de imagem.'
             );
+
             return;
         }
 
-        if (arquivo.size > 5 * 1024 * 1024) {
+        if (
+            arquivo.size >
+            5 * 1024 * 1024
+        ) {
+
             alert(
                 'A imagem deve ter no máximo 5 MB.'
             );
+
             return;
         }
 
-        setNovaImagem(arquivo);
+
+        setNovaImagem(
+            arquivo
+        );
+
 
         const imagemPreview =
-            URL.createObjectURL(arquivo);
+            URL.createObjectURL(
+                arquivo
+            );
 
-        setPreviewImagem(imagemPreview);
+        setPreviewImagem(
+            imagemPreview
+        );
+
     };
 
-    // Criar uma nova publicação
+
     const handlePublicar = async () => {
+
         if (!userId) {
-            alert('Usuário não encontrado.');
+
+            alert(
+                'Usuário não encontrado.'
+            );
+
             return;
         }
+
 
         if (
             !novoTitulo.trim() ||
             !novoConteudo.trim()
         ) {
+
             alert(
                 'Preencha o título e o conteúdo da publicação.'
             );
+
             return;
         }
+
 
         setPublicando(true);
 
         try {
+
             let linkImagem = null;
 
-            // Faz upload da imagem para o Storage
+
             if (novaImagem) {
-                const extensao = novaImagem.name
-                    .split('.')
-                    .pop();
+
+                const extensao =
+                    novaImagem.name
+                        .split('.')
+                        .pop();
+
 
                 const nomeDoArquivo =
                     `${userId}_${Date.now()}.${extensao}`;
+
 
                 const {
                     data: uploadData,
@@ -282,9 +567,11 @@ function Perfil() {
                         novaImagem
                     );
 
+
                 if (uploadError) {
                     throw uploadError;
                 }
+
 
                 const { data: urlData } =
                     supabase.storage
@@ -293,11 +580,13 @@ function Perfil() {
                             uploadData.path
                         );
 
+
                 linkImagem =
                     urlData.publicUrl;
+
             }
 
-            // Salva a publicação na tabela
+
             const {
                 data,
                 error
@@ -305,22 +594,28 @@ function Perfil() {
                 .from('postagens')
                 .insert([
                     {
-                        id_usuario: userId,
+                        id_usuario:
+                            userId,
+
                         titulo:
                             novoTitulo.trim(),
+
                         conteudo:
                             novoConteudo.trim(),
-                        imagem: linkImagem
+
+                        imagem:
+                            linkImagem
                     }
                 ])
                 .select()
                 .single();
 
+
             if (error) {
                 throw error;
             }
 
-            // Coloca a nova publicação no começo
+
             setMeusPosts(
                 (postsAtuais) => [
                     data,
@@ -328,16 +623,19 @@ function Perfil() {
                 ]
             );
 
-            // Limpa o formulário
+
             setNovoTitulo('');
             setNovoConteudo('');
             setNovaImagem(null);
             setPreviewImagem('');
 
+
             alert(
                 'Publicação criada com sucesso!'
             );
+
         } catch (error) {
+
             console.error(
                 'Erro ao publicar:',
                 error
@@ -346,21 +644,27 @@ function Perfil() {
             alert(
                 'Não foi possível criar a publicação.'
             );
+
         } finally {
+
             setPublicando(false);
+
         }
     };
 
+
     return (
+
         <>
+
             <NavbarPesquisa />
 
             <main className="page-wrapper">
 
                 <div className="profile-layout">
 
-                    {/* SIDEBAR */}
                     {isMeuPerfil && (
+
                         <aside className="profile-sidebar">
 
                             <nav className="sidebar-nav">
@@ -372,12 +676,15 @@ function Perfil() {
                                             : ''
                                     }`}
                                     onClick={() =>
-                                        setActiveTab('perfil')
+                                        setActiveTab(
+                                            'perfil'
+                                        )
                                     }
                                 >
                                     <i className="ph-fill ph-user"></i>
                                     Meu Perfil
                                 </button>
+
 
                                 <button
                                     className={`sidebar-link ${
@@ -395,9 +702,12 @@ function Perfil() {
                                     Configurações
                                 </button>
 
+
                                 <button
                                     className="sidebar-link"
-                                    onClick={handleLogout}
+                                    onClick={
+                                        handleLogout
+                                    }
                                 >
                                     <i className="ph ph-sign-out"></i>
                                     Sair
@@ -408,18 +718,20 @@ function Perfil() {
                             <div className="sidebar-art"></div>
 
                         </aside>
+
                     )}
 
-                    {/* CONTEÚDO PRINCIPAL */}
+
                     <div className="profile-container">
 
-                        {/* PERFIL */}
+
                         {activeTab === 'perfil' && (
+
                             <>
 
                                 <div className="profile-header-row">
 
-                                    {/* DADOS DO USUÁRIO */}
+
                                     <section className="user-info-section">
 
                                         <div className="avatar-col">
@@ -431,26 +743,37 @@ function Perfil() {
                                                         'hidden'
                                                 }}
                                             >
+
                                                 {fotoUrl ? (
+
                                                     <img
                                                         src={fotoUrl}
                                                         alt="Avatar"
                                                         style={{
                                                             width:
                                                                 '100%',
+
                                                             height:
                                                                 '100%',
+
                                                             objectFit:
                                                                 'cover'
                                                         }}
                                                     />
+
                                                 ) : (
+
                                                     <i className="ph ph-user"></i>
+
                                                 )}
+
                                             </div>
 
+
                                             {isMeuPerfil && (
+
                                                 <>
+
                                                     <input
                                                         type="file"
                                                         id="fileInput"
@@ -464,30 +787,39 @@ function Perfil() {
                                                         }
                                                     />
 
+
                                                     <label
                                                         htmlFor="fileInput"
                                                         className="edit-photo-btn"
                                                         style={{
                                                             cursor:
                                                                 'pointer',
+
                                                             display:
                                                                 'inline-flex',
+
                                                             alignItems:
                                                                 'center',
+
                                                             justifyContent:
                                                                 'center'
                                                         }}
                                                     >
+
                                                         <i className="ph ph-pencil-simple"></i>
 
                                                         {carregandoUpload
                                                             ? 'Enviando...'
                                                             : 'Editar foto'}
+
                                                     </label>
+
                                                 </>
+
                                             )}
 
                                         </div>
+
 
                                         <div className="info-col">
 
@@ -495,11 +827,13 @@ function Perfil() {
                                                 Perfil de usuário
                                             </h2>
 
+
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-user info-icon"></i>
 
                                                 <div>
+
                                                     <span className="info-label">
                                                         NOME DO USUÁRIO
                                                     </span>
@@ -508,15 +842,18 @@ function Perfil() {
                                                         {nome ||
                                                             'Carregando...'}
                                                     </span>
+
                                                 </div>
 
                                             </div>
+
 
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-envelope-simple info-icon"></i>
 
                                                 <div>
+
                                                     <span className="info-label">
                                                         E-MAIL
                                                     </span>
@@ -525,15 +862,18 @@ function Perfil() {
                                                         {email ||
                                                             'Carregando...'}
                                                     </span>
+
                                                 </div>
 
                                             </div>
+
 
                                             <div className="info-item">
 
                                                 <i className="ph-fill ph-calendar-blank info-icon"></i>
 
                                                 <div>
+
                                                     <span className="info-label">
                                                         DATA DE CADASTRO
                                                     </span>
@@ -542,6 +882,7 @@ function Perfil() {
                                                         {registro ||
                                                             'Carregando...'}
                                                     </span>
+
                                                 </div>
 
                                             </div>
@@ -550,23 +891,32 @@ function Perfil() {
 
                                     </section>
 
-                                    {/* PLANO */}
+
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
+
                                             <i className="ph-fill ph-crown"></i>
+
                                             Plano atual
+
                                         </h2>
 
+
                                         <div className="plan-badge">
+
                                             <i className="ph-fill ph-coin"></i>
+
                                             {plano ||
                                                 'Gratuito'}
+
                                         </div>
+
 
                                         <p className="plan-desc">
                                             Aproveite os recursos mais populares do nosso site.
                                         </p>
+
 
                                         <Link
                                             to="/Planos"
@@ -577,22 +927,31 @@ function Perfil() {
 
                                     </section>
 
-                                    {/* MOEDAS */}
+
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
+
                                             <i className="ph-fill ph-coins"></i>
+
                                             Minhas moedas
+
                                         </h2>
 
+
                                         <div className="plan-badge">
+
                                             <i className="ph-fill ph-coin"></i>
+
                                             {moedas} moedas
+
                                         </div>
+
 
                                         <p className="plan-desc">
                                             Você pode ter até 150 moedas.
                                         </p>
+
 
                                         <Link
                                             to="/Moedas"
@@ -605,37 +964,46 @@ function Perfil() {
 
                                 </div>
 
-                                {/* PREFERÊNCIAS */}
+
                                 <section className="preferences-section">
 
                                     <h2 className="section-title">
+
                                         <i className="ph-fill ph-star"></i>
+
                                         Preferências de animes
+
                                     </h2>
+
 
                                     <p className="section-subtitle">
                                         Personalize suas experiências no site.
                                     </p>
 
+
                                     <div className="prefs-grid">
 
-                                        {/* ANIMES FAVORITOS */}
+
                                         <div className="pref-col">
 
                                             <i
                                                 className="ph-fill ph-heart pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
+
 
                                             <h3 className="pref-title">
                                                 Animes favoritos
                                             </h3>
 
+
                                             <p className="pref-desc">
                                                 Adicione os animes que você mais gosta.
                                             </p>
+
 
                                             <div className="tags-container">
 
@@ -669,29 +1037,34 @@ function Perfil() {
 
                                             </div>
 
+
                                             <button className="btn-add">
                                                 + Adicionar
                                             </button>
 
                                         </div>
 
-                                        {/* GÊNEROS */}
+
                                         <div className="pref-col">
 
                                             <i
                                                 className="ph-fill ph-star pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
+
 
                                             <h3 className="pref-title">
                                                 Gêneros favoritos
                                             </h3>
 
+
                                             <p className="pref-desc">
                                                 Escolha os gêneros que você mais gosta.
                                             </p>
+
 
                                             <div className="tags-container">
 
@@ -725,29 +1098,34 @@ function Perfil() {
 
                                             </div>
 
+
                                             <button className="btn-add">
                                                 + Adicionar
                                             </button>
 
                                         </div>
 
-                                        {/* TAGS */}
+
                                         <div className="pref-col">
 
                                             <i
                                                 className="ph-fill ph-tag pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
+
 
                                             <h3 className="pref-title">
                                                 Tags de interesse
                                             </h3>
 
+
                                             <p className="pref-desc">
                                                 Escolha as tags que mais te interessam.
                                             </p>
+
 
                                             <div className="tags-container">
 
@@ -781,6 +1159,7 @@ function Perfil() {
 
                                             </div>
 
+
                                             <button className="btn-add">
                                                 + Adicionar
                                             </button>
@@ -791,7 +1170,132 @@ function Perfil() {
 
                                 </section>
 
-                                {/* MINHAS PUBLICAÇÕES */}
+
+                                <section className="minha-lista-section">
+
+                                    <h2 className="section-title">
+
+                                        <i className="ph-fill ph-books"></i>
+
+                                        {isMeuPerfil
+                                            ? 'Minha lista'
+                                            : `Lista de ${nome}`}
+
+                                    </h2>
+
+
+                                    <p className="section-subtitle">
+                                        Obras adicionadas à lista deste usuário.
+                                    </p>
+
+
+                                    {carregandoObras ? (
+
+                                        <p className="mensagem-post">
+                                            Carregando obras...
+                                        </p>
+
+                                    ) : minhasObras.length > 0 ? (
+
+                                        <div className="minha-lista-grid">
+
+                                            {minhasObras.map(
+                                                (obra) => {
+
+                                                    const nomeObra =
+                                                        obra.title?.english ||
+                                                        obra.title?.romaji ||
+                                                        obra.title?.native ||
+                                                        'Obra sem título';
+
+
+                                                    const imagem =
+                                                        obra.coverImage?.large ||
+                                                        obra.coverImage?.extraLarge;
+
+
+                                                    return (
+
+                                                        <div
+                                                            key={obra.id}
+                                                            className="obra-card"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/anime/${obra.id}`
+                                                                )
+                                                            }
+                                                        >
+
+                                                            <div className="obra-card-imagem">
+
+                                                                {imagem && (
+
+                                                                    <img
+                                                                        src={imagem}
+                                                                        alt={nomeObra}
+                                                                    />
+
+                                                                )}
+
+                                                            </div>
+
+
+                                                            <div className="obra-card-info">
+
+                                                                <h3>
+                                                                    {nomeObra}
+                                                                </h3>
+
+
+                                                                {obra.startDate?.year && (
+
+                                                                    <span>
+                                                                        {obra.startDate.year}
+                                                                    </span>
+
+                                                                )}
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    );
+
+                                                }
+                                            )}
+
+                                        </div>
+
+                                    ) : (
+
+                                        <div className="sem-obras">
+
+                                            <i className="ph ph-books"></i>
+
+                                            <h3>
+
+                                                {isMeuPerfil
+                                                    ? 'Sua lista está vazia'
+                                                    : `${nome} ainda não adicionou obras`}
+
+                                            </h3>
+
+
+                                            {isMeuPerfil && (
+
+                                                <p>
+                                                    Pesquise uma obra e adicione à sua lista.
+                                                </p>
+
+                                            )}
+
+                                        </div>
+
+                                    )}
+
+                                </section>
+
+
                                 <div className="meus-posts-secao">
 
                                     <h2 className="section-title">
@@ -804,18 +1308,24 @@ function Perfil() {
 
                                     </h2>
 
+
                                     <p className="section-subtitle">
                                         Compartilhe suas opiniões e fale sobre seus animes favoritos.
                                     </p>
 
-                                    {/* FORMULÁRIO */}
+
                                     {isMeuPerfil && (
+
                                         <div className="criar-post-card">
 
                                             <h3>
+
                                                 <i className="ph-fill ph-pencil-simple"></i>
+
                                                 Criar publicação
+
                                             </h3>
+
 
                                             <input
                                                 type="text"
@@ -829,16 +1339,20 @@ function Perfil() {
                                                 className="post-input"
                                             />
 
-                                            {/* ESCOLHER IMAGEM */}
+
                                             <div className="campo-imagem-post">
 
                                                 <label
                                                     htmlFor="imagemPublicacao"
                                                     className="botao-escolher-imagem"
                                                 >
+
                                                     <i className="ph-fill ph-image"></i>
+
                                                     Escolher imagem
+
                                                 </label>
+
 
                                                 <input
                                                     type="file"
@@ -853,16 +1367,20 @@ function Perfil() {
                                                     }}
                                                 />
 
+
                                                 {novaImagem && (
+
                                                     <span className="nome-imagem">
                                                         {novaImagem.name}
                                                     </span>
+
                                                 )}
 
                                             </div>
 
-                                            {/* PRÉ-VISUALIZAÇÃO */}
+
                                             {previewImagem && (
+
                                                 <div className="preview-imagem-post">
 
                                                     <img
@@ -871,7 +1389,9 @@ function Perfil() {
                                                     />
 
                                                 </div>
+
                                             )}
+
 
                                             <textarea
                                                 placeholder="Escreva sua publicação..."
@@ -884,9 +1404,12 @@ function Perfil() {
                                                 className="post-textarea"
                                             ></textarea>
 
+
                                             <button
                                                 className="btn-publicar"
-                                                onClick={handlePublicar}
+                                                onClick={
+                                                    handlePublicar
+                                                }
                                                 disabled={
                                                     publicando
                                                 }
@@ -901,16 +1424,20 @@ function Perfil() {
                                             </button>
 
                                         </div>
+
                                     )}
 
-                                    {/* PUBLICAÇÕES */}
+
                                     <div className="publicacoes-usuario">
 
                                         <h3 className="subtitulo-publicacoes">
+
                                             {isMeuPerfil
                                                 ? 'Minhas publicações'
                                                 : `Publicações de ${nome}`}
+
                                         </h3>
+
 
                                         {carregandoPosts ? (
 
@@ -926,13 +1453,12 @@ function Perfil() {
                                                     (post) => (
 
                                                         <div
-                                                            key={
-                                                                post.id
-                                                            }
+                                                            key={post.id}
                                                             className="meu-post-card"
                                                         >
 
                                                             {post.imagem && (
+
                                                                 <div
                                                                     className="meu-post-imagem"
                                                                     style={{
@@ -940,7 +1466,9 @@ function Perfil() {
                                                                             `url(${post.imagem})`
                                                                     }}
                                                                 />
+
                                                             )}
+
 
                                                             <div className="meu-post-conteudo-area">
 
@@ -948,11 +1476,14 @@ function Perfil() {
                                                                     {post.titulo}
                                                                 </h4>
 
+
                                                                 <p className="meu-post-conteudo">
                                                                     {post.conteudo}
                                                                 </p>
 
+
                                                                 {post.criado_em && (
+
                                                                     <small className="post-data">
 
                                                                         {new Date(
@@ -962,6 +1493,7 @@ function Perfil() {
                                                                         )}
 
                                                                     </small>
+
                                                                 )}
 
                                                             </div>
@@ -980,15 +1512,20 @@ function Perfil() {
                                                 <i className="ph ph-article"></i>
 
                                                 <h3>
+
                                                     {isMeuPerfil
                                                         ? 'Você ainda não publicou nada'
                                                         : `${nome} ainda não publicou nada`}
+
                                                 </h3>
 
+
                                                 {isMeuPerfil && (
+
                                                     <p>
                                                         Crie sua primeira publicação usando o formulário acima.
                                                     </p>
+
                                                 )}
 
                                             </div>
@@ -1000,19 +1537,24 @@ function Perfil() {
                                 </div>
 
                             </>
+
                         )}
 
-                        {/* CONFIGURAÇÕES */}
+
                         {activeTab === 'configuracoes' && (
+
                             <div className="settings-container">
 
-                                {/* DADOS PESSOAIS */}
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
+
                                         <i className="ph-fill ph-user-list"></i>
+
                                         Dados Pessoais
+
                                     </h2>
+
 
                                     <div className="settings-group">
 
@@ -1036,6 +1578,7 @@ function Perfil() {
 
                                         </div>
 
+
                                         <div className="settings-item">
 
                                             <div className="settings-item-info">
@@ -1055,6 +1598,7 @@ function Perfil() {
                                             </button>
 
                                         </div>
+
 
                                         <div className="settings-item">
 
@@ -1080,13 +1624,17 @@ function Perfil() {
 
                                 </div>
 
-                                {/* SEGURANÇA */}
+
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
+
                                         <i className="ph-fill ph-lock-key"></i>
+
                                         Segurança
+
                                     </h2>
+
 
                                     <div className="settings-group">
 
@@ -1110,6 +1658,7 @@ function Perfil() {
 
                                         </div>
 
+
                                         <div className="settings-item">
 
                                             <div className="settings-item-info">
@@ -1129,6 +1678,7 @@ function Perfil() {
                                             </button>
 
                                         </div>
+
 
                                         <div className="settings-item">
 
@@ -1154,13 +1704,17 @@ function Perfil() {
 
                                 </div>
 
-                                {/* PREFERÊNCIAS */}
+
                                 <div className="settings-section card-bg">
 
                                     <h2 className="section-title">
+
                                         <i className="ph-fill ph-gear"></i>
+
                                         Preferências
+
                                     </h2>
+
 
                                     <div className="settings-group">
 
@@ -1184,6 +1738,7 @@ function Perfil() {
 
                                         </div>
 
+
                                         <div className="settings-item">
 
                                             <div className="settings-item-info">
@@ -1203,6 +1758,7 @@ function Perfil() {
                                             </button>
 
                                         </div>
+
 
                                         <div className="settings-item">
 
@@ -1229,6 +1785,7 @@ function Perfil() {
                                 </div>
 
                             </div>
+
                         )}
 
                     </div>
@@ -1236,8 +1793,11 @@ function Perfil() {
                 </div>
 
             </main>
+
         </>
+
     );
+
 }
 
 export default Perfil;

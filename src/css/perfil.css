@@ -992,3 +992,73 @@ body {
     height: 100%;
     object-fit: contain;
 }
+.minha-lista-section {
+    margin-top: 40px;
+}
+
+.minha-lista-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.obra-card {
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    border: 1px solid #e5e5e5;
+}
+
+.obra-card:hover {
+    transform: translateY(-4px);
+}
+
+.obra-card-imagem {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+}
+
+.obra-card-imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.obra-card-info {
+    padding: 12px;
+}
+
+.obra-card-info h3 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.obra-card-info span {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #777;
+}
+
+.sem-obras {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.sem-obras i {
+    font-size: 40px;
+    color: #999;
+}
+
+.sem-obras h3 {
+    margin: 10px 0 5px;
+}
+
+.sem-obras p {
+    color: #777;
+}
