@@ -762,7 +762,7 @@ function Perfil() {
                                     )}
 
                                     {/* PUBLICAÇÕES */}
-                                        </h3>
+                                        
 
                                         {carregandoPosts ? (
                                             <p className="mensagem-post">
@@ -825,7 +825,7 @@ function Perfil() {
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                
                             </>
                         )}
 
