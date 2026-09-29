@@ -26,7 +26,15 @@ function Leitura() {
         if (!tituloParaSalvar || tituloParaSalvar === "Carregando...") return;
 
         const tituloLimpo = decodeURIComponent(tituloParaSalvar);
-        const historicoAtual = JSON.parse(localStorage.getItem('manga_historico') || '[]');
+
+        // 1. Pega o identificador exato do utilizador logado no localStorage
+        const usuarioId = localStorage.getItem('usuario_id') || localStorage.getItem('usuario_email') || 'convidado';
+
+        // 2. Cria a mesma chave personalizada por utilizador
+        const chaveHistorico = `manga_historico_${usuarioId}`;
+
+        // 3. Lê o histórico específico deste utilizador
+        const historicoAtual = JSON.parse(localStorage.getItem(chaveHistorico) || '[]');
 
         const index = historicoAtual.findIndex(item => item.obra_titulo?.toLowerCase() === tituloLimpo.toLowerCase());
 
@@ -44,9 +52,9 @@ function Leitura() {
             historicoAtual.push(dadosObraHistorico);
         }
 
-        localStorage.setItem('manga_historico', JSON.stringify(historicoAtual));
+        // 4. Salva de volta usando a chave dinâmica do utilizador
+        localStorage.setItem(chaveHistorico, JSON.stringify(historicoAtual));
     }
-
 
     // 1. Carrega os dados da obra e os capítulos
     useEffect(() => {
