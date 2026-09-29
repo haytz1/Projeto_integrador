@@ -11,8 +11,14 @@ function Historico() {
         function carregarHistoricoLocal() {
             setLoading(true);
             try {
-                // Lê o histórico guardado no localStorage (ex: chave 'manga_historico')
-                const dadosSalvos = localStorage.getItem('manga_historico');
+                // 1. Pega o identificador exato do utilizador logado no localStorage
+                const usuarioId = localStorage.getItem('usuario_id') || localStorage.getItem('usuario_email') || 'convidado';
+
+                // 2. Cria uma chave única por utilizador (ex: 'manga_historico_1')
+                const chaveHistorico = `manga_historico_${usuarioId}`;
+
+                // 3. Lê o histórico específico desta conta
+                const dadosSalvos = localStorage.getItem(chaveHistorico);
 
                 if (dadosSalvos) {
                     const listaParseada = JSON.parse(dadosSalvos);
@@ -78,25 +84,32 @@ function Historico() {
                     ) : historico.length === 0 ? (
                         <p style={{ color: '#fff', textAlign: 'center' }}>Nenhuma história encontrada no seu histórico.</p>
                     ) : (
-                        historico.map((item, index) => (
-                            <article className="item-historico" key={item.id || index}>
-                                <div className="item-esquerda">
-                                    <div className="capa capa-1" style={item.capa_url ? { backgroundImage: `url(${item.capa_url})`, backgroundSize: 'cover' } : {}}>
-                                        {!item.capa_url && (item.obra_titulo ? item.obra_titulo.charAt(0).toUpperCase() : 'M')}
+                        historico.map((item, index) => {
+                            const numeroCapa = (index % 20) + 1;
+
+                            return (
+                                <article className="item-historico" key={item.id || index}>
+                                    <div className="item-esquerda">
+                                        <div
+                                            className={`capa capa-${numeroCapa}`}
+                                            style={item.capa_url ? { backgroundImage: `url(${item.capa_url})`, backgroundSize: 'cover' } : {}}
+                                        >
+                                            {!item.capa_url && (item.obra_titulo ? item.obra_titulo.charAt(0).toUpperCase() : 'M')}
+                                        </div>
+                                        <div className="informacoes">
+                                            <h2>{item.obra_titulo || 'Obra sem título'}</h2>
+                                            <p>Último capítulo: {item.ultimo_capitulo || 1}</p>
+                                        </div>
                                     </div>
-                                    <div className="informacoes">
-                                        <h2>{item.obra_titulo || 'Obra sem título'}</h2>
-                                        <p>Último capítulo: {item.ultimo_capitulo || 1}</p>
+                                    <div className={`status ${getStatusClass(item.status)}`}>
+                                        {(item.status === 'Concluído' || item.status === 'concluido') && (
+                                            <span className="icone">✓ </span>
+                                        )}
+                                        {item.status}
                                     </div>
-                                </div>
-                                <div className={`status ${getStatusClass(item.status)}`}>
-                                    {(item.status === 'Concluído' || item.status === 'concluido') && (
-                                        <span className="icone">✓ </span>
-                                    )}
-                                    {item.status}
-                                </div>
-                            </article>
-                        ))
+                                </article>
+                            );
+                        })
                     )}
                 </section>
             </main>
