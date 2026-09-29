@@ -36,6 +36,9 @@ function PaginaInicial() {
     const [slideAtual, setSlideAtual] = useState(0);
     const [carregando, setCarregando] = useState(true);
     const [filtroAtivo, setFiltroAtivo] = useState('Todos');
+    const POSTS_POR_PAGINA = 6;
+    const [paginaAtual, setPaginaAtual] = useState(1);
+
 
     useEffect(() => {
         async function buscarDadosIniciais() {
@@ -262,7 +265,7 @@ function PaginaInicial() {
                 throw errorPostagem;
             }
 
-            
+
 
             if (!postagemCriada) {
                 throw new Error('A postagem não foi retornada pelo Supabase.');
@@ -506,7 +509,10 @@ function PaginaInicial() {
                                         id="filtro-select"
                                         className="filtro-select-moderno"
                                         value={filtroAtivo}
-                                        onChange={e => setFiltroAtivo(e.target.value)}
+                                        onChange={e => {
+                                            setFiltroAtivo(e.target.value);
+                                            setPaginaAtual(1);
+                                        }}
                                     >
                                         <option value="Todos">Todos os Posts</option>
                                         <option value="Fantasia">Fantasia</option>
@@ -534,88 +540,173 @@ function PaginaInicial() {
                                 const postsFiltrados = filtroAtivo === 'Todos'
                                     ? posts
                                     : posts.filter(
-                                        p => (p.categoria || 'Geral').toLowerCase() === filtroAtivo.toLowerCase()
+                                        p =>
+                                            (p.categoria || 'Geral').toLowerCase() ===
+                                            filtroAtivo.toLowerCase()
                                     );
 
+                                const totalPaginas = Math.ceil(
+                                    postsFiltrados.length / POSTS_POR_PAGINA
+                                );
+
+                                const indiceInicial = (paginaAtual - 1) * POSTS_POR_PAGINA;
+                                const indiceFinal = indiceInicial + POSTS_POR_PAGINA;
+
+                                const postsDaPagina = postsFiltrados.slice(
+                                    indiceInicial,
+                                    indiceFinal
+                                );
+
                                 return postsFiltrados.length > 0 ? (
-                                    postsFiltrados.map(post => {
-                                        const imagemPost = post.imagem || IMAGEM_POST_PADRAO;
-                                        const fotoPerfil = post.usuarios?.foto || AVATAR_PADRAO;
-                                        const totalComentarios = post.comentarios?.[0]?.count || 0;
+                                    <>
+                                        {postsDaPagina.map(post => {
+                                            const imagemPost =
+                                                post.imagem || IMAGEM_POST_PADRAO;
 
-                                        return (
-                                            <article
-                                                className="post-card"
-                                                key={post.id}
-                                                onClick={() => abrirDetalhesPost(post)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <div
-                                                    className="post-image"
-                                                    style={{
-                                                        backgroundImage: `url(${imagemPost})`,
-                                                        backgroundSize: 'cover',
-                                                        backgroundPosition: 'center',
-                                                        backgroundColor: '#2a2a2a'
-                                                    }}
+                                            const fotoPerfil =
+                                                post.usuarios?.foto || AVATAR_PADRAO;
+
+                                            const totalComentarios =
+                                                post.comentarios?.[0]?.count || 0;
+
+                                            return (
+                                                <article
+                                                    className="post-card"
+                                                    key={post.id}
+                                                    onClick={() => abrirDetalhesPost(post)}
+                                                    style={{ cursor: 'pointer' }}
                                                 >
-                                                    <span className="post-tag">
-                                                        {post.categoria || 'GERAL'}
-                                                    </span>
-                                                </div>
+                                                    <div
+                                                        className="post-image"
+                                                        style={{
+                                                            backgroundImage: `url(${imagemPost})`,
+                                                            backgroundSize: 'cover',
+                                                            backgroundPosition: 'center',
+                                                            backgroundColor: '#2a2a2a'
+                                                        }}
+                                                    >
+                                                        <span className="post-tag">
+                                                            {post.categoria || 'GERAL'}
+                                                        </span>
+                                                    </div>
 
-                                                <div className="post-body">
-                                                    <h3 className="post-title">{post.titulo}</h3>
+                                                    <div className="post-body">
+                                                        <h3 className="post-title">
+                                                            {post.titulo}
+                                                        </h3>
 
-                                                    <div className="post-author">
-                                                        <div
-                                                            className="author-avatar"
+                                                        <div className="post-author">
+                                                            <div
+                                                                className="author-avatar"
+                                                                style={{
+                                                                    backgroundImage: `url(${fotoPerfil})`,
+                                                                    backgroundSize: 'cover',
+                                                                    backgroundPosition: 'center'
+                                                                }}
+                                                            ></div>
+
+                                                            <div className="author-info">
+                                                                <Link
+                                                                    to={`/Perfil/${post.usuarios?.id}`}
+                                                                    className="author-name"
+                                                                    onClick={e =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                >
+                                                                    @{post.usuarios?.username || 'Usuário'}
+                                                                </Link>
+
+                                                                <span className="author-time">
+                                                                    {formatarData(post.criado_em)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <p
                                                             style={{
-                                                                backgroundImage: `url(${fotoPerfil})`,
-                                                                backgroundSize: 'cover',
-                                                                backgroundPosition: 'center'
+                                                                color: '#aaa',
+                                                                fontSize: '0.85rem',
+                                                                marginTop: '8px'
                                                             }}
-                                                        ></div>
+                                                        >
+                                                            {post.conteudo?.length > 80
+                                                                ? post.conteudo.substring(0, 80) + '...'
+                                                                : post.conteudo}
+                                                        </p>
 
-                                                        <div className="author-info">
-                                                            <Link 
-                                                                to={`/Perfil/${post.usuarios?.id}`}
-                                                                className="author-name"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                @{post.usuarios?.username || 'Usuário'}
-                                                            </Link>
+                                                        <div className="post-stats">
+                                                            <span className="stat">
+                                                                <i className="ph-fill ph-heart stat-heart"></i>
+                                                                0
+                                                            </span>
 
-                                                            <span className="author-time">
-                                                                {formatarData(post.criado_em)}
+                                                            <span className="stat">
+                                                                <i className="ph ph-chat-circle"></i>
+                                                                {totalComentarios}
                                                             </span>
                                                         </div>
                                                     </div>
+                                                </article>
+                                            );
+                                        })}
 
-                                                    <p style={{ color: '#aaa', fontSize: '0.85rem', marginTop: '8px' }}>
-                                                        {post.conteudo?.length > 80
-                                                            ? post.conteudo.substring(0, 80) + '...'
-                                                            : post.conteudo}
-                                                    </p>
+                                        {totalPaginas > 1 && (
+                                            <div className="paginacao-posts">
+                                                <button
+                                                    className="btn-paginacao"
+                                                    onClick={() =>
+                                                        setPaginaAtual(prev =>
+                                                            Math.max(prev - 1, 1)
+                                                        )
+                                                    }
+                                                    disabled={paginaAtual === 1}
+                                                >
+                                                    <i className="ph ph-caret-left"></i>
+                                                    Anterior
+                                                </button>
 
-                                                    <div className="post-stats">
-                                                        <span className="stat">
-                                                            <i className="ph-fill ph-heart stat-heart"></i>
-                                                            0
-                                                        </span>
-
-                                                        <span className="stat">
-                                                            <i className="ph ph-chat-circle"></i>
-                                                            {totalComentarios}
-                                                        </span>
-                                                    </div>
+                                                <div className="paginas-numeros">
+                                                    {Array.from(
+                                                        { length: totalPaginas },
+                                                        (_, index) => index + 1
+                                                    ).map(numero => (
+                                                        <button
+                                                            key={numero}
+                                                            className={`numero-pagina ${paginaAtual === numero
+                                                                    ? 'pagina-ativa'
+                                                                    : ''
+                                                                }`}
+                                                            onClick={() =>
+                                                                setPaginaAtual(numero)
+                                                            }
+                                                        >
+                                                            {numero}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </article>
-                                        );
-                                    })
+
+                                                <button
+                                                    className="btn-paginacao"
+                                                    onClick={() =>
+                                                        setPaginaAtual(prev =>
+                                                            Math.min(
+                                                                prev + 1,
+                                                                totalPaginas
+                                                            )
+                                                        )
+                                                    }
+                                                    disabled={paginaAtual === totalPaginas}
+                                                >
+                                                    Próxima
+                                                    <i className="ph ph-caret-right"></i>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <p className="filtro-vazio">
-                                        Nenhuma postagem encontrada para <strong>"{filtroAtivo}"</strong>.
+                                        Nenhuma postagem encontrada para{' '}
+                                        <strong>"{filtroAtivo}"</strong>.
                                     </p>
                                 );
                             })()}
@@ -790,7 +881,7 @@ function PaginaInicial() {
                                 ></div>
 
                                 <div>
-                                    <Link 
+                                    <Link
                                         to={`/Perfil/${postSelecionado.usuarios?.id}`}
                                         className="instagram-modal-username"
                                         style={{ textDecoration: 'none' }}
@@ -842,7 +933,7 @@ function PaginaInicial() {
 
                                                 <div className="instagram-comment-bubble">
                                                     <div className="instagram-comment-header">
-                                                        <Link 
+                                                        <Link
                                                             to={`/Perfil/${comentario.usuarios?.id}`}
                                                             className="instagram-comment-user"
                                                             style={{ textDecoration: 'none' }}
