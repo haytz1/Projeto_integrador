@@ -11,7 +11,10 @@ import NavbarPesquisa from '../components/Navbar_pesquisa';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+    supabaseUrl,
+    supabaseKey
+);
 
 function Perfil() {
     const [userId, setUserId] = useState(null);
@@ -25,11 +28,12 @@ function Perfil() {
 
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
-    // Estados para os posts do usuário
     const [meusPosts, setMeusPosts] = useState([]);
     const [carregandoPosts, setCarregandoPosts] = useState(true);
 
-    // Estados para criar publicação
+    const [minhasObras, setMinhasObras] = useState([]);
+    const [carregandoObras, setCarregandoObras] = useState(true);
+
     const [novoTitulo, setNovoTitulo] = useState('');
     const [novoConteudo, setNovoConteudo] = useState('');
     const [novaImagem, setNovaImagem] = useState('');
@@ -38,6 +42,7 @@ function Perfil() {
     const [activeTab, setActiveTab] = useState('perfil');
 
     const navigate = useNavigate();
+
     const { id: routeId } = useParams();
 
     const isMeuPerfil =
@@ -46,15 +51,22 @@ function Perfil() {
     useEffect(() => {
         async function buscarDadosDoBanco() {
             try {
-                let query = supabase.from('usuarios').select('*');
+
+                let query = supabase
+                    .from('usuarios')
+                    .select('*');
 
                 if (routeId) {
+
                     query = query.eq('id', routeId);
+
                 } else {
                     const emailSalvo = localStorage.getItem('usuario_email');
 
                     if (!emailSalvo) {
+
                         navigate('/Login');
+
                         return;
                     }
 
@@ -78,7 +90,9 @@ function Perfil() {
                         setRegistro(
                             new Date(
                                 dadosUsuario.registro
-                            ).toLocaleDateString('pt-BR')
+                            ).toLocaleDateString(
+                                'pt-BR'
+                            )
                         );
                     }
 
@@ -93,10 +107,16 @@ function Perfil() {
                     } = await supabase
                         .from('postagens')
                         .select('*')
-                        .eq('id_usuario', idDoUsuario)
-                        .order('criado_em', {
-                            ascending: false
-                        });
+                        .eq(
+                            'id_usuario',
+                            idDoUsuario
+                        )
+                        .order(
+                            'criado_em',
+                            {
+                                ascending: false
+                            }
+                        );
 
                     if (erroPosts) {
                         throw erroPosts;
@@ -117,7 +137,6 @@ function Perfil() {
         buscarDadosDoBanco();
     }, [navigate, routeId]);
 
-    // Logout
     const handleLogout = () => {
         localStorage.removeItem('usuario_email');
         localStorage.removeItem('usuario_id');
@@ -146,15 +165,21 @@ function Perfil() {
                 error: uploadError
             } = await supabase.storage
                 .from('avatars_usuarios')
-                .upload(nomeDoArquivo, arquivo);
+                .upload(
+                    nomeDoArquivo,
+                    arquivo
+                );
 
             if (uploadError) {
                 throw uploadError;
             }
 
-            const { data: urlData } = supabase.storage
-                .from('avatars_usuarios')
-                .getPublicUrl(uploadData.path);
+            const { data: urlData } =
+                supabase.storage
+                    .from('avatars_usuarios')
+                    .getPublicUrl(
+                        uploadData.path
+                    );
 
             const linkDaFoto = urlData.publicUrl;
 
@@ -163,13 +188,18 @@ function Perfil() {
                 .update({
                     foto: linkDaFoto
                 })
-                .eq('id', userId);
+                .eq(
+                    'id',
+                    userId
+                );
 
             if (dbError) {
                 throw dbError;
             }
 
-            setFotoUrl(linkDaFoto);
+            setFotoUrl(
+                linkDaFoto
+            );
 
             alert('Foto de perfil atualizada com sucesso!');
         } catch (error) {
@@ -205,10 +235,17 @@ function Perfil() {
                 .from('postagens')
                 .insert([
                     {
-                        id_usuario: userId,
-                        titulo: novoTitulo,
-                        conteudo: novoConteudo,
-                        imagem: novaImagem || null
+                        id_usuario:
+                            userId,
+
+                        titulo:
+                            novoTitulo.trim(),
+
+                        conteudo:
+                            novoConteudo.trim(),
+
+                        imagem:
+                            linkImagem
                     }
                 ])
                 .select()
@@ -218,11 +255,12 @@ function Perfil() {
                 throw error;
             }
 
-            // Coloca a nova publicação no começo da lista
-            setMeusPosts((postsAtuais) => [
-                data,
-                ...postsAtuais
-            ]);
+            setMeusPosts(
+                (postsAtuais) => [
+                    data,
+                    ...postsAtuais
+                ]
+            );
 
             // Limpa o formulário
             setNovoTitulo('');
@@ -307,7 +345,8 @@ function Perfil() {
                                             <div
                                                 className="avatar-circle"
                                                 style={{
-                                                    overflow: 'hidden'
+                                                    overflow:
+                                                        'hidden'
                                                 }}
                                             >
                                                 {fotoUrl ? (
@@ -315,9 +354,14 @@ function Perfil() {
                                                         src={fotoUrl}
                                                         alt="Avatar"
                                                         style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover'
+                                                            width:
+                                                                '100%',
+
+                                                            height:
+                                                                '100%',
+
+                                                            objectFit:
+                                                                'cover'
                                                         }}
                                                     />
                                                 ) : (
@@ -484,7 +528,8 @@ function Perfil() {
                                             <i
                                                 className="ph-fill ph-heart pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
 
@@ -537,7 +582,8 @@ function Perfil() {
                                             <i
                                                 className="ph-fill ph-star pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
 
@@ -590,7 +636,8 @@ function Perfil() {
                                             <i
                                                 className="ph-fill ph-tag pref-icon"
                                                 style={{
-                                                    color: '#c084fc'
+                                                    color:
+                                                        '#c084fc'
                                                 }}
                                             ></i>
 
@@ -657,7 +704,6 @@ function Perfil() {
                                         Compartilhe suas opiniões e fale sobre
                                         seus animes favoritos.
                                     </p>
-
                                     {/* FORMULÁRIO */}
                                     {isMeuPerfil && (
                                         <div className="criar-post-card">
@@ -716,11 +762,6 @@ function Perfil() {
                                     )}
 
                                     {/* PUBLICAÇÕES */}
-                                    <div className="publicacoes-usuario">
-                                        <h3 className="subtitulo-publicacoes">
-                                            {isMeuPerfil
-                                                ? 'Minhas publicações'
-                                                : `Publicações de ${nome}`}
                                         </h3>
 
                                         {carregandoPosts ? (

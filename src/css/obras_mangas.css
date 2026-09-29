@@ -8,42 +8,49 @@
     background-color: #0d1117;
     color: #8b5cf6;
     min-height: 100vh;
-    padding-top: 50px; /* 👈 Espaço reservado para a Navbar não cobrir o topo */
+    padding-top: 80px;
+    /* 👈 Espaço reservado para a Navbar não cobrir o topo */
 }
 
 /* =====================
    BOTÕES DE NAVEGAÇÃO
    ===================== */
-.pagina-obras-mangas .btn-voltar,
-.pagina-obras-mangas .btn-historico-link {
+.pagina-obras-mangas .btn-voltar {
     display: inline-block;
-    position: fixed;
-    top: 16px;
+    position: static !important;
+    /* Fica no fluxo natural do cabeçalho fixo */
     color: #8b5cf6;
     text-decoration: none;
-    font-size: 1rem;
-    background-color: rgba(139, 92, 246, 0.1);
+    font-size: 0.9rem;
+    background-color: rgba(139, 92, 246, 0.15);
     border: 1px solid #8b5cf6;
-    padding: 6px 14px;
+    padding: 8px 14px;
     border-radius: 6px;
-    z-index: 100;
     transition: all 0.2s ease;
 }
 
-.pagina-obras-mangas .btn-voltar {
-    left: 320px;
-    top: 30px;
-}
-
 .pagina-obras-mangas .btn-historico-link {
-    left: 210px;
-    background-color: #c384ff;
-    border-color: #c384ff;
+    display: inline-block;
+    position: fixed !important;
+    top: 28px !important;
+    left: 210px !important;
     color: #15092e;
+    text-decoration: none;
+    font-size: 0.9rem;
+    background-color: #c384ff;
+    border: 1px solid #c384ff;
+    padding: 8px 14px;
+    border-radius: 6px;
     font-weight: 700;
+    z-index: 99999 !important;
+    transition: all 0.2s ease;
 }
 
-.pagina-obras-mangas .btn-voltar:hover,
+.pagina-obras-mangas .btn-voltar:hover {
+    background-color: #8b5cf6;
+    color: #0d1117;
+}
+
 .pagina-obras-mangas .btn-historico-link:hover {
     background-color: #8b5cf6;
     color: #0d1117;
@@ -55,20 +62,24 @@
    ===================== */
 .pagina-obras-mangas .cabecalho {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    /* Espaça os elementos nas pontas */
     align-items: center;
-    padding: 16px 24px;
+    padding: 12px 24px;
     background-color: #161b22;
     border-bottom: 1px solid #8b5cf6;
-    position: sticky;
+    position: fixed;
+    /* O cabeçalho inteiro fica fixo na janela */
     top: 0;
-    z-index: 50;
-    margin-top: 20px;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 9999;
 }
 
 .pagina-obras-mangas .icone-perfil {
     width: 20px;
-    align-items: center;   
+    align-items: center;
     display: inline-flex;
     gap: 2px;
     vertical-align: middle;
@@ -174,7 +185,7 @@
 
 .pagina-obras-mangas .filtro-generos input[type="checkbox"] {
     appearance: none;
-    width: 16px;                                                
+    width: 16px;
     height: 16px;
     margin: 0;
     flex-shrink: 0;
@@ -207,16 +218,20 @@
    ===================== */
 
 .pagina-obras-mangas .conteudo-principal {
-    display: block; /* Removemos o flex para dar liberdade total ao posicionamento fixo */
+    display: block;
+    /* Removemos o flex para dar liberdade total ao posicionamento fixo */
     padding: 24px;
     position: relative;
     min-height: 100vh;
 }
 
 .pagina-obras-mangas .painel-usuario {
-    position: fixed !important; /* Força absoluta contra qualquer herança de transform */
-    top: 90px !important;       /* Distância exata do topo da janela do navegador */
-    left: 20px !important;      /* Distância fixa na lateral esquerda */
+    position: fixed !important;
+    /* Força absoluta contra qualquer herança de transform */
+    top: 90px !important;
+    /* Distância exata do topo da janela do navegador */
+    left: 20px !important;
+    /* Distância fixa na lateral esquerda */
     width: 280px;
     height: calc(100vh - 110px);
     display: flex;
@@ -237,7 +252,8 @@
 }
 
 .pagina-obras-mangas .usuario-foto {
-    width: 120px;              /* 👈 Reduzido ligeiramente para poupar espaço vertical */
+    width: 120px;
+    /* 👈 Reduzido ligeiramente para poupar espaço vertical */
     height: 120px;
     aspect-ratio: 1 / 1;
     border-radius: 12px;
@@ -266,22 +282,27 @@
 .pagina-obras-mangas .obras-lidas {
     width: 100%;
     margin-top: 5px;
-    flex: 1;                   /* 👈 Faz a caixa ocupar o espaço disponível */
-    overflow-y: auto;          /* 👈 CRUCIAL: Adiciona barra de rolagem se a lista for grande */
-    padding-right: 4px;        /* Espaço para a scrollbar */
+    flex: 1;
+    /* 👈 Faz a caixa ocupar o espaço disponível */
+    overflow-y: auto;
+    /* 👈 CRUCIAL: Adiciona barra de rolagem se a lista for grande */
+    padding-right: 4px;
+    /* Espaço para a scrollbar */
 }
 
 /* Estilização suave para a barra de rolagem interna */
 .pagina-obras-mangas .obras-lidas::-webkit-scrollbar {
     width: 6px;
 }
+
 .pagina-obras-mangas .obras-lidas::-webkit-scrollbar-thumb {
     background-color: rgba(139, 92, 246, 0.3);
     border-radius: 4px;
 }
 
 .pagina-obras-mangas .obras-lidas-titulo {
-    font-size: 16px;            /* 👈 Ajustado para harmonizar com o painel */
+    font-size: 16px;
+    /* 👈 Ajustado para harmonizar com o painel */
     color: rgba(139, 92, 246, 0.7);
     margin: 0 0 10px;
     text-align: center;
@@ -327,7 +348,8 @@
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
     font-size: 15px;
-    margin-top: 15px;          /* 👈 Reduzido para não forçar o botão para fora da tela */
+    margin-top: 15px;
+    /* 👈 Reduzido para não forçar o botão para fora da tela */
     flex-shrink: 0;
 }
 
@@ -336,26 +358,26 @@
    ===================== */
 .pagina-obras-mangas .grade-obras {
     display: grid;
-    grid-template-columns: repeat(4, 260px);
-    gap: 20px;
+    /* Usa auto-fill flexível em vez de largura fixa estrita, permitindo cards maiores (mínimo de 240px) */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
     justify-content: center;
-    /* Deixa margem à esquerda para os cards não ficarem debaixo do painel fixo */
-    margin-left: 310px; 
+    margin-left: 310px;
     margin-right: 20px;
+    padding-bottom: 40px;
 }
 
 .pagina-obras-mangas .card {
     background-color: #161b22;
     border: 1px solid #8b5cf6;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding-bottom: 14px;
+    /* Removemos a altura fixa (height: 420px) para o card crescer de forma natural conforme o conteúdo */
+    min-height: 440px;
+    padding-bottom: 16px;
     transition: transform 0.2s, box-shadow 0.2s;
-    width: 260px;
-    height: 420px;
 }
 
 .pagina-obras-mangas .card:hover {
@@ -365,30 +387,40 @@
 
 .pagina-obras-mangas .card-imagem {
     width: 100%;
-    aspect-ratio: 3 / 4;
+    height: 250px;
+    /* Altura fixa ideal e elegante para capas */
     object-fit: cover;
+    /* Garante que a imagem preenche o espaço sem distorcer as proporções */
     display: block;
 }
 
 .pagina-obras-mangas .card-nome {
-    font-size: 0.95rem;
-    color: #8b5cf6;
+    font-size: 1rem;
+    color: #ffffff;
+    /* Passa para branco para dar mais destaque e legibilidade */
+    font-weight: bold;
     text-align: center;
-    margin: 10px 10px 4px;
+    margin: 12px 12px 6px;
 }
 
 .pagina-obras-mangas .card-autor {
-    font-size: 0.78rem;
-    color: rgba(139, 92, 246, 0.7);
+    font-size: 0.82rem;
+    color: rgba(139, 92, 246, 0.8);
     text-align: center;
-    padding: 0 8px;
+    padding: 0 10px;
+    flex-grow: 1;
+    /* Empurra o contador de capítulos sempre para a base do card */
 }
 
 .pagina-obras-mangas .card-capitulos {
-    font-size: 0.78rem;
-    color: rgba(139, 92, 246, 0.5);
-    text-align: center;
-    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #c384ff;
+    background-color: rgba(139, 92, 246, 0.12);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin: 10px auto 0 auto;
+    width: fit-content;
+    font-weight: 600;
 }
 
 /* =====================
@@ -525,10 +557,12 @@
     .pagina-obras-mangas .conteudo-principal {
         flex-direction: column;
     }
+
     .pagina-obras-mangas .painel-usuario {
         width: 100%;
         position: static;
     }
+
     .pagina-obras-mangas .grade-obras {
         grid-template-columns: repeat(2, 1fr);
         margin-left: 0;
