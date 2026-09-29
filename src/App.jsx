@@ -8,6 +8,7 @@ import Cadastro from './pages/Cadastro';
 import Moedas from './pages/Moedas';
 import Planos from './pages/Planos';
 import Perfil from './pages/Perfil';
+import Denuncias from './pages/Denuncias';
 
 function App() {
 
@@ -33,6 +34,7 @@ function App() {
                     <Route path="/Planos" element={<Planos />} />
                     <Route path="/Perfil" element={<Perfil />} />
                     <Route path="/Perfil/:id" element={<Perfil />} />
+                    <Route path='Denuncias' element={<Denuncias/>} />
                 </Routes>
             </BrowserRouter>
         </>
