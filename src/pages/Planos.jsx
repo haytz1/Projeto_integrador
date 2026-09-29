@@ -149,8 +149,8 @@ function Planos() {
                                     Sem anúncios em mangás
                                 </li>
 
-                                <li className="disabled">
-                                    <i className="ph ph-x-circle"></i>
+                                <li>
+                                    <i className="ph ph-check-circle"></i>
                                     Capítulos adiantados
                                 </li>
 
