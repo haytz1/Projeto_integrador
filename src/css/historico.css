@@ -1,191 +1,329 @@
 :root {
-            --bg-main: #15092e;
-            --bg-panel: #20113d;
-            --bg-panel-strong: #27164d;
-            --purple-button: #c384ff;
-            --purple-dark: #8f5fe6;
-            --text: #f5ebff;
-            --text-soft: #d4b9ff;
-            --green: #32d583;
-            --green-soft: rgba(50, 213, 131, 0.18);
-            --red: #ff6b6b;
-            --red-soft: rgba(255, 107, 107, 0.16);
-            --yellow: #f7c948;
-            --yellow-soft: rgba(247, 201, 72, 0.16);
-            --border: rgba(195, 132, 255, 0.35);
-            --shadow: 0 16px 32px rgba(10, 4, 20, 0.35);
-        }
+    --bg-main: #15092e;
+    --bg-panel: #20113d;
+    --bg-panel-strong: #27164d;
+    --purple-button: #c384ff;
+    --purple-dark: #8f5fe6;
+    --text: #f5ebff;
+    --text-soft: #d4b9ff;
+    --green: #32d583;
+    --green-soft: rgba(50, 213, 131, 0.18);
+    --red: #ff6b6b;
+    --red-soft: rgba(255, 107, 107, 0.16);
+    --yellow: #f7c948;
+    --yellow-soft: rgba(247, 201, 72, 0.16);
+    --border: rgba(195, 132, 255, 0.35);
+    --shadow: 0 16px 32px rgba(10, 4, 20, 0.35);
+}
 
-        * {
-            box-sizing: border-box;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(180deg, #15092e 0%, #1d1037 100%);
-            color: var(--text);
-            font-family: Arial, Helvetica, sans-serif;
-        }
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #15092e 0%, #1d1037 100%);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+}
 
-        .btn-voltar {
-            position: fixed;
-            top: 18px;
-            left: 18px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: rgba(195, 132, 255, 0.12);
-            color: var(--purple-button);
-            border: 1px solid var(--border);
-            text-decoration: none;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
+.btn-voltar {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(195, 132, 255, 0.12);
+    color: var(--purple-button);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    transition: all 0.25s ease;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+}
 
-        .btn-voltar:hover {
-            background: var(--purple-button);
-            color: var(--bg-main);
-            transform: translateY(-1px);
-        }
+.btn-voltar:hover {
+    background: var(--purple-button);
+    color: var(--bg-main);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(195, 132, 255, 0.3);
+}
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 96px 20px 48px;
-        }
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 96px 20px 48px;
+}
 
-        .cabecalho-historico {
-            text-align: center;
-            margin-bottom: 32px;
-        }
+.cabecalho-historico {
+    text-align: center;
+    margin-bottom: 36px;
+}
 
-        .cabecalho-historico h1 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            margin: 0 0 10px;
-            color: var(--text);
-        }
+.cabecalho-historico h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin: 0 0 10px;
+    color: var(--text);
+    text-shadow: 0 2px 10px rgba(195, 132, 255, 0.2);
+}
 
-        .cabecalho-historico p {
-            color: var(--text-soft);
-            font-size: 1.1rem;
-            margin: 0;
-        }
+.cabecalho-historico p {
+    color: var(--text-soft);
+    font-size: 1.1rem;
+    margin: 0;
+}
 
-        .lista-historico {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
+.lista-historico {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
 
-        .item-historico {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 18px 22px;
-            box-shadow: var(--shadow);
-        }
+/* Card Individual Dinâmico e Modernizado */
+.item-historico {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    background: linear-gradient(135deg, rgba(32, 17, 61, 0.8), rgba(21, 9, 46, 0.9));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px 22px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
 
-        .item-esquerda {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            min-width: 0;
-        }
+/* Efeito de brilho lateral sutil ao passar o rato */
+.item-historico::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(to bottom, var(--purple-dark), var(--purple-button));
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
 
-        .capa {
-            width: 76px;
-            height: 96px;
-            border-radius: 14px;
-            border: 1px solid rgba(195, 132, 255, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text);
-            background: linear-gradient(135deg, rgba(195, 132, 255, 0.25), rgba(83, 32, 122, 0.7));
-            flex-shrink: 0;
-        }
+.item-historico:hover {
+    transform: translateY(-3px);
+    border-color: var(--purple-button);
+    box-shadow: 0 12px 30px rgba(143, 95, 230, 0.25);
+    background: linear-gradient(135deg, rgba(39, 22, 77, 0.9), rgba(25, 11, 56, 0.95));
+}
 
-        .capa-1 { background: linear-gradient(135deg, #8f5fe6, #2f1a52); }
-        .capa-2 { background: linear-gradient(135deg, #c384ff, #552d85); }
-        .capa-3 { background: linear-gradient(135deg, #ef7bff, #3e1d66); }
-        .capa-4 { background: linear-gradient(135deg, #9a7cff, #2e204f); }
-        .capa-5 { background: linear-gradient(135deg, #fe9b78, #6f2d5d); }
+.item-historico:hover::before {
+    opacity: 1;
+}
 
-        .informacoes h2 {
-            margin: 0 0 6px;
-            font-size: clamp(1.1rem, 2vw, 1.5rem);
-            color: var(--text);
-        }
+.item-esquerda {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+}
 
-        .informacoes p {
-            margin: 0;
-            color: var(--text-soft);
-            font-size: 0.95rem;
-        }
+.capa {
+    width: 76px;
+    height: 96px;
+    border-radius: 14px;
+    border: 1px solid rgba(195, 132, 255, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
 
-        .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 150px;
-            justify-content: center;
-            padding: 10px 14px;
-            border-radius: 999px;
-            font-weight: 700;
-            border: 1px solid transparent;
-            white-space: nowrap;
-        }
+.item-historico:hover .capa {
+    transform: scale(1.03);
+}
 
-        .status-concluido {
-            background: var(--green-soft);
-            border-color: rgba(50, 213, 131, 0.5);
-            color: var(--green);
-        }
+/* Cores totalmente distintas e vibrantes para cada capa */
+.capa-1 {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: rgba(2, 132, 199, 0.7);
+}
 
-        .status-concluido .icone {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--green);
-            color: #0f172a;
-            font-size: 0.8rem;
-            font-weight: 900;
-        }
+.capa-2 {
+    background: linear-gradient(135deg, #ea580c, #c2410c);
+    border-color: rgba(234, 88, 12, 0.7);
+}
 
-        .status-andamento {
-            background: rgba(195, 132, 255, 0.12);
-            border-color: rgba(195, 132, 255, 0.45);
-            color: var(--purple-button);
-        }
+.capa-3 {
+    background: linear-gradient(135deg, #059669, #047857);
+    border-color: rgba(5, 150, 105, 0.7);
+}
 
-        .status-abandonado {
-            background: var(--red-soft);
-            border-color: rgba(255, 107, 107, 0.5);
-            color: var(--red);
-        }
+.capa-4 {
+    background: linear-gradient(135deg, #db2777, #9d174d);
+    border-color: rgba(219, 39, 119, 0.7);
+}
 
-        @media (max-width: 720px) {
-            .item-historico {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+.capa-5 {
+    background: linear-gradient(135deg, #7c3aed, #4c1d95);
+    border-color: rgba(124, 58, 237, 0.7);
+}
 
-            .status {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+.capa-6 {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    border-color: rgba(217, 119, 6, 0.7);
+}
+
+.capa-7 {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    border-color: rgba(13, 148, 136, 0.7);
+}
+
+.capa-8 {
+    background: linear-gradient(135deg, #4f46e5, #3730a3);
+    border-color: rgba(79, 70, 229, 0.7);
+}
+
+.capa-9 {
+    background: linear-gradient(135deg, #e11d48, #9f1239);
+    border-color: rgba(225, 29, 72, 0.7);
+}
+
+.capa-10 {
+    background: linear-gradient(135deg, #65a30d, #4d7c0f);
+    border-color: rgba(101, 163, 13, 0.7);
+}
+
+.capa-11 {
+    background: linear-gradient(135deg, #9333ea, #581c87);
+    border-color: rgba(147, 51, 234, 0.7);
+}
+
+.capa-12 {
+    background: linear-gradient(135deg, #0284c7, #1e40af);
+    border-color: rgba(2, 132, 199, 0.7);
+}
+
+.capa-13 {
+    background: linear-gradient(135deg, #ca8a04, #854d0e);
+    border-color: rgba(202, 138, 4, 0.7);
+}
+
+.capa-14 {
+    background: linear-gradient(135deg, #0891b2, #155e75);
+    border-color: rgba(8, 145, 178, 0.7);
+}
+
+.capa-15 {
+    background: linear-gradient(135deg, #be185d, #831843);
+    border-color: rgba(190, 24, 93, 0.7);
+}
+
+.capa-16 {
+    background: linear-gradient(135deg, #16a34a, #14532d);
+    border-color: rgba(22, 163, 74, 0.7);
+}
+
+.capa-17 {
+    background: linear-gradient(135deg, #c2410c, #7c2d12);
+    border-color: rgba(194, 65, 12, 0.7);
+}
+
+.capa-18 {
+    background: linear-gradient(135deg, #6d28d9, #3b0764);
+    border-color: rgba(109, 40, 217, 0.7);
+}
+
+.capa-19 {
+    background: linear-gradient(135deg, #4338ca, #312e81);
+    border-color: rgba(67, 56, 202, 0.7);
+}
+
+.capa-20 {
+    background: linear-gradient(135deg, #475569, #1e293b);
+    border-color: rgba(71, 85, 105, 0.7);
+}
+
+.informacoes h2 {
+    margin: 0 0 6px;
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    color: var(--text);
+    font-weight: 700;
+}
+
+.informacoes p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 150px;
+    justify-content: center;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.status:hover {
+    transform: scale(1.02);
+}
+
+.status-concluido {
+    background: var(--green-soft);
+    border-color: rgba(50, 213, 131, 0.5);
+    color: var(--green);
+}
+
+.status-concluido .icone {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--green);
+    color: #0f172a;
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.status-andamento {
+    background: rgba(195, 132, 255, 0.12);
+    border-color: rgba(195, 132, 255, 0.45);
+    color: var(--purple-button);
+}
+
+.status-abandonado {
+    background: var(--red-soft);
+    border-color: rgba(255, 107, 107, 0.5);
+    color: var(--red);
+}
+
+@media (max-width: 720px) {
+    .item-historico {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .status {
+        width: 100%;
+        justify-content: center;
+    }
+}

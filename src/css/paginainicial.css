@@ -1460,6 +1460,102 @@ img { max-width: 100%; display: block; }
     cursor: pointer;
     padding: 0 8px;
 }
+.instagram-modal-actions{
+    position:fixed
+    ;top:20px
+    ;right:20px
+    ;display:flex
+    ;align-items:center;
+    gap:10px;z-index:1002
+}
+.instagram-modal-more,
+.instagram-modal-close{
+    width:42px;
+    height:42px;
+    border:none;
+    border-radius:50%;
+    background:rgba(30,30,30,.9);
+    color:#fff;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s ease
+}
+.instagram-modal-more{
+    font-size:22px
+}
+.instagram-modal-close{
+    font-size:28px
+}
+.instagram-modal-more:hover,
+.instagram-modal-close:hover{
+    background:#7c3aed;
+    transform:scale(1.05)
+}
+.post-options-menu{
+    position:absolute;
+    top:50px;
+    right:52px;
+    width:220px;
+    background:#1c1c22;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    padding:6px;
+    box-shadow:0 15px 40px rgba(0,0,0,.5)
+}
+.post-option{
+    width:100%;
+    border:none;
+    background:transparent;
+    color:#eee;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border-radius:8px;
+    font-size:14px;
+    text-align:left;
+    cursor:pointer
+}
+.post-option:hover{
+    background:rgba(168,85,247,.15)
+}
+.post-option i{
+    font-size:18px;
+    color:#c084fc
+}
+.post-option-danger{
+    color:#f87171
+}
+.post-option-danger i{
+    color:#f87171
+}
+.post-option-danger:hover{
+    background:rgba(239,68,68,.12)
+}
+.meu-post-card{
+    position:relative
+}
+.meu-post-menu-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:50%;
+    background:rgba(20,20,25,.85);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:2
+}
+.meu-post-menu-btn:hover{
+    background:#7c3aed
+}
 
 /* ==========================================================================
    Filtros de Posts
@@ -1904,4 +2000,56 @@ img { max-width: 100%; display: block; }
         opacity: 1;
         transform: translateY(0) scale(1); 
     }
+}
+
+.paginacao-posts {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 25px;
+    padding: 20px 0;
+}
+
+.paginas-numeros {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-paginacao,
+.numero-pagina {
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: #1c1c1f;
+    color: #fff;
+    border-radius: 8px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-paginacao {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.btn-paginacao:hover:not(:disabled),
+.numero-pagina:hover {
+    background: #a855f7;
+    border-color: #a855f7;
+}
+
+.numero-pagina.pagina-ativa {
+    background: #a855f7;
+    border-color: #a855f7;
+    color: white;
+    font-weight: 700;
+}
+
+.btn-paginacao:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }

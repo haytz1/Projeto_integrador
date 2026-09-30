@@ -5,6 +5,39 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { supabase } from '/supabase';
 
+// Subcomponente de Card otimizado com fallback visual de segurança
+function CardObra({ obra }) {
+    // Usa diretamente a capa salva no Supabase (obra.capa_url)
+    const [erroImagem, setErroImagem] = useState(false);
+
+    return (
+        <Link
+            to={`/Leitura/${encodeURIComponent(obra.titulo)}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+            <article className="card">
+                <div className="card-imagem-container">
+                    <img
+                        src={!erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`}
+                        alt={`Capa de ${obra.titulo}`}
+                        className="card-imagem"
+                        onError={() => setErroImagem(true)}
+                    />
+                </div>
+                <div className="card-info">
+                    <h2 className="card-nome">{obra.titulo}</h2>
+                    <p className="card-autor">
+                        {obra.sinopse ? `${obra.sinopse.substring(0, 45)}...` : 'Sem sinopse'}
+                    </p>
+                    <p className="card-capitulos">
+                        Capítulos: {obra.capitulos ? obra.capitulos.length : 0}
+                    </p>
+                </div>
+            </article>
+        </Link>
+    );
+}
+
 function ObrasMangas() {
     const [obras, setObras] = useState([]);
     const [historicoLidas, setHistoricoLidas] = useState([]);
@@ -19,29 +52,25 @@ function ObrasMangas() {
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
     const [salvando, setSalvando] = useState(false);
 
-    // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase se houver email
+    // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase
     useEffect(() => {
         async function verificarSessaoUsuario() {
             const id = localStorage.getItem('usuario_id');
             const email = localStorage.getItem('usuario_email');
-            const nome = localStorage.getItem('usuario_nome');
+            const usernameSalvo = localStorage.getItem('username');
 
             if (email || id) {
-                setUsuarioLogado({ id, email, nome });
+                setUsuarioLogado({ id, email, nome: usernameSalvo });
 
-                // Opcional: busca a foto do perfil na tabela 'usuarios' do Supabase
                 if (email) {
                     const { data } = await supabase
                         .from('usuarios')
-                        .select('foto, nome')
+                        .select('foto')
                         .eq('email', email)
                         .single();
 
-                    if (data) {
-                        if (data.foto) setFotoPerfil(data.foto);
-                        if (data.nome) {
-                            setUsuarioLogado(prev => ({ ...prev, nome: data.nome }));
-                        }
+                    if (data && data.foto) {
+                        setFotoPerfil(data.foto);
                     }
                 }
             }
@@ -50,7 +79,7 @@ function ObrasMangas() {
         verificarSessaoUsuario();
     }, []);
 
-    // 2. Busca todas as obras e a contagem de capítulos relacionados
+    // 2. Busca todas as obras diretamente do Supabase
     async function procurar_todas_obras() {
         const { data, error } = await supabase
             .from("obras")
@@ -64,14 +93,27 @@ function ObrasMangas() {
         if (error) {
             console.error("Erro ao carregar obras:", error.message);
         } else {
-            setObras(data || []);
+            // Remove duplicatas usando o título
+            const obrasUnicas = Array.from(
+                new Map((data || []).map(obra => [obra.titulo, obra])).values()
+            );
+
+            setObras(obrasUnicas);
         }
     }
 
-    // 3. Carrega o histórico de leituras diretamente do localStorage (mesma fonte da aba Historico)
+    // 3. Carrega o histórico de leituras diretamente do localStorage
     function procurar_historico_local() {
         try {
-            const dadosSalvos = localStorage.getItem('manga_historico');
+            const usuarioId = localStorage.getItem('usuario_id');
+
+            const chaveEspecifica = usuarioId ? `manga_historico_${usuarioId}` : null;
+            let dadosSalvos = chaveEspecifica ? localStorage.getItem(chaveEspecifica) : null;
+
+            if (!dadosSalvos) {
+                dadosSalvos = localStorage.getItem('manga_historico');
+            }
+
             if (dadosSalvos) {
                 const listaParseada = JSON.parse(dadosSalvos);
                 setHistoricoLidas(listaParseada);
@@ -138,6 +180,16 @@ function ObrasMangas() {
         }
 
         loadData();
+
+        window.addEventListener('focus', procurar_historico_local);
+        window.addEventListener('storage', procurar_historico_local);
+        window.addEventListener('historicoAtualizado', procurar_historico_local);
+
+        return () => {
+            window.removeEventListener('focus', procurar_historico_local);
+            window.removeEventListener('storage', procurar_historico_local);
+            window.removeEventListener('historicoAtualizado', procurar_historico_local);
+        };
     }, []);
 
     return (
@@ -145,10 +197,14 @@ function ObrasMangas() {
             <NavbarPesquisa />
 
             <div className="pagina-obras-mangas">
-                <header className="cabecalho">
-                    <div className="barra-pesquisa-wrapper">
+                {/* Cabeçalho Fixo Superior Limpo */}
+                <header className="cabecalho-obras">
+                    <div className="acoes-esquerda">
+                        <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
+                    </div>
+
+                    <div className="acoes-direita">
                         <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
-                        <span className="resultado-pesquisa" id="resultado-pesquisa"></span>
 
                         <button
                             type="button"
@@ -165,11 +221,8 @@ function ObrasMangas() {
                             ➕ Nova Obra
                         </button>
 
-                        <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
-
                         <details className="filtro-container">
                             <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
-
                             <div className="filtro-generos">
                                 <label><input type="checkbox" name="genero" value="acao" /> Ação</label>
                                 <label><input type="checkbox" name="genero" value="aventura" /> Aventura</label>
@@ -184,43 +237,9 @@ function ObrasMangas() {
                     </div>
                 </header>
 
-                <main className="conteudo-principal">
-
-                    <section className="grade-obras">
-                        {loading ? (
-                            <p style={{ color: '#fff' }}>Carregando obras...</p>
-                        ) : obras.length === 0 ? (
-                            <p style={{ color: '#fff' }}>Nenhuma obra cadastrada.</p>
-                        ) : (
-                            obras.map(i => (
-                                <Link
-                                    to={`/Leitura/${encodeURIComponent(i.titulo)}`}
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
-                                    key={i.id || i.titulo}
-                                >
-                                    <article className="card">
-                                        <img
-                                            src={i.capa_url || `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(i.titulo)}`}
-                                            alt={`Capa de ${i.titulo}`}
-                                            className="card-imagem"
-                                        />
-                                        <h2 className="card-nome">{i.titulo}</h2>
-
-                                        <p className="card-autor">
-                                            {i.sinopse ? `${i.sinopse.substring(0, 30)}...` : 'Sem sinopse'}
-                                        </p>
-
-                                        <p className="card-capitulos">
-                                            Capítulos: {i.capitulos ? i.capitulos.length : 0}
-                                        </p>
-                                    </article>
-                                </Link>
-                            ))
-                        )}
-                    </section>
-
+                <div className="layout-dashboard">
+                    {/* Painel Lateral Fixo */}
                     <aside className="painel-usuario">
-
                         <div className="cabecalho-perfil">
                             <img className="icone-perfil" src="/person.png" alt="Perfil" />
                             <span> PERFIL</span>
@@ -228,29 +247,26 @@ function ObrasMangas() {
 
                         <div className="usuario-foto">
                             {fotoPerfil ? (
-                                <img src={fotoPerfil} alt="Foto do usuário" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={fotoPerfil} alt="Foto do usuário" />
                             ) : (
-                                <img src="https://placehold.co/200x200/15092E/C384FF" alt="Foto padrão" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src="https://placehold.co/200x200/15092E/C384FF" alt="Foto padrão" />
                             )}
                         </div>
 
-                        {/* Exibe o nome correto do utilizador logado */}
                         <h2 className="usuario-nome">
                             {usuarioLogado ? (usuarioLogado.nome || usuarioLogado.email?.split('@')[0]) : 'Visitante'}
                         </h2>
 
                         <div className="obras-lidas">
                             <h3 className="obras-lidas-titulo">📚 Obras lidas:</h3>
-
                             <ul>
                                 {historicoLidas.length === 0 ? (
                                     <li>
                                         <span className="obra-titulo">Nenhuma leitura salva</span>
                                     </li>
                                 ) : (
-                                    // Exibe de forma resumida as últimas leituras gravadas no localStorage
-                                    historicoLidas.slice(0, 4).map((item, index) => (
-                                        <li key={item.id_obra || index} style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                                    historicoLidas.slice(0, 6).map((item, index) => (
+                                        <li key={`hist-${index}`}>
                                             <span className="obra-titulo" style={{ fontWeight: 'bold' }}>{item.obra_titulo}</span>
                                             <span className="obra-caps" style={{ fontSize: '0.75rem', opacity: 0.8 }}>Cap. {item.ultimo_capitulo} - {item.status}</span>
                                         </li>
@@ -260,10 +276,23 @@ function ObrasMangas() {
                         </div>
 
                         <Link to="/Historico" className="btn-historico">Ver Histórico</Link>
-
                     </aside>
 
-                </main>
+                    {/* Grade de Cards das Obras */}
+                    <main className="conteudo-principal">
+                        <section className="grade-obras">
+                            {loading ? (
+                                <p style={{ color: '#fff' }}>Carregando obras...</p>
+                            ) : obras.length === 0 ? (
+                                <p style={{ color: '#fff' }}>Nenhuma obra cadastrada.</p>
+                            ) : (
+                                obras.map((i, index) => (
+                                    <CardObra key={`obra-card-${index}`} obra={i} />
+                                ))
+                            )}
+                        </section>
+                    </main>
+                </div>
 
                 {/* Modal de Cadastro de Nova Obra */}
                 {modalAberto && (
