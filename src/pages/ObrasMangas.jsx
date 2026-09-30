@@ -61,6 +61,9 @@ function ObrasMangas() {
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
     const [salvando, setSalvando] = useState(false);
 
+    // Estado para os gêneros selecionados
+    const [generosSelecionados, setGenerosSelecionados] = useState([]);
+
     // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase
     useEffect(() => {
         async function verificarSessaoUsuario() {
@@ -93,20 +96,16 @@ function ObrasMangas() {
         const { data, error } = await supabase
             .from("obras")
             .select(`
-            id,
-            titulo,
-            sinopse,
-            capa_url,
-            capitulos (
-                id
-            )
-        `);
+                *,
+                capitulos (
+                    id
+                )
+            `)
+            .order('titulo', { ascending: true }); // <--- Adicionado para ordenar alfabeticamente
 
         if (error) {
             console.error("Erro ao carregar obras:", error.message);
         } else {
-            //console.log("Dados vindos do Supabase:", data); // Olhe no F12 do navegador se a capa_url aparece aqui!
-
             const obrasUnicas = Array.from(
                 new Map((data || []).map(obra => [obra.titulo, obra])).values()
             );
@@ -217,11 +216,11 @@ function ObrasMangas() {
                     </div>
 
                     <div className="acoes-direita">
-                        <input 
-                            type="text" 
-                            id="pesquisa" 
-                            className="barra-pesquisa" 
-                            placeholder="Pesquisar obras..." 
+                        <input
+                            type="text"
+                            id="pesquisa"
+                            className="barra-pesquisa"
+                            placeholder="Pesquisar obras..."
                             value={termoPesquisa}
                             onChange={(e) => setTermoPesquisa(e.target.value)}
                         />
@@ -244,14 +243,36 @@ function ObrasMangas() {
                         <details className="filtro-container">
                             <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
                             <div className="filtro-generos">
-                                <label><input type="checkbox" name="genero" value="acao" /> Ação</label>
-                                <label><input type="checkbox" name="genero" value="aventura" /> Aventura</label>
-                                <label><input type="checkbox" name="genero" value="romance" /> Romance</label>
-                                <label><input type="checkbox" name="genero" value="fantasia" /> Fantasia</label>
-                                <label><input type="checkbox" name="genero" value="comedia" /> Comédia</label>
-                                <label><input type="checkbox" name="genero" value="drama" /> Drama</label>
-                                <label><input type="checkbox" name="genero" value="terror" /> Terror</label>
-                                <label><input type="checkbox" name="genero" value="ficcao" /> Ficção Científica</label>
+                                {['acao', 'aventura', 'comedia', 'drama', 'esporte', 'fantasia', 'ficcao', 'misterio', 'romance', 'sobrenatural', 'terror'].map((gen, idx) => {
+                                    const labels = {
+                                        'acao': 'Ação', 'aventura': 'Aventura', 'comedia': 'Comédia',
+                                        'drama': 'Drama', 'esporte': 'Esporte', 'fantasia': 'Fantasia',
+                                        'ficcao': 'Ficção Científica', 'misterio': 'Mistério',
+                                        'romance': 'Romance', 'sobrenatural': 'Sobrenatural', 'terror': 'Terror'
+                                    };
+                                    return (
+                                        <label
+                                            key={idx}
+                                            className={`genero-pill ${generosSelecionados.includes(gen) ? 'ativo' : ''}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                name="genero"
+                                                value={gen}
+                                                checked={generosSelecionados.includes(gen)}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (e.target.checked) {
+                                                        setGenerosSelecionados([...generosSelecionados, value]);
+                                                    } else {
+                                                        setGenerosSelecionados(generosSelecionados.filter(g => g !== value));
+                                                    }
+                                                }}
+                                            />
+                                            {labels[gen]}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </details>
                     </div>
@@ -308,6 +329,33 @@ function ObrasMangas() {
                             ) : (
                                 obras
                                     .filter(obra => obra.titulo.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                                    .filter(obra => {
+                                        if (generosSelecionados.length === 0) return true;
+
+                                        if (!obra.genero_principal) return false;
+
+                                        const labelsMap = {
+                                            'acao': 'Ação', 'aventura': 'Aventura', 'comedia': 'Comédia',
+                                            'drama': 'Drama', 'esporte': 'Esporte', 'fantasia': 'Fantasia',
+                                            'ficcao': 'Ficção Científica', 'misterio': 'Mistério',
+                                            'romance': 'Romance', 'sobrenatural': 'Sobrenatural', 'terror': 'Terror'
+                                        };
+
+                                        let principalGenero = obra.genero_principal.trim().toLowerCase();
+
+                                        // Força "Dr Stone" para Ficção Científica
+                                        const tituloLower = obra.titulo.toLowerCase();
+                                        if (tituloLower.includes("dr stone") || tituloLower.includes("dr. stone")) {
+                                            principalGenero = "ficção científica";
+                                        }
+
+                                        const principalNormalizado = principalGenero.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                                        return generosSelecionados.some(g => {
+                                            const gNorm = labelsMap[g] ? labelsMap[g].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : g.toLowerCase();
+                                            return principalNormalizado === gNorm || principalGenero.includes(gNorm);
+                                        });
+                                    })
                                     .map((i, index) => (
                                         <CardObra key={`obra-card-${index}`} obra={i} />
                                     ))

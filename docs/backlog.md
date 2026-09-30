@@ -1,6 +1,12 @@
 
 # Funcionalidades e Correções Implementadas (Recente)
 
+## ObrasMangas.jsx
+- Adicionado sistema de filtros por "Gêneros".
+- Ao selecionar um ou mais gêneros nos checkboxes do topo, a grade de obras exibe apenas os itens correspondentes.
+- A lógica de filtragem utiliza apenas o **gênero principal** (primeiro subgênero) caso a obra tenha múltiplos gêneros cadastrados no banco de dados.
+- O select da API do Supabase foi alterado para buscar todos os campos (`*`), garantindo que a coluna de gêneros seja retornada.
+
 ## App.jsx
 - Correção de rotas duplicadas (`/Leitura` estava declarado 4 vezes em vez de 2).
 - Correção de sintaxe na rota `/Denuncias` (adicionada a `/` no caminho inicial).
