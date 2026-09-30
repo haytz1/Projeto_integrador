@@ -7,8 +7,13 @@ import { supabase } from '/supabase';
 
 // Subcomponente de Card otimizado com fallback visual de segurança
 function CardObra({ obra }) {
-    // Usa diretamente a capa salva no Supabase (obra.capa_url)
     const [erroImagem, setErroImagem] = useState(false);
+
+    // Descomente a linha abaixo para inspecionar no F12 se a capa_url está chegando
+    //console.log(`Obra: ${obra.titulo} | Capa: ${obra.capa_url}`);
+
+    // Se obra.capa_url existir e não deu erro, usa ela. Senão, usa o placehold.co
+    const imagemSrc = !erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`;
 
     return (
         <Link
@@ -18,16 +23,19 @@ function CardObra({ obra }) {
             <article className="card">
                 <div className="card-imagem-container">
                     <img
-                        src={!erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`}
+                        src={imagemSrc}
                         alt={`Capa de ${obra.titulo}`}
                         className="card-imagem"
-                        onError={() => setErroImagem(true)}
+                        onError={() => {
+                            console.error(`Erro ao carregar a imagem da obra: ${obra.titulo} | URL tentada: ${obra.capa_url}`);
+                            setErroImagem(true);
+                        }}
                     />
                 </div>
                 <div className="card-info">
                     <h2 className="card-nome">{obra.titulo}</h2>
                     <p className="card-autor">
-                        {obra.sinopse ? `${obra.sinopse.substring(0, 45)}...` : 'Sem sinopse'}
+                        {obra.sinopse ? `${obra.sinopse.substring(0, 100)}...` : 'Sem sinopse'}
                     </p>
                     <p className="card-capitulos">
                         Capítulos: {obra.capitulos ? obra.capitulos.length : 0}
@@ -44,6 +52,7 @@ function ObrasMangas() {
     const [loading, setLoading] = useState(true);
     const [usuarioLogado, setUsuarioLogado] = useState(null);
     const [fotoPerfil, setFotoPerfil] = useState('');
+    const [termoPesquisa, setTermoPesquisa] = useState('');
 
     // Estados para o Modal de Inserção de Obra
     const [modalAberto, setModalAberto] = useState(false);
@@ -84,16 +93,20 @@ function ObrasMangas() {
         const { data, error } = await supabase
             .from("obras")
             .select(`
-                *,
-                capitulos (
-                    id
-                )
-            `);
+            id,
+            titulo,
+            sinopse,
+            capa_url,
+            capitulos (
+                id
+            )
+        `);
 
         if (error) {
             console.error("Erro ao carregar obras:", error.message);
         } else {
-            // Remove duplicatas usando o título
+            //console.log("Dados vindos do Supabase:", data); // Olhe no F12 do navegador se a capa_url aparece aqui!
+
             const obrasUnicas = Array.from(
                 new Map((data || []).map(obra => [obra.titulo, obra])).values()
             );
@@ -204,7 +217,14 @@ function ObrasMangas() {
                     </div>
 
                     <div className="acoes-direita">
-                        <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
+                        <input 
+                            type="text" 
+                            id="pesquisa" 
+                            className="barra-pesquisa" 
+                            placeholder="Pesquisar obras..." 
+                            value={termoPesquisa}
+                            onChange={(e) => setTermoPesquisa(e.target.value)}
+                        />
 
                         <button
                             type="button"
@@ -286,9 +306,11 @@ function ObrasMangas() {
                             ) : obras.length === 0 ? (
                                 <p style={{ color: '#fff' }}>Nenhuma obra cadastrada.</p>
                             ) : (
-                                obras.map((i, index) => (
-                                    <CardObra key={`obra-card-${index}`} obra={i} />
-                                ))
+                                obras
+                                    .filter(obra => obra.titulo.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                                    .map((i, index) => (
+                                        <CardObra key={`obra-card-${index}`} obra={i} />
+                                    ))
                             )}
                         </section>
                     </main>

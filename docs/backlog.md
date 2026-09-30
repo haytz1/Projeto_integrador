@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 
 # Funcionalidades e Correções Implementadas (Recente)
 
@@ -34,3 +35,13 @@
 - Rota: `/Favoritos`
 - Página placeholder que exibe mensagem "Você ainda não adicionou nenhum favorito" com ícone e CTA.
 - Usa o mesmo padrão de layout de `Seguindo.jsx`.
+=======
+# Backlog
+
+## Modificações Realizadas
+
+### ObrasMangas.jsx - Pesquisa de Obras
+- Adicionado estado `termoPesquisa` (`useState`) para armazenar o que o usuário digita na barra de pesquisa.
+- Vinculado o campo de input de pesquisa (`<input id="pesquisa">`) ao estado, utilizando as propriedades `value` e `onChange`.
+- Implementado um filtro em tempo real (`.filter()`) que converte tanto os títulos das obras quanto a pesquisa para letras minúsculas (case-insensitive) antes de renderizar os cards com `.map()`.
+>>>>>>> Stashed changes
