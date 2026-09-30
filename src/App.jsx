@@ -18,6 +18,7 @@ function App() {
         <>
             <BrowserRouter>
                 <Routes>
+                    
                     <Route path="/" element={<PaginaInicial />} />
                     <Route path="/ObrasMangas" element={<ObrasMangas />} />
 
