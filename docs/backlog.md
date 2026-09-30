@@ -1,6 +1,11 @@
 
 # Funcionalidades e Correções Implementadas (Recente)
 
+## Leitura.jsx e Favoritos.jsx (Sistema de Favoritos)
+- Criado o botão "Favoritar" na tela de leitura de uma obra (`Leitura.jsx`), ao lado do título.
+- A função de favoritar verifica se o usuário está logado, insere ou remove a relação na tabela `favoritos` do Supabase e altera a interface (coração cheio ou vazio) imediatamente.
+- A página `Favoritos.jsx` foi remodelada para buscar diretamente no banco de dados todas as obras que o usuário logado favoritou, apresentando-as com a mesma grade visual de obras (`CardObra`).
+
 ## ObrasMangas.jsx
 - Adicionado sistema de filtros por "Gêneros".
 - Ao selecionar um ou mais gêneros nos checkboxes do topo, a grade de obras exibe apenas os itens correspondentes.
