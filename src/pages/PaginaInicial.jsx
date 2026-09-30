@@ -52,6 +52,10 @@ function PaginaInicial() {
     const [imagemEdicao, setImagemEdicao] = useState(null);
     const [usuariosBloqueados, setUsuariosBloqueados] = useState([]);
 
+    const [modalDenunciaAberto, setModalDenunciaAberto] = useState(false);
+    const [alvoDenuncia, setAlvoDenuncia] = useState(null);
+    const [motivoDenuncia, setMotivoDenuncia] = useState("");
+
     const POSTS_POR_PAGINA = 6;
 
     const usuarioLogadoId = localStorage.getItem("usuario_id");
@@ -652,107 +656,78 @@ function PaginaInicial() {
             return;
         }
 
-        const motivo = window.prompt(
-            "Por que você deseja denunciar esta postagem?\n\n" +
-            "Exemplos: conteúdo ofensivo, spam, conteúdo impróprio, assédio, outro.",
-        );
-
-        if (motivo === null) {
-            return;
-        }
-
-        const motivoFinal = motivo.trim() || "Não informado";
-
-        try {
-            const { error } = await supabase.from("denuncias").insert({
-                id_usuario: Number(usuarioId),
-
-                id_postagem: Number(post.id),
-
-                motivo: motivoFinal,
-            });
-
-            if (error) {
-                if (error.code === "23505") {
-                    alert("Você já denunciou esta postagem.");
-
-                    return;
-                }
-
-                throw error;
-            }
-
-            alert(
-                "Denúncia enviada com sucesso. Obrigado por ajudar a manter a comunidade segura.",
-            );
-        } catch (error) {
-            console.error("Erro ao denunciar postagem:", error);
-
-            alert(error.message || "Não foi possível registrar a denúncia.");
-        }
+        setAlvoDenuncia({ tipo: 'post', item: post });
+        setMotivoDenuncia("");
+        setModalDenunciaAberto(true);
     };
 
     const denunciarComentario = async (e, comentario) => {
-    e.stopPropagation();
+        e.stopPropagation();
 
-    const usuarioId = localStorage.getItem("usuario_id");
+        const usuarioId = localStorage.getItem("usuario_id");
 
-    if (!usuarioId) {
-        alert("Você precisa estar logado para denunciar um comentário.");
-        return;
-    }
-
-    if (!comentario?.id) {
-        alert("Não foi possível identificar o comentário.");
-        return;
-    }
-
-    if (
-        comentario.usuarios?.id &&
-        Number(comentario.usuarios.id) === Number(usuarioId)
-    ) {
-        alert("Você não pode denunciar seu próprio comentário.");
-        return;
-    }
-
-    const motivo = window.prompt(
-        "Por que você deseja denunciar este comentário?\n\n" +
-            "Exemplos: conteúdo ofensivo, spam, conteúdo impróprio, assédio, outro.",
-    );
-
-    if (motivo === null) {
-        return;
-    }
-
-    const motivoFinal = motivo.trim() || "Não informado";
-
-    try {
-        const { error } = await supabase.from("denuncias").insert({
-            id_usuario: Number(usuarioId),
-            id_postagem: null,
-            id_comentario: Number(comentario.id),
-            motivo: motivoFinal,
-        });
-
-        if (error) {
-            if (error.code === "23505") {
-                alert("Você já denunciou este comentário.");
-                return;
-            }
-
-            throw error;
+        if (!usuarioId) {
+            alert("Você precisa estar logado para denunciar um comentário.");
+            return;
         }
 
-        alert("Comentário denunciado com sucesso.");
-    } catch (error) {
-        console.error("Erro ao denunciar comentário:", error);
+        if (!comentario?.id) {
+            alert("Não foi possível identificar o comentário.");
+            return;
+        }
 
-        alert(
-            error.message ||
-                "Não foi possível registrar a denúncia.",
-        );
-    }
-};
+        if (
+            comentario.usuarios?.id &&
+            Number(comentario.usuarios.id) === Number(usuarioId)
+        ) {
+            alert("Você não pode denunciar seu próprio comentário.");
+            return;
+        }
+
+        setAlvoDenuncia({ tipo: 'comentario', item: comentario });
+        setMotivoDenuncia("");
+        setModalDenunciaAberto(true);
+    };
+
+    const confirmarDenuncia = async (e) => {
+        e.preventDefault();
+        
+        const usuarioId = localStorage.getItem("usuario_id");
+        if (!usuarioId || !alvoDenuncia) return;
+
+        const motivoFinal = motivoDenuncia.trim() || "Não informado";
+
+        try {
+            const payload = {
+                id_usuario: Number(usuarioId),
+                motivo: motivoFinal
+            };
+
+            if (alvoDenuncia.tipo === 'post') {
+                payload.id_postagem = Number(alvoDenuncia.item.id);
+            } else if (alvoDenuncia.tipo === 'comentario') {
+                payload.id_comentario = Number(alvoDenuncia.item.id);
+            }
+
+            const { error } = await supabase.from("denuncias").insert(payload);
+
+            if (error) {
+                if (error.code === "23505") {
+                    alert("Você já enviou esta denúncia.");
+                    return;
+                }
+                throw error;
+            }
+
+            alert("Denúncia enviada com sucesso. Obrigado!");
+            setModalDenunciaAberto(false);
+            setAlvoDenuncia(null);
+            setMotivoDenuncia("");
+        } catch (error) {
+            console.error("Erro ao denunciar:", error);
+            alert(error.message || "Não foi possível registrar a denúncia.");
+        }
+    };
 
 
 
@@ -1095,25 +1070,27 @@ function PaginaInicial() {
                         <a
                             href="#"
                             className="sidebar-link active"
-                            onClick={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
                         >
                             <i className="ph-fill ph-house"></i>
                             <span>Para você</span>
                         </a>
 
-                        <a
-                            href="#"
-                            className="sidebar-link"
-                            onClick={(e) => e.preventDefault()}
-                        >
+                        <Link to="/Seguindo" className="sidebar-link">
                             <i className="ph ph-user-circle-plus"></i>
                             <span>Seguindo</span>
-                        </a>
+                        </Link>
 
                         <a
                             href="#"
                             className="sidebar-link"
-                            onClick={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById('posts-titulo')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
                         >
                             <i className="ph ph-compass"></i>
                             <span>Explorar</span>
@@ -1122,33 +1099,23 @@ function PaginaInicial() {
                         <a
                             href="#"
                             className="sidebar-link"
-                            onClick={(e) => e.preventDefault()}
-                        >
-                            <i className="ph ph-star"></i>
-                            <span>Novidades</span>
-                        </a>
-
-                        <a
-                            href="#"
-                            className="sidebar-link"
-                            onClick={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setModalEventosAberto(true);
+                            }}
                         >
                             <i className="ph ph-calendar"></i>
                             <span>Eventos</span>
                         </a>
 
-                        <a
-                            href="#"
-                            className="sidebar-link"
-                            onClick={(e) => e.preventDefault()}
-                        >
+                        <Link to="/Favoritos" className="sidebar-link">
                             <i className="ph ph-heart"></i>
                             <span>Favoritos</span>
-                        </a>
+                        </Link>
 
-                        <Link to="/Historico" className="sidebar-link">
-                            <i className="ph ph-clock-counter-clockwise"></i>
-                            <span>Histórico</span>
+                        <Link to="/ObrasMangas" className="sidebar-link">
+                            <i className="ph ph-book-open"></i>
+                            <span>Obras</span>
                         </Link>
                     </nav>
 
@@ -1195,8 +1162,8 @@ function PaginaInicial() {
                                     return (
                                         <div
                                             className={`hero-slide ${index === slideAtual
-                                                    ? "active"
-                                                    : ""
+                                                ? "active"
+                                                : ""
                                                 }`}
                                             key={post.id}
                                         >
@@ -1298,8 +1265,8 @@ function PaginaInicial() {
                                         <button
                                             key={idx}
                                             className={`hero-dot ${idx === slideAtual
-                                                    ? "active"
-                                                    : ""
+                                                ? "active"
+                                                : ""
                                                 }`}
                                             onClick={() => setSlideAtual(idx)}
                                             aria-label={`Ir para slide ${idx + 1
@@ -1597,9 +1564,9 @@ function PaginaInicial() {
                                                             <button
                                                                 key={numero}
                                                                 className={`numero-pagina ${paginaAtual ===
-                                                                        numero
-                                                                        ? "pagina-ativa"
-                                                                        : ""
+                                                                    numero
+                                                                    ? "pagina-ativa"
+                                                                    : ""
                                                                     }`}
                                                                 onClick={() =>
                                                                     setPaginaAtual(
@@ -2546,6 +2513,49 @@ function PaginaInicial() {
                     </div>
                 </div>
             )}
+            
+            {/* MODAL DE DENÚNCIA */}
+            {modalDenunciaAberto && (
+                <div className="eventos-modal-overlay" onClick={() => setModalDenunciaAberto(false)}>
+                    <div className="eventos-modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="eventos-modal-header">
+                            <h2 className="eventos-modal-title">Denunciar</h2>
+                            <button onClick={() => setModalDenunciaAberto(false)} className="eventos-modal-close">&times;</button>
+                        </div>
+                        <form onSubmit={confirmarDenuncia} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <p style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                                Por que você deseja denunciar este <strong>{alvoDenuncia?.tipo === 'post' ? 'post' : 'comentário'}</strong>?
+                            </p>
+                            <textarea
+                                value={motivoDenuncia}
+                                onChange={(e) => setMotivoDenuncia(e.target.value)}
+                                placeholder="Ex: Conteúdo ofensivo, spam, assédio, etc."
+                                required
+                                rows={4}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #333',
+                                    background: '#18181b',
+                                    color: '#fff',
+                                    resize: 'vertical',
+                                    fontFamily: "'Inter', sans-serif"
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button type="submit" style={{ flex: 1, padding: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                    Enviar Denúncia
+                                </button>
+                                <button type="button" onClick={() => setModalDenunciaAberto(false)} style={{ flex: 1, padding: '10px', background: '#27272a', color: '#fff', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <Rodape />
         </>
     );
