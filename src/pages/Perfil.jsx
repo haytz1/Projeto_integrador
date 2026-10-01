@@ -1108,9 +1108,7 @@ function Perfil() {
                                             {moedas} moedas
                                         </div>
 
-                                        <p className="plan-desc">
-                                            Você pode ter até 150 moedas.
-                                        </p>
+                                        
 
                                         <Link
                                             to="/Moedas"
