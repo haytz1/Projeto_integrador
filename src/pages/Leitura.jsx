@@ -13,6 +13,7 @@ function Leitura() {
     const [dadosObra, setDadosObra] = useState(null);
     const [listaCapitulos, setListaCapitulos] = useState([]);
     const [conteudoCapitulo, setConteudoCapitulo] = useState('');
+    const [isFavorito, setIsFavorito] = useState(false);
 
     // Estados para controlar o Modal de Novo Capítulo
     const [modalAberto, setModalAberto] = useState(false);
@@ -141,6 +142,50 @@ function Leitura() {
         carregarConteudo();
     }, [capituloAtual, dadosObra]);
 
+    useEffect(() => {
+        async function verificarFavorito() {
+            if (!dadosObra || !dadosObra.id) return;
+            const uId = localStorage.getItem('usuario_id');
+            if (!uId) return;
+
+            const { data } = await supabase
+                .from('favoritos')
+                .select('*')
+                .eq('usuario_id', uId)
+                .eq('obra_id', dadosObra.id)
+                .maybeSingle();
+
+            if (data) {
+                setIsFavorito(true);
+            } else {
+                setIsFavorito(false);
+            }
+        }
+        verificarFavorito();
+    }, [dadosObra]);
+
+    async function handleFavoritar() {
+        const uId = localStorage.getItem('usuario_id');
+        if (!uId) {
+            alert('Você precisa estar logado para favoritar uma obra.');
+            return;
+        }
+
+        if (isFavorito) {
+            const { error } = await supabase
+                .from('favoritos')
+                .delete()
+                .eq('usuario_id', uId)
+                .eq('obra_id', dadosObra.id);
+            if (!error) setIsFavorito(false);
+        } else {
+            const { error } = await supabase
+                .from('favoritos')
+                .insert([{ usuario_id: uId, obra_id: dadosObra.id }]);
+            if (!error) setIsFavorito(true);
+        }
+    }
+
     function handleCapituloChange(e) {
         setCapituloAtual(Number(e.target.value));
     }
@@ -257,7 +302,24 @@ function Leitura() {
             </div>
 
             <div className="header">
-                <h1>{obraTitulo}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <h1>{obraTitulo}</h1>
+                    {dadosObra && (
+                        <button 
+                            onClick={handleFavoritar} 
+                            style={{ 
+                                background: isFavorito ? 'linear-gradient(135deg, #c384ff, #8b5cf6)' : 'rgba(139, 92, 246, 0.1)', 
+                                border: '1px solid #c384ff', 
+                                color: isFavorito ? '#fff' : '#c384ff', 
+                                padding: '8px 16px', borderRadius: '20px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                fontWeight: 'bold', transition: 'all 0.2s'
+                            }}
+                        >
+                            {isFavorito ? '❤️ Favoritado' : '🤍 Favoritar'}
+                        </button>
+                    )}
+                </div>
                 <select
                     className="capitulos"
                     value={capituloAtual}

@@ -1,80 +1,413 @@
+/* =====================================================
+   PERFIL DO NAVBAR
+   ===================================================== */
+
+.nav-profile-dropdown {
+    position: relative !important;
+
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: auto !important;
+    height: 40px !important;
+
+    gap: 5px !important;
+}
+
+
+/* =====================================================
+   LINK DA FOTO
+   ===================================================== */
+
+.nav-profile-photo-link {
+    width: 40px !important;
+    height: 40px !important;
+
+    min-width: 40px !important;
+    min-height: 40px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex-shrink: 0 !important;
+
+    border-radius: 50% !important;
+    overflow: hidden !important;
+
+    text-decoration: none !important;
+
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   CÍRCULO DO AVATAR
+   ===================================================== */
+
+.nav-avatar-circle {
+    width: 40px !important;
+    height: 40px !important;
+
+    min-width: 40px !important;
+    min-height: 40px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex-shrink: 0 !important;
+
+    border-radius: 50% !important;
+    overflow: hidden !important;
+
+    background-color: #cccccc;
+
+    box-sizing: border-box;
+}
+
+
+/* =====================================================
+   IMAGEM DO PERFIL
+   ===================================================== */
+
+.nav-profile-img {
+    width: 100% !important;
+    height: 100% !important;
+
+    min-width: 100%;
+    min-height: 100%;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: block !important;
+
+    object-fit: cover !important;
+
+    border: none !important;
+    border-radius: 50% !important;
+}
+
+
+/* =====================================================
+   ÍCONE DE USUÁRIO SEM FOTO
+   ===================================================== */
+
+.nav-avatar-circle .ph-user {
+    font-size: 20px !important;
+
+    line-height: 1 !important;
+
+    color: #333333 !important;
+}
+
+
+/* =====================================================
+   EFEITO AO PASSAR NA FOTO
+   ===================================================== */
+
+.nav-profile-photo-link:hover .nav-avatar-circle {
+    transform: scale(1.04);
+
+    transition: transform 0.2s ease;
+}
+
+
+/* =====================================================
+   BOTÃO DA SETA
+   ===================================================== */
+
+.nav-profile-arrow {
+    width: 25px !important;
+    height: 40px !important;
+
+    min-width: 25px !important;
+    min-height: 40px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex-shrink: 0 !important;
+
+    background: transparent !important;
+
+    border: none !important;
+    outline: none !important;
+
+    box-shadow: none !important;
+
+    color: #a9a9b3 !important;
+
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   ÍCONE DA SETA
+   ===================================================== */
+
+.nav-profile-arrow i {
+    width: auto !important;
+    height: auto !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: block !important;
+
+    font-size: 14px !important;
+
+    line-height: 1 !important;
+
+    color: inherit !important;
+
+    transition:
+        transform 0.25s ease,
+        color 0.2s ease;
+}
+
+
+/* =====================================================
+   HOVER DA SETA
+   ===================================================== */
+
+.nav-profile-arrow:hover {
+    background: transparent !important;
+
+    color: #b86cff !important;
+}
+
+
+/* =====================================================
+   CLIQUE DA SETA
+   ===================================================== */
+
+.nav-profile-arrow:active {
+    background: transparent !important;
+
+    transform: scale(0.92);
+}
+
+
+/* =====================================================
+   SETA QUANDO O MENU ESTÁ ABERTO
+   ===================================================== */
+
+.nav-profile-arrow .arrow-open {
+    transform: rotate(180deg);
+}
+
+
+/* =====================================================
+   MENU SUSPENSO
+   ===================================================== */
+
+.profile-dropdown {
+    position: absolute !important;
+
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+
+    width: 190px !important;
+    height: auto !important;
+
+    min-width: 190px !important;
+
+    padding: 8px !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    gap: 3px !important;
+
+    box-sizing: border-box !important;
+
+    background: #100b18 !important;
+
+    border: 1px solid #6f2cff !important;
+    border-radius: 10px !important;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.55) !important;
+
+    z-index: 99999 !important;
+}
+
+
+/* =====================================================
+   ITENS DO MENU
+   ===================================================== */
+
+.profile-dropdown-item {
+    width: 100% !important;
+    min-height: 40px !important;
+
+    padding: 10px 12px !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    flex-direction: row !important;
+
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 10px !important;
+
+    box-sizing: border-box !important;
+
+    background: transparent !important;
+
+    border: none !important;
+    border-radius: 7px !important;
+
+    color: #dddddd !important;
+
+    font-family: inherit !important;
+    font-size: 14px !important;
+
+    line-height: normal !important;
+
+    text-align: left !important;
+    text-decoration: none !important;
+
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   ÍCONES DOS ITENS
+   ===================================================== */
+
+.profile-dropdown-item i {
+    width: 20px !important;
+    min-width: 20px !important;
+
+    height: auto !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    font-size: 17px !important;
+
+    line-height: 1 !important;
+
+    color: #a855f7 !important;
+}
+
+
+/* =====================================================
+   TEXTO DOS ITENS
+   ===================================================== */
+
+.profile-dropdown-item span {
+    display: block;
+
+    flex: 1;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   HOVER DOS ITENS
+   ===================================================== */
+
+.profile-dropdown-item:hover {
+    background: #241035 !important;
+
+    color: #c084fc !important;
+}
+
+
+.profile-dropdown-item:hover i {
+    color: #c084fc !important;
+}
+
+
+/* =====================================================
+   DIVISÓRIA
+   ===================================================== */
+
+.profile-dropdown-divider {
+    width: 100% !important;
+    height: 1px !important;
+
+    min-height: 1px !important;
+
+    padding: 0 !important;
+    margin: 5px 0 !important;
+
+    background: #30203d !important;
+
+    border: none !important;
+}
+
+
+/* =====================================================
+   BOTÃO SAIR
+   ===================================================== */
+
+.profile-logout {
+    font-family: inherit !important;
+}
+
+
+.profile-logout:hover {
+    color: #ff7070 !important;
+
+    background: #241035 !important;
+}
+
+
+.profile-logout:hover i {
+    color: #ff7070 !important;
+}
+
+
+/* =====================================================
+   GARANTIR QUE O NAV-RIGHT NÃO EMPILHE O PERFIL
+   ===================================================== */
+
+.nav-right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+
+/* =====================================================
+   GARANTIR QUE O NAVBAR NÃO QUEBRE O PERFIL
+   ===================================================== */
+
 .navbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      height: 64px;
-      background: rgba(10, 0, 16, 0.78);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 24px rgba(0,0,0,.5);
-    }
-    .nav-left { display: flex; align-items: center; gap: 0.6rem; }
-    .nav-logo-img {
-      height: 38px; width: 38px; object-fit: contain; border-radius: 10px;
-      filter: drop-shadow(0 0 8px rgba(168,85,247,.7));
-    }
-    .nav-logo-text {
-      font-size: 1.25rem; font-weight: 800;
-      background: linear-gradient(135deg, #e879f9, #a855f7 50%, #7c3aed);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      letter-spacing: 0.5px; text-decoration: none;
-    }
-    .nav-right { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-    .nav-login-link {
-      font-weight: 700; color: var(--purple-light); text-decoration: none;
-      padding: 0.45rem 1.1rem; border: 1.5px solid var(--border); border-radius: 10px;
-      transition: background .2s, border-color .2s, color .2s, box-shadow .2s;
-    }
-    .nav-login-link:hover {
-      background: rgba(123,47,247,.18); border-color: var(--purple-mid);
-      color: var(--purple-glow); box-shadow: 0 0 12px rgba(123,47,247,.3);
-    }
-    .nav-right {
+    position: relative;
+}
+
+
+/* =====================================================
+   BOTÕES DE LOGIN
+   ===================================================== */
+
+.nav-auth-buttons {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-shrink: 0;
-}
-
-.btn-entrar {
-    background: var(--purple);
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.875rem;
-    padding: 0.5rem 1.25rem;
-    border-radius: var(--radius-full);
-    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-}
-
-.btn-entrar:hover {
-    background: var(--purple-hover);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-glow);
-}
-
-.btn-criar-conta {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    color: var(--text-muted);
-    font-weight: 500;
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--border);
-    transition: color var(--transition), border-color var(--transition);
-}
-
-.btn-criar-conta:hover {
-    color: var(--text-main);
-    border-color: var(--border-hover);
-}
-
-.btn-criar-conta i {
-    font-size: 1rem;
+    gap: 10px;
 }

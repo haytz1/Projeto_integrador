@@ -83,6 +83,7 @@ function App() {
 
             <BrowserRouter>
                 <Routes>
+                    
                     <Route path="/" element={<PaginaInicial />} />
                     <Route path="/ObrasMangas" element={<ObrasMangas />} />
                     <Route path='/Leitura/:tituloObra' element={<Leitura />} />

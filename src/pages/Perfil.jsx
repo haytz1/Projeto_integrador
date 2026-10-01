@@ -572,110 +572,148 @@ function Perfil() {
                     throw error;
                 }
 
-                if (
-                    !biblioteca ||
-                    biblioteca.length === 0
-                ) {
+                // BUSCAR FAVORITOS (Obras do banco de dados)
+                const { data: favoritosDb, error: erroFav } = await supabase
+                    .from('favoritos')
+                    .select(`
+                        id,
+                        obras (
+                            id,
+                            titulo,
+                            sinopse,
+                            capa_url
+                        )
+                    `)
+                    .eq('usuario_id', userId)
+                    .order('created_at', { ascending: false });
 
-                    setMinhasObras([]);
-
-                    return;
+                let favoritosFormatados = [];
+                if (!erroFav && favoritosDb) {
+                    favoritosFormatados = favoritosDb
+                        .map(f => f.obras)
+                        .filter(o => o !== null)
+                        .map(obra => ({
+                            id: `fav_${obra.id}`,
+                            isFavorito: true,
+                            tituloOriginal: obra.titulo,
+                            title: {
+                                english: obra.titulo,
+                                romaji: obra.titulo,
+                                native: obra.titulo
+                            },
+                            coverImage: {
+                                large: obra.capa_url || `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`,
+                                extraLarge: obra.capa_url
+                            },
+                            startDate: {
+                                year: null
+                            }
+                        }));
                 }
 
-                const ids =
-                    biblioteca.map(
-                        (item) =>
-                            item.anime_id
-                    );
+                let obrasOrdenadas = [];
 
-                const query = `
-                    query ($ids: [Int]) {
-                        Page(
-                            page: 1,
-                            perPage: 50
-                        ) {
-                            media(
-                                id_in: $ids,
-                                type: ANIME
+                if (
+                    biblioteca &&
+                    biblioteca.length > 0
+                ) {
+
+                    const ids =
+                        biblioteca.map(
+                            (item) =>
+                                item.anime_id
+                        );
+
+                    const query = `
+                        query ($ids: [Int]) {
+                            Page(
+                                page: 1,
+                                perPage: 50
                             ) {
-                                id
-
-                                title {
-                                    romaji
-                                    english
-                                    native
-                                }
-
-                                coverImage {
-                                    large
-                                    extraLarge
-                                }
-
-                                startDate {
-                                    year
+                                media(
+                                    id_in: $ids,
+                                    type: ANIME
+                                ) {
+                                    id
+    
+                                    title {
+                                        romaji
+                                        english
+                                        native
+                                    }
+    
+                                    coverImage {
+                                        large
+                                        extraLarge
+                                    }
+    
+                                    startDate {
+                                        year
+                                    }
                                 }
                             }
                         }
+                    `;
+
+                    const resposta =
+                        await fetch(
+                            'https://graphql.anilist.co',
+                            {
+                                method: 'POST',
+
+                                headers: {
+                                    'Content-Type':
+                                        'application/json',
+
+                                    'Accept':
+                                        'application/json'
+                                },
+
+                                body: JSON.stringify({
+                                    query: query,
+
+                                    variables: {
+                                        ids: ids
+                                    }
+                                })
+                            }
+                        );
+
+                    const dados =
+                        await resposta.json();
+
+                    if (
+                        !resposta.ok ||
+                        !dados.data ||
+                        !dados.data.Page
+                    ) {
+
+                        throw new Error(
+                            'Não foi possível buscar as obras.'
+                        );
                     }
-                `;
 
-                const resposta =
-                    await fetch(
-                        'https://graphql.anilist.co',
-                        {
-                            method: 'POST',
+                    const obras =
+                        dados.data.Page.media ||
+                        [];
 
-                            headers: {
-                                'Content-Type':
-                                    'application/json',
-
-                                'Accept':
-                                    'application/json'
-                            },
-
-                            body: JSON.stringify({
-                                query: query,
-
-                                variables: {
-                                    ids: ids
-                                }
-                            })
-                        }
-                    );
-
-                const dados =
-                    await resposta.json();
-
-                if (
-                    !resposta.ok ||
-                    !dados.data ||
-                    !dados.data.Page
-                ) {
-
-                    throw new Error(
-                        'Não foi possível buscar as obras.'
-                    );
+                    obrasOrdenadas =
+                        ids
+                            .map(
+                                (animeId) =>
+                                    obras.find(
+                                        (obra) =>
+                                            obra.id ===
+                                            animeId
+                                    )
+                            )
+                            .filter(Boolean);
                 }
 
-                const obras =
-                    dados.data.Page.media ||
-                    [];
-
-                const obrasOrdenadas =
-                    ids
-                        .map(
-                            (animeId) =>
-                                obras.find(
-                                    (obra) =>
-                                        obra.id ===
-                                        animeId
-                                )
-                        )
-                        .filter(Boolean);
-
-                setMinhasObras(
-                    obrasOrdenadas
-                );
+                setMinhasObras([
+                    ...obrasOrdenadas,
+                    ...favoritosFormatados
+                ]);
 
             } catch (error) {
 
@@ -2306,11 +2344,13 @@ function Perfil() {
                                                                 obra.id
                                                             }
                                                             className="obra-card"
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    `/anime/${obra.id}`
-                                                                )
-                                                            }
+                                                            onClick={() => {
+                                                                if (obra.isFavorito) {
+                                                                    navigate(`/Leitura/${encodeURIComponent(obra.tituloOriginal)}`);
+                                                                } else {
+                                                                    navigate(`/anime/${obra.id}`);
+                                                                }
+                                                            }}
                                                         >
 
                                                             <div className="obra-card-imagem">
