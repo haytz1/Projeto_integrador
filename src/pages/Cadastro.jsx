@@ -56,7 +56,7 @@ function Cadastro() {
 
             if (foto) {
                 const fileExt = foto.name.split('.').pop();
-                const fileName = \`\${Math.random()}.\${fileExt}\`;
+                const fileName = `${Math.random()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage
                     .from('avatars_usuarios')
                     .upload(fileName, foto);
