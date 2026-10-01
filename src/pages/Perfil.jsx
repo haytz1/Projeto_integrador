@@ -32,6 +32,12 @@ function Perfil() {
 
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
+    const [totalSeguidores, setTotalSeguidores] = useState(0);
+    const [totalSeguindo, setTotalSeguindo] = useState(0);
+    const [seguindo, setSeguindo] = useState(false);
+    const [carregandoSeguir, setCarregandoSeguir] = useState(false);
+
+
     // =========================================
     // PUBLICAÇÕES
     // =========================================
@@ -393,6 +399,57 @@ function Perfil() {
 
         buscarMinhaLista();
     }, [userId]);
+
+    // =========================================
+    // SEGUIR / DEIXAR DE SEGUIR
+    // =========================================
+
+    const alternarSeguir = async () => {
+        const meuId = Number(localStorage.getItem('usuario_id'));
+
+        if (!meuId) {
+            alert('Você precisa estar logado para seguir alguém!');
+            return;
+        }
+
+        if (!userId || meuId === Number(userId) || carregandoSeguir) return;
+
+        setCarregandoSeguir(true);
+
+        try {
+            if (seguindo) {
+                const { error } = await supabase
+                    .from('seguidores')
+                    .delete()
+                    .eq('id_seguidor', meuId)
+                    .eq('id_seguido', userId);
+
+                if (error) throw error;
+
+                setSeguindo(false);
+                setTotalSeguidores((n) => Math.max(n - 1, 0));
+            } else {
+                const { error } = await supabase
+                    .from('seguidores')
+                    .insert({
+                        id_seguidor: meuId,
+                        id_seguido: Number(userId),
+                    });
+
+                // 23505 = já seguia, só sincroniza a tela
+                if (error && error.code !== '23505') throw error;
+
+                setSeguindo(true);
+
+                if (!error) setTotalSeguidores((n) => n + 1);
+            }
+        } catch (error) {
+            console.error('Erro ao seguir:', error);
+            alert('Não foi possível atualizar o seguimento.');
+        } finally {
+            setCarregandoSeguir(false);
+        }
+    };
 
     // =========================================
     // LOGOUT

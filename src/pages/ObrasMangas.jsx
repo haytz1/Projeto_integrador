@@ -7,8 +7,13 @@ import { supabase } from '/supabase';
 
 // Subcomponente de Card otimizado com fallback visual de segurança
 function CardObra({ obra }) {
-    // Usa diretamente a capa salva no Supabase (obra.capa_url)
     const [erroImagem, setErroImagem] = useState(false);
+
+    // Descomente a linha abaixo para inspecionar no F12 se a capa_url está chegando
+    //console.log(`Obra: ${obra.titulo} | Capa: ${obra.capa_url}`);
+
+    // Se obra.capa_url existir e não deu erro, usa ela. Senão, usa o placehold.co
+    const imagemSrc = !erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`;
 
     return (
         <Link
@@ -18,16 +23,19 @@ function CardObra({ obra }) {
             <article className="card">
                 <div className="card-imagem-container">
                     <img
-                        src={!erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`}
+                        src={imagemSrc}
                         alt={`Capa de ${obra.titulo}`}
                         className="card-imagem"
-                        onError={() => setErroImagem(true)}
+                        onError={() => {
+                            console.error(`Erro ao carregar a imagem da obra: ${obra.titulo} | URL tentada: ${obra.capa_url}`);
+                            setErroImagem(true);
+                        }}
                     />
                 </div>
                 <div className="card-info">
                     <h2 className="card-nome">{obra.titulo}</h2>
                     <p className="card-autor">
-                        {obra.sinopse ? `${obra.sinopse.substring(0, 45)}...` : 'Sem sinopse'}
+                        {obra.sinopse ? `${obra.sinopse.substring(0, 100)}...` : 'Sem sinopse'}
                     </p>
                     <p className="card-capitulos">
                         Capítulos: {obra.capitulos ? obra.capitulos.length : 0}
@@ -44,6 +52,7 @@ function ObrasMangas() {
     const [loading, setLoading] = useState(true);
     const [usuarioLogado, setUsuarioLogado] = useState(null);
     const [fotoPerfil, setFotoPerfil] = useState('');
+    const [termoPesquisa, setTermoPesquisa] = useState('');
 
     // Estados para o Modal de Inserção de Obra
     const [modalAberto, setModalAberto] = useState(false);
@@ -51,6 +60,9 @@ function ObrasMangas() {
     const [novaSinopse, setNovaSinopse] = useState('');
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
     const [salvando, setSalvando] = useState(false);
+
+    // Estado para os gêneros selecionados
+    const [generosSelecionados, setGenerosSelecionados] = useState([]);
 
     // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase
     useEffect(() => {
@@ -88,12 +100,12 @@ function ObrasMangas() {
                 capitulos (
                     id
                 )
-            `);
+            `)
+            .order('titulo', { ascending: true }); // <--- Adicionado para ordenar alfabeticamente
 
         if (error) {
             console.error("Erro ao carregar obras:", error.message);
         } else {
-            // Remove duplicatas usando o título
             const obrasUnicas = Array.from(
                 new Map((data || []).map(obra => [obra.titulo, obra])).values()
             );
@@ -204,7 +216,14 @@ function ObrasMangas() {
                     </div>
 
                     <div className="acoes-direita">
-                        <input type="text" id="pesquisa" className="barra-pesquisa" placeholder="Pesquisar obras..." />
+                        <input
+                            type="text"
+                            id="pesquisa"
+                            className="barra-pesquisa"
+                            placeholder="Pesquisar obras..."
+                            value={termoPesquisa}
+                            onChange={(e) => setTermoPesquisa(e.target.value)}
+                        />
 
                         <button
                             type="button"
@@ -224,14 +243,36 @@ function ObrasMangas() {
                         <details className="filtro-container">
                             <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
                             <div className="filtro-generos">
-                                <label><input type="checkbox" name="genero" value="acao" /> Ação</label>
-                                <label><input type="checkbox" name="genero" value="aventura" /> Aventura</label>
-                                <label><input type="checkbox" name="genero" value="romance" /> Romance</label>
-                                <label><input type="checkbox" name="genero" value="fantasia" /> Fantasia</label>
-                                <label><input type="checkbox" name="genero" value="comedia" /> Comédia</label>
-                                <label><input type="checkbox" name="genero" value="drama" /> Drama</label>
-                                <label><input type="checkbox" name="genero" value="terror" /> Terror</label>
-                                <label><input type="checkbox" name="genero" value="ficcao" /> Ficção Científica</label>
+                                {['acao', 'aventura', 'comedia', 'drama', 'esporte', 'fantasia', 'ficcao', 'misterio', 'romance', 'sobrenatural', 'terror'].map((gen, idx) => {
+                                    const labels = {
+                                        'acao': 'Ação', 'aventura': 'Aventura', 'comedia': 'Comédia',
+                                        'drama': 'Drama', 'esporte': 'Esporte', 'fantasia': 'Fantasia',
+                                        'ficcao': 'Ficção Científica', 'misterio': 'Mistério',
+                                        'romance': 'Romance', 'sobrenatural': 'Sobrenatural', 'terror': 'Terror'
+                                    };
+                                    return (
+                                        <label
+                                            key={idx}
+                                            className={`genero-pill ${generosSelecionados.includes(gen) ? 'ativo' : ''}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                name="genero"
+                                                value={gen}
+                                                checked={generosSelecionados.includes(gen)}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (e.target.checked) {
+                                                        setGenerosSelecionados([...generosSelecionados, value]);
+                                                    } else {
+                                                        setGenerosSelecionados(generosSelecionados.filter(g => g !== value));
+                                                    }
+                                                }}
+                                            />
+                                            {labels[gen]}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </details>
                     </div>
@@ -286,9 +327,38 @@ function ObrasMangas() {
                             ) : obras.length === 0 ? (
                                 <p style={{ color: '#fff' }}>Nenhuma obra cadastrada.</p>
                             ) : (
-                                obras.map((i, index) => (
-                                    <CardObra key={`obra-card-${index}`} obra={i} />
-                                ))
+                                obras
+                                    .filter(obra => obra.titulo.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                                    .filter(obra => {
+                                        if (generosSelecionados.length === 0) return true;
+
+                                        if (!obra.genero_principal) return false;
+
+                                        const labelsMap = {
+                                            'acao': 'Ação', 'aventura': 'Aventura', 'comedia': 'Comédia',
+                                            'drama': 'Drama', 'esporte': 'Esporte', 'fantasia': 'Fantasia',
+                                            'ficcao': 'Ficção Científica', 'misterio': 'Mistério',
+                                            'romance': 'Romance', 'sobrenatural': 'Sobrenatural', 'terror': 'Terror'
+                                        };
+
+                                        let principalGenero = obra.genero_principal.trim().toLowerCase();
+
+                                        // Força "Dr Stone" para Ficção Científica
+                                        const tituloLower = obra.titulo.toLowerCase();
+                                        if (tituloLower.includes("dr stone") || tituloLower.includes("dr. stone")) {
+                                            principalGenero = "ficção científica";
+                                        }
+
+                                        const principalNormalizado = principalGenero.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                                        return generosSelecionados.some(g => {
+                                            const gNorm = labelsMap[g] ? labelsMap[g].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : g.toLowerCase();
+                                            return principalNormalizado === gNorm || principalGenero.includes(gNorm);
+                                        });
+                                    })
+                                    .map((i, index) => (
+                                        <CardObra key={`obra-card-${index}`} obra={i} />
+                                    ))
                             )}
                         </section>
                     </main>
