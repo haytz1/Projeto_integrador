@@ -87,11 +87,6 @@ function Planos() {
 
                                 <li className="disabled">
                                     <i className="ph ph-x-circle"></i>
-                                    Sem anúncios
-                                </li>
-
-                                <li className="disabled">
-                                    <i className="ph ph-x-circle"></i>
                                     Capítulos adiantados
                                 </li>
 
@@ -144,10 +139,6 @@ function Planos() {
                                     Seguir autores favoritos
                                 </li>
 
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Sem anúncios em mangás
-                                </li>
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
