@@ -287,8 +287,7 @@ function ObrasMangas() {
                     {/* Painel Lateral Fixo */}
                     <aside className="painel-usuario">
                         <div className="cabecalho-perfil">
-                            <img className="icone-perfil" src="/person.png" alt="Perfil" />
-                            <span> PERFIL</span>
+                            <span style={{ marginLeft: '0' }}> PERFIL</span>
                         </div>
 
                         <div className="usuario-foto">
