@@ -12,10 +12,10 @@ export const supabase = createClient(
     supabaseKey,
     {
         auth: {
-            persistSession: false,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
-        }
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
     }
 );
 

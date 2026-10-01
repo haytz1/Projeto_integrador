@@ -71,26 +71,11 @@ function Perfil() {
     const [categoriaAberta, setCategoriaAberta] = useState(null);
     const [buscaPreferencia, setBuscaPreferencia] = useState('');
 
-    const [animesSelecionados, setAnimesSelecionados] = useState([
-        'Naruto',
-        'One Piece',
-        'Attack on Titan',
-        'Haikyuu'
-    ]);
+    const [animesSelecionados, setAnimesSelecionados] = useState([]);
 
-    const [generosSelecionados, setGenerosSelecionados] = useState([
-        'Ação',
-        'Aventura',
-        'Drama',
-        'Fantasia'
-    ]);
+    const [generosSelecionados, setGenerosSelecionados] = useState([]);
 
-    const [tagsSelecionadas, setTagsSelecionadas] = useState([
-        'Shounen',
-        'Seinen',
-        'Slice of Life',
-        'Comédia'
-    ]);
+    const [tagsSelecionadas, setTagsSelecionadas] = useState([]);
 
     const animesDisponiveis = [
         'Naruto',
@@ -188,352 +173,91 @@ function Perfil() {
 
             try {
 
-                let idUsuario;
-                let usuarioLogado = null;
-                let dadosUsuario = null;
+                const { data: { user: usuarioLogado }, error: erroAuth } =
+                    await supabase.auth.getUser();
 
-                // =========================================
-                // PERFIL DE OUTRA PESSOA
-                // =========================================
-
-                if (routeId) {
-
-                    idUsuario = routeId;
-
-                    // Quando é o perfil de outra pessoa, o ID da rota
-                    // continua sendo o ID da tabela usuarios.
-                    const {
-                        data: usuarioPorId,
-                        error: erroPorId
-                    } = await supabase
-                        .from('usuarios')
-                        .select('*')
-                        .eq('id', idUsuario)
-                        .maybeSingle();
-
-                    if (erroPorId) {
-                        throw erroPorId;
-                    }
-
-                    dadosUsuario = usuarioPorId;
-
-                } else {
-
-                    // =========================================
-                    // PEGAR USUÁRIO DO SUPABASE AUTH
-                    // =========================================
-
-                    const {
-                        data: sessionData,
-                        error: sessionError
-                    } = await supabase.auth.getSession();
-
-                    if (sessionError) {
-
-                        console.error(
-                            'Erro ao verificar sessão:',
-                            sessionError
-                        );
-
-                        navigate('/Login');
-
-                        return;
-                    }
-
-                    usuarioLogado =
-                        sessionData?.session?.user;
-
-                    if (!usuarioLogado) {
-
-                        console.log(
-                            'Nenhum usuário logado.'
-                        );
-
-                        navigate('/Login');
-
-                        return;
-                    }
-
-                    // =====================================================
-                    // 1. Tenta pelo auth_id
-                    // =====================================================
-
-                    const {
-                        data: usuarioPorAuthId,
-                        error: erroAuthId
-                    } = await supabase
-                        .from('usuarios')
-                        .select('*')
-                        .eq('auth_id', usuarioLogado.id)
-                        .maybeSingle();
-
-                    if (erroAuthId) {
-
-                        console.error(
-                            'Erro ao buscar perfil pelo auth_id:',
-                            erroAuthId
-                        );
-
-                    }
-
-                    if (usuarioPorAuthId) {
-
-                        dadosUsuario =
-                            usuarioPorAuthId;
-
-                    }
-
-                    // =====================================================
-                    // 2. Se não encontrou, tenta pelo e-mail
-                    // =====================================================
-
-                    if (
-                        !dadosUsuario &&
-                        usuarioLogado.email
-                    ) {
-
-                        const {
-                            data: usuarioPorEmail,
-                            error: erroEmail
-                        } = await supabase
-                            .from('usuarios')
-                            .select('*')
-                            .eq(
-                                'email',
-                                usuarioLogado.email
-                            )
-                            .maybeSingle();
-
-                        if (erroEmail) {
-
-                            console.error(
-                                'Erro ao buscar perfil pelo e-mail:',
-                                erroEmail
-                            );
-
-                        }
-
-                        if (usuarioPorEmail) {
-
-                            dadosUsuario =
-                                usuarioPorEmail;
-
-                        }
-                    }
-
-                    // =====================================================
-                    // 3. Último recurso: usa o usuario_id salvo no login
-                    // =====================================================
-
-                    if (!dadosUsuario) {
-
-                        const idSalvo =
-                            localStorage.getItem(
-                                'usuario_id'
-                            );
-
-                        if (idSalvo) {
-
-                            const {
-                                data: usuarioPorIdSalvo,
-                                error: erroIdSalvo
-                            } = await supabase
-                                .from('usuarios')
-                                .select('*')
-                                .eq(
-                                    'id',
-                                    idSalvo
-                                )
-                                .maybeSingle();
-
-                            if (erroIdSalvo) {
-
-                                console.error(
-                                    'Erro ao buscar pelo usuario_id salvo:',
-                                    erroIdSalvo
-                                );
-
-                            }
-
-                            if (usuarioPorIdSalvo) {
-
-                                dadosUsuario =
-                                    usuarioPorIdSalvo;
-
-                            }
-                        }
-                    }
+                if (erroAuth || !usuarioLogado) {
+                    console.error('Erro ao verificar usuário autenticado:', erroAuth);
+                    navigate('/Login');
+                    return;
                 }
 
-                // =========================================
-                // VERIFICAR SE O PERFIL FOI ENCONTRADO
-                // =========================================
+                // A identidade verdadeira vem do Supabase Auth.
+                // Alterar localStorage ou o ID na URL não troca de conta.
+                if (routeId && routeId !== String(usuarioLogado.id)) {
+                    navigate('/Perfil', { replace: true });
+                    return;
+                }
+
+                const { data: dadosUsuario, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('auth_id', usuarioLogado.id)
+                    .maybeSingle();
+
+                if (error) throw error;
 
                 if (!dadosUsuario) {
-
                     throw new Error(
-                        'O login foi realizado, mas o perfil não foi encontrado na tabela usuarios.'
+                        'Seu usuário foi autenticado, mas o perfil não foi encontrado na tabela usuarios.'
                     );
-
                 }
 
-                const idDoUsuario =
-                    dadosUsuario.id;
+                const idDoUsuario = dadosUsuario.id;
+                setUserId(idDoUsuario);
 
-                setUserId(
-                    idDoUsuario
-                );
+                // localStorage é apenas auxiliar. Não é usado para autenticação.
+                localStorage.setItem('usuario_id', String(idDoUsuario));
+                localStorage.setItem('usuario_auth_id', String(usuarioLogado.id));
+                localStorage.setItem('usuario_email', dadosUsuario.email || usuarioLogado.email || '');
+                localStorage.setItem('usuario_username', dadosUsuario.username || '');
 
-                // =========================================
-                // NOME
-                // =========================================
-
-                setNome(
-                    dadosUsuario.username ||
-                    ''
-                );
-
-                // =========================================
-                // EMAIL
-                // =========================================
-
-                setEmail(
-                    dadosUsuario.email ||
-                    ''
-                );
-
-                // =========================================
-                // DATA DE CADASTRO
-                // =========================================
+                setNome(dadosUsuario.username || '');
+                setEmail(dadosUsuario.email || usuarioLogado.email || '');
 
                 if (dadosUsuario.registro) {
-
-                    setRegistro(
-                        new Date(
-                            dadosUsuario.registro
-                        ).toLocaleDateString(
-                            'pt-BR'
-                        )
-                    );
-
+                    setRegistro(new Date(dadosUsuario.registro).toLocaleDateString('pt-BR'));
                 } else {
-
                     setRegistro('');
-
                 }
 
-                // =========================================
-                // FOTO
-                // =========================================
+                setFotoUrl(dadosUsuario.foto || '');
 
-                setFotoUrl(
-                    dadosUsuario.foto ||
-                    ''
-                );
-
-                // =========================================
-                // PLANO
-                // =========================================
-
-                let planoAtual = String(
-                    dadosUsuario.plano ||
-                    'Gratuito'
-                )
-                    .replace(
-                        /['"]/g,
-                        ''
-                    )
-                    .replace(
-                        /::text/gi,
-                        ''
-                    )
+                let planoAtual = String(dadosUsuario.plano || 'Gratuito')
+                    .replace(/['\"]/g, '')
+                    .replace(/::text/gi, '')
                     .trim();
 
-                if (
-                    planoAtual.toLowerCase() ===
-                    'gratuito'
-                ) {
+                if (planoAtual.toLowerCase() === 'gratuito') planoAtual = 'Gratuito';
+                if (planoAtual.toLowerCase() === 'premium') planoAtual = 'Premium';
 
-                    planoAtual = 'Gratuito';
+                setPlano(planoAtual);
+                setMoedas(dadosUsuario.moedas || 0);
 
-                }
+                // Preferências vêm do banco.
+                setAnimesSelecionados(Array.isArray(dadosUsuario.animes_favoritos) ? dadosUsuario.animes_favoritos : []);
+                setGenerosSelecionados(Array.isArray(dadosUsuario.generos_favoritos) ? dadosUsuario.generos_favoritos : []);
+                setTagsSelecionadas(Array.isArray(dadosUsuario.tags_interesse) ? dadosUsuario.tags_interesse : []);
 
-                if (
-                    planoAtual.toLowerCase() ===
-                    'premium'
-                ) {
-
-                    planoAtual = 'Premium';
-
-                }
-
-                setPlano(
-                    planoAtual
-                );
-
-                // =========================================
-                // MOEDAS
-                // =========================================
-
-                setMoedas(
-                    dadosUsuario.moedas ||
-                    0
-                );
-
-                // =========================================
-                // PUBLICAÇÕES
-                // =========================================
-
-                const {
-                    data: dadosPosts,
-                    error: erroPosts
-                } = await supabase
+                const { data: dadosPosts, error: erroPosts } = await supabase
                     .from('postagens')
                     .select('*')
-                    .eq(
-                        'id_usuario',
-                        idDoUsuario
-                    )
-                    .order(
-                        'criado_em',
-                        {
-                            ascending: false
-                        }
-                    );
+                    .eq('id_usuario', idDoUsuario)
+                    .order('criado_em', { ascending: false });
 
-                if (erroPosts) {
-
-                    throw erroPosts;
-
-                }
-
-                setMeusPosts(
-                    dadosPosts ||
-                    []
-                );
+                if (erroPosts) throw erroPosts;
+                setMeusPosts(dadosPosts || []);
 
             } catch (error) {
-
-                console.error(
-                    'Erro ao buscar dados:',
-                    error
-                );
-
+                console.error('Erro ao buscar dados:', error);
             } finally {
-
-                setCarregandoPosts(
-                    false
-                );
-
+                setCarregandoPosts(false);
             }
         }
 
         buscarDadosDoBanco();
 
-    }, [
-        navigate,
-        routeId
-    ]);
+    }, [navigate, routeId]);
 
     // =========================================
     // BUSCAR MINHA LISTA
@@ -572,148 +296,110 @@ function Perfil() {
                     throw error;
                 }
 
-                // BUSCAR FAVORITOS (Obras do banco de dados)
-                const { data: favoritosDb, error: erroFav } = await supabase
-                    .from('favoritos')
-                    .select(`
-                        id,
-                        obras (
-                            id,
-                            titulo,
-                            sinopse,
-                            capa_url
-                        )
-                    `)
-                    .eq('usuario_id', userId)
-                    .order('created_at', { ascending: false });
-
-                let favoritosFormatados = [];
-                if (!erroFav && favoritosDb) {
-                    favoritosFormatados = favoritosDb
-                        .map(f => f.obras)
-                        .filter(o => o !== null)
-                        .map(obra => ({
-                            id: `fav_${obra.id}`,
-                            isFavorito: true,
-                            tituloOriginal: obra.titulo,
-                            title: {
-                                english: obra.titulo,
-                                romaji: obra.titulo,
-                                native: obra.titulo
-                            },
-                            coverImage: {
-                                large: obra.capa_url || `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`,
-                                extraLarge: obra.capa_url
-                            },
-                            startDate: {
-                                year: null
-                            }
-                        }));
-                }
-
-                let obrasOrdenadas = [];
-
                 if (
-                    biblioteca &&
-                    biblioteca.length > 0
+                    !biblioteca ||
+                    biblioteca.length === 0
                 ) {
 
-                    const ids =
-                        biblioteca.map(
-                            (item) =>
-                                item.anime_id
-                        );
+                    setMinhasObras([]);
 
-                    const query = `
-                        query ($ids: [Int]) {
-                            Page(
-                                page: 1,
-                                perPage: 50
+                    return;
+                }
+
+                const ids =
+                    biblioteca.map(
+                        (item) =>
+                            item.anime_id
+                    );
+
+                const query = `
+                    query ($ids: [Int]) {
+                        Page(
+                            page: 1,
+                            perPage: 50
+                        ) {
+                            media(
+                                id_in: $ids,
+                                type: ANIME
                             ) {
-                                media(
-                                    id_in: $ids,
-                                    type: ANIME
-                                ) {
-                                    id
-    
-                                    title {
-                                        romaji
-                                        english
-                                        native
-                                    }
-    
-                                    coverImage {
-                                        large
-                                        extraLarge
-                                    }
-    
-                                    startDate {
-                                        year
-                                    }
+                                id
+
+                                title {
+                                    romaji
+                                    english
+                                    native
+                                }
+
+                                coverImage {
+                                    large
+                                    extraLarge
+                                }
+
+                                startDate {
+                                    year
                                 }
                             }
                         }
-                    `;
-
-                    const resposta =
-                        await fetch(
-                            'https://graphql.anilist.co',
-                            {
-                                method: 'POST',
-
-                                headers: {
-                                    'Content-Type':
-                                        'application/json',
-
-                                    'Accept':
-                                        'application/json'
-                                },
-
-                                body: JSON.stringify({
-                                    query: query,
-
-                                    variables: {
-                                        ids: ids
-                                    }
-                                })
-                            }
-                        );
-
-                    const dados =
-                        await resposta.json();
-
-                    if (
-                        !resposta.ok ||
-                        !dados.data ||
-                        !dados.data.Page
-                    ) {
-
-                        throw new Error(
-                            'Não foi possível buscar as obras.'
-                        );
                     }
+                `;
 
-                    const obras =
-                        dados.data.Page.media ||
-                        [];
+                const resposta =
+                    await fetch(
+                        'https://graphql.anilist.co',
+                        {
+                            method: 'POST',
 
-                    obrasOrdenadas =
-                        ids
-                            .map(
-                                (animeId) =>
-                                    obras.find(
-                                        (obra) =>
-                                            obra.id ===
-                                            animeId
-                                    )
-                            )
-                            .filter(Boolean);
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+
+                                'Accept':
+                                    'application/json'
+                            },
+
+                            body: JSON.stringify({
+                                query: query,
+
+                                variables: {
+                                    ids: ids
+                                }
+                            })
+                        }
+                    );
+
+                const dados =
+                    await resposta.json();
+
+                if (
+                    !resposta.ok ||
+                    !dados.data ||
+                    !dados.data.Page
+                ) {
+
+                    throw new Error(
+                        'Não foi possível buscar as obras.'
+                    );
                 }
 
-                setMinhasObras([
-                    ...obrasOrdenadas,
-                    ...favoritosFormatados
-                ]);
+                const obras =
+                    dados.data.Page.media ||
+                    [];
+
+                const obrasOrdenadas =
+                    ids
+                        .map(
+                            (animeId) =>
+                                obras.find(
+                                    (obra) =>
+                                        obra.id ===
+                                        animeId
+                                )
+                        )
+                        .filter(Boolean);
+
+                setMinhasObras(
+                    obrasOrdenadas
+                );
 
             } catch (error) {
 
@@ -743,23 +429,18 @@ function Perfil() {
 
     const handleLogout = async () => {
 
-        const {
-            error
-        } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut();
 
         if (error) {
-
-            console.error(
-                'Erro ao sair:',
-                error
-            );
-
-            alert(
-                'Erro ao sair da conta.'
-            );
-
+            console.error('Erro ao sair:', error);
+            alert('Erro ao sair da conta.');
             return;
         }
+
+        localStorage.removeItem('usuario_id');
+        localStorage.removeItem('usuario_auth_id');
+        localStorage.removeItem('usuario_email');
+        localStorage.removeItem('usuario_username');
 
         navigate('/Login');
     };
@@ -1363,63 +1044,44 @@ function Perfil() {
     // PREFERÊNCIAS
     // =========================================
 
-    const alternarOpcao = (
-        opcao,
-        categoria
-    ) => {
+    const alternarOpcao = async (opcao, categoria) => {
 
-        if (
-            categoria === 'animes'
-        ) {
+        if (!isMeuPerfil || !userId) return;
 
-            setAnimesSelecionados(
-                (lista) =>
-                    lista.includes(opcao)
-                        ? lista.filter(
-                            (item) =>
-                                item !== opcao
-                        )
-                        : [
-                            ...lista,
-                            opcao
-                        ]
-            );
+        let listaAtual = [];
+        let colunaBanco = '';
+        let atualizarEstado;
+
+        if (categoria === 'animes') {
+            listaAtual = animesSelecionados;
+            colunaBanco = 'animes_favoritos';
+            atualizarEstado = setAnimesSelecionados;
+        } else if (categoria === 'generos') {
+            listaAtual = generosSelecionados;
+            colunaBanco = 'generos_favoritos';
+            atualizarEstado = setGenerosSelecionados;
+        } else if (categoria === 'tags') {
+            listaAtual = tagsSelecionadas;
+            colunaBanco = 'tags_interesse';
+            atualizarEstado = setTagsSelecionadas;
+        } else {
+            return;
         }
 
-        if (
-            categoria === 'generos'
-        ) {
+        const novaLista = listaAtual.includes(opcao)
+            ? listaAtual.filter((item) => item !== opcao)
+            : [...listaAtual, opcao];
 
-            setGenerosSelecionados(
-                (lista) =>
-                    lista.includes(opcao)
-                        ? lista.filter(
-                            (item) =>
-                                item !== opcao
-                        )
-                        : [
-                            ...lista,
-                            opcao
-                        ]
-            );
-        }
+        atualizarEstado(novaLista);
 
-        if (
-            categoria === 'tags'
-        ) {
+        const { error } = await supabase
+            .from('usuarios')
+            .update({ [colunaBanco]: novaLista })
+            .eq('id', userId);
 
-            setTagsSelecionadas(
-                (lista) =>
-                    lista.includes(opcao)
-                        ? lista.filter(
-                            (item) =>
-                                item !== opcao
-                        )
-                        : [
-                            ...lista,
-                            opcao
-                        ]
-            );
+        if (error) {
+            console.error('Erro ao salvar preferência:', error);
+            alert('Não foi possível salvar essa preferência no banco.');
         }
     };
 
@@ -1777,7 +1439,7 @@ function Perfil() {
 
 
                                         <p className="plan-desc">
-                                            Não há limite de moedas: compre e acumule à vontade!
+                                            Você pode ter até 150 moedas.
                                         </p>
 
 
@@ -2344,13 +2006,11 @@ function Perfil() {
                                                                 obra.id
                                                             }
                                                             className="obra-card"
-                                                            onClick={() => {
-                                                                if (obra.isFavorito) {
-                                                                    navigate(`/Leitura/${encodeURIComponent(obra.tituloOriginal)}`);
-                                                                } else {
-                                                                    navigate(`/anime/${obra.id}`);
-                                                                }
-                                                            }}
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/anime/${obra.id}`
+                                                                )
+                                                            }
                                                         >
 
                                                             <div className="obra-card-imagem">
