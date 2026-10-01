@@ -5,6 +5,7 @@ import '../css/planos.css';
 import { Link } from 'react-router-dom';
 
 import { createClient } from '@supabase/supabase-js';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -40,7 +41,7 @@ function Planos() {
 
     return (
         <>
-            <Navbar />
+            <NavbarPesquisa/>
 
             <main className="container">
 
@@ -83,11 +84,6 @@ function Planos() {
                                 <li>
                                     <i className="ph ph-check-circle"></i>
                                     Seguir autores favoritos
-                                </li>
-
-                                <li className="disabled">
-                                    <i className="ph ph-x-circle"></i>
-                                    Sem anúncios
                                 </li>
 
                                 <li className="disabled">
@@ -144,10 +140,6 @@ function Planos() {
                                     Seguir autores favoritos
                                 </li>
 
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Sem anúncios em mangás
-                                </li>
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
