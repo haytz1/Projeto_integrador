@@ -1439,7 +1439,7 @@ function Perfil() {
 
 
                                         <p className="plan-desc">
-                                            Você pode ter até 150 moedas.
+                                            Não há limite de moedas: compre e acumule à vontade!
                                         </p>
 
 
