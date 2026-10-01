@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 import { createClient } from '@supabase/supabase-js';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -60,7 +61,7 @@ function Moedas() {
 
         <>
 
-            <Navbar />
+            <NavbarPesquisa/>
 
             <main className="container">
 
