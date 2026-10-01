@@ -905,9 +905,8 @@ function Perfil() {
                             <nav className="sidebar-nav">
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${
-                                        activeTab === "perfil" ? "active" : ""
-                                    }`}
+                                    className={`sidebar-link ${activeTab === "perfil" ? "active" : ""
+                                        }`}
                                     onClick={() => setActiveTab("perfil")}
                                 >
                                     <i className="ph-fill ph-user"></i>
@@ -916,11 +915,10 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${
-                                        activeTab === "configuracoes"
+                                    className={`sidebar-link ${activeTab === "configuracoes"
                                             ? "active"
                                             : ""
-                                    }`}
+                                        }`}
                                     onClick={() =>
                                         setActiveTab("configuracoes")
                                     }
@@ -1316,12 +1314,12 @@ function Perfil() {
                                                 <div className="painel-preferencias-header">
                                                     <h3>
                                                         {categoriaAberta ===
-                                                        "animes"
+                                                            "animes"
                                                             ? "Escolha seus animes"
                                                             : categoriaAberta ===
                                                                 "generos"
-                                                              ? "Escolha seus gêneros"
-                                                              : "Escolha suas tags"}
+                                                                ? "Escolha seus gêneros"
+                                                                : "Escolha suas tags"}
                                                     </h3>
 
                                                     <button
@@ -1347,12 +1345,12 @@ function Perfil() {
                                                         }
                                                         placeholder={
                                                             categoriaAberta ===
-                                                            "animes"
+                                                                "animes"
                                                                 ? "Procure um anime..."
                                                                 : categoriaAberta ===
                                                                     "generos"
-                                                                  ? "Procure um gênero..."
-                                                                  : "Procure uma tag..."
+                                                                    ? "Procure um gênero..."
+                                                                    : "Procure uma tag..."
                                                         }
                                                     />
                                                 </div>
@@ -1363,7 +1361,7 @@ function Perfil() {
                                                     {categoriaAberta ===
                                                         "animes" &&
                                                         (animesFiltrados.length >
-                                                        0 ? (
+                                                            0 ? (
                                                             animesFiltrados.map(
                                                                 (anime) => (
                                                                     <button
@@ -1413,7 +1411,7 @@ function Perfil() {
                                                     {categoriaAberta ===
                                                         "generos" &&
                                                         (generosFiltrados.length >
-                                                        0 ? (
+                                                            0 ? (
                                                             generosFiltrados.map(
                                                                 (genero) => (
                                                                     <button
@@ -1463,7 +1461,7 @@ function Perfil() {
                                                     {categoriaAberta ===
                                                         "tags" &&
                                                         (tagsFiltradas.length >
-                                                        0 ? (
+                                                            0 ? (
                                                             tagsFiltradas.map(
                                                                 (tag) => (
                                                                     <button
@@ -1579,14 +1577,14 @@ function Perfil() {
 
                                                             {obra.startDate
                                                                 ?.year && (
-                                                                <span>
-                                                                    {
-                                                                        obra
-                                                                            .startDate
-                                                                            .year
-                                                                    }
-                                                                </span>
-                                                            )}
+                                                                    <span>
+                                                                        {
+                                                                            obra
+                                                                                .startDate
+                                                                                .year
+                                                                        }
+                                                                    </span>
+                                                                )}
                                                         </div>
                                                     </div>
                                                 );
