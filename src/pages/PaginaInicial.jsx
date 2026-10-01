@@ -129,7 +129,7 @@ function PaginaInicial() {
                                 Number(item.id_usuario_bloqueado),
                             ) || [];
 
-                        setUsuariosBloqueados(bloqueiosIds);
+                        
                     }
                 }
 
@@ -642,13 +642,7 @@ function PaginaInicial() {
                 throw error;
             }
 
-            setUsuariosBloqueados((prev) => {
-                if (prev.includes(idUsuarioBloqueado)) {
-                    return prev;
-                }
-
-                return [...prev, idUsuarioBloqueado];
-            });
+            
 
             setPosts((prevPosts) =>
                 prevPosts.filter(
