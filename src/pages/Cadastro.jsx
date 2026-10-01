@@ -15,8 +15,17 @@ function Cadastro() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
     const [carregando, setCarregando] = useState(false);
+    const [foto, setFoto] = useState(null);
+    const [fotoPreview, setFotoPreview] = useState(null);
 
     const navigate = useNavigate();
+
+    const handleFotoChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setFoto(e.target.files[0]);
+            setFotoPreview(URL.createObjectURL(e.target.files[0]));
+        }
+    };
 
     async function fazerCadastro(e) {
 
@@ -43,12 +52,32 @@ function Cadastro() {
             // Cria a conta no Supabase Auth
             // O username vai junto nos metadados
             // para o trigger criar o perfil na tabela usuarios.
+                        let fotoUrl = null;
+
+            if (foto) {
+                const fileExt = foto.name.split('.').pop();
+                const fileName = \`\${Math.random()}.\${fileExt}\`;
+                const { error: uploadError } = await supabase.storage
+                    .from('avatars_usuarios')
+                    .upload(fileName, foto);
+
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage
+                        .from('avatars_usuarios')
+                        .getPublicUrl(fileName);
+                    fotoUrl = urlData.publicUrl;
+                } else {
+                    console.error("Erro no upload da foto", uploadError);
+                }
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: senha,
                 options: {
                     data: {
-                        username: username
+                        username: username,
+                        ...(fotoUrl && { foto: fotoUrl })
                     }
                 }
             });
@@ -112,12 +141,18 @@ function Cadastro() {
                             className="avatar-circle"
                             id="avatar-circle"
                             title="Clique para adicionar uma foto de perfil"
+                            style={{ 
+                                backgroundImage: fotoPreview ? `url(${fotoPreview})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                            }}
                         >
 
-                            <div
-                                className="avatar-placeholder"
-                                id="avatar-placeholder"
-                            >
+                            {!fotoPreview && (
+                                <div
+                                    className="avatar-placeholder"
+                                    id="avatar-placeholder"
+                                >
 
                                 <svg
                                     viewBox="0 0 24 24"
@@ -141,7 +176,8 @@ function Cadastro() {
 
                                 <span>Foto</span>
 
-                            </div>
+                                </div>
+                            )}
 
                             <div
                                 className="avatar-overlay"
@@ -180,6 +216,7 @@ function Cadastro() {
                             className="avatar-input"
                             accept="image/*"
                             aria-label="Selecionar foto de perfil"
+                            onChange={handleFotoChange}
                         />
 
                     </div>

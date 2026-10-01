@@ -65,6 +65,7 @@ function Denuncias() {
 
     useEffect(() => {
         if (!usuarioAutorizado) {
+            // eslint-disable-next-line react/set-state-in-effect
             setCarregando(false);
             return;
         }
@@ -78,7 +79,7 @@ function Denuncias() {
     |--------------------------------------------------------------------------
     */
 
-    const buscarDenuncias = async () => {
+    async function buscarDenuncias() {
         setCarregando(true);
         setErro("");
 

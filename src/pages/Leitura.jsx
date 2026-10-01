@@ -95,6 +95,7 @@ function Leitura() {
         }
 
         carregarObraECapitulos();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [identificador]);
 
     // Função auxiliar para buscar a lista de capítulos

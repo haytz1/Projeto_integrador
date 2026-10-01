@@ -10,6 +10,65 @@ const AVATAR_PADRAO = 'https://api.dicebear.com/7.x/bottts/svg?seed=DefaultUser'
 const IMAGEM_POST_PADRAO =
     'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop';
 
+const EstadoVazio = ({ icone, titulo, texto, botaoTexto, botaoLink }) => (
+        <div
+            style={{
+                background: 'rgba(168, 85, 247, 0.07)',
+                border: '1px dashed rgba(168, 85, 247, 0.3)',
+                padding: '4rem 2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+            }}
+        >
+            <i
+                className={`ph ${icone}`}
+                style={{
+                    fontSize: '4.5rem',
+                    color: '#a855f7',
+                    display: 'block',
+                    marginBottom: '1.2rem',
+                }}
+            ></i>
+
+            <p
+                style={{
+                    color: '#fff',
+                    fontSize: '1.2rem',
+                    fontWeight: '600',
+                    marginBottom: '0.5rem',
+                }}
+            >
+                {titulo}
+            </p>
+
+            <p
+                style={{
+                    color: '#888',
+                    fontSize: '0.95rem',
+                    marginBottom: '1.5rem',
+                }}
+            >
+                {texto}
+            </p>
+
+            <Link
+                to={botaoLink}
+                style={{
+                    display: 'inline-block',
+                    padding: '10px 24px',
+                    background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontWeight: '600',
+                    fontSize: '0.95rem',
+                }}
+            >
+                {botaoTexto}
+            </Link>
+        </div>
+    );
+
 function Seguindo() {
     const meuId = Number(localStorage.getItem('usuario_id')) || null;
 
@@ -151,64 +210,7 @@ function Seguindo() {
     // ESTADO VAZIO (reaproveitado)
     // =========================================
 
-    const EstadoVazio = ({ icone, titulo, texto, botaoTexto, botaoLink }) => (
-        <div
-            style={{
-                background: 'rgba(168, 85, 247, 0.07)',
-                border: '1px dashed rgba(168, 85, 247, 0.3)',
-                padding: '4rem 2rem',
-                borderRadius: '16px',
-                textAlign: 'center',
-            }}
-        >
-            <i
-                className={`ph ${icone}`}
-                style={{
-                    fontSize: '4.5rem',
-                    color: '#a855f7',
-                    display: 'block',
-                    marginBottom: '1.2rem',
-                }}
-            ></i>
-
-            <p
-                style={{
-                    color: '#fff',
-                    fontSize: '1.2rem',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem',
-                }}
-            >
-                {titulo}
-            </p>
-
-            <p
-                style={{
-                    color: '#888',
-                    fontSize: '0.95rem',
-                    marginBottom: '1.5rem',
-                }}
-            >
-                {texto}
-            </p>
-
-            <Link
-                to={botaoLink}
-                style={{
-                    display: 'inline-block',
-                    padding: '10px 24px',
-                    background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                    color: '#fff',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    fontWeight: '600',
-                    fontSize: '0.95rem',
-                }}
-            >
-                {botaoTexto}
-            </Link>
-        </div>
-    );
+    
 
     return (
         <>
