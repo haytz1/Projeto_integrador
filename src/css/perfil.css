@@ -1925,3 +1925,48 @@ body {
     }
 
 }
+
+.follow-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 4px 0 16px 38px; /* alinha com o texto, depois do ícone */
+}
+
+.follow-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.follow-stat strong {
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.follow-stat span {
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.btn-seguir {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 20px;
+    background: #c084fc;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-seguir.seguindo {
+    background: transparent;
+    border: 1px solid #c084fc;
+    color: #c084fc;
+}
+
+.btn-seguir:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
