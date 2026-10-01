@@ -4,7 +4,6 @@ import '../css/obras_mangas.css';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { supabase } from '/supabase';
-import person from '../public/person.png';
 
 // Subcomponente de Card otimizado com fallback visual de segurança
 function CardObra({ obra }) {
