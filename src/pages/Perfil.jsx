@@ -4,10 +4,9 @@ import '../css/perfil.css';
 
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { supabase } from '/supabase.js';
+import { supabase } from '../../supabase';
 
 import NavbarPesquisa from '../components/Navbar_pesquisa';
-
 
 function Perfil() {
 
@@ -28,12 +27,6 @@ function Perfil() {
     const [moedas, setMoedas] = useState(0);
 
     const [carregandoUpload, setCarregandoUpload] = useState(false);
-
-    const [totalSeguidores, setTotalSeguidores] = useState(0);
-    const [totalSeguindo, setTotalSeguindo] = useState(0);
-    const [seguindo, setSeguindo] = useState(false);
-    const [carregandoSeguir, setCarregandoSeguir] = useState(false);
-
 
     // =========================================
     // PUBLICAÇÕES
@@ -150,9 +143,7 @@ function Perfil() {
 
     const isMeuPerfil =
         !routeId ||
-        routeId === String(
-            localStorage.getItem('usuario_id')
-        );
+        routeId === String(userId);
 
     // =========================================
     // FILTROS
@@ -197,51 +188,193 @@ function Perfil() {
 
             try {
 
-                let query = supabase
-                    .from('usuarios')
-                    .select('*');
+                let idUsuario;
+                let usuarioLogado = null;
+                let dadosUsuario = null;
+
+                // =========================================
+                // PERFIL DE OUTRA PESSOA
+                // =========================================
 
                 if (routeId) {
 
-                    query = query.eq(
-                        'id',
-                        routeId
-                    );
+                    idUsuario = routeId;
+
+                    // Quando é o perfil de outra pessoa, o ID da rota
+                    // continua sendo o ID da tabela usuarios.
+                    const {
+                        data: usuarioPorId,
+                        error: erroPorId
+                    } = await supabase
+                        .from('usuarios')
+                        .select('*')
+                        .eq('id', idUsuario)
+                        .maybeSingle();
+
+                    if (erroPorId) {
+                        throw erroPorId;
+                    }
+
+                    dadosUsuario = usuarioPorId;
 
                 } else {
 
-                    const emailSalvo =
-                        localStorage.getItem(
-                            'usuario_email'
-                        );
+                    // =========================================
+                    // PEGAR USUÁRIO DO SUPABASE AUTH
+                    // =========================================
 
-                    if (!emailSalvo) {
+                    const {
+                        data: sessionData,
+                        error: sessionError
+                    } = await supabase.auth.getSession();
+
+                    if (sessionError) {
+
+                        console.error(
+                            'Erro ao verificar sessão:',
+                            sessionError
+                        );
 
                         navigate('/Login');
 
                         return;
                     }
 
-                    query = query.eq(
-                        'email',
-                        emailSalvo
-                    );
+                    usuarioLogado =
+                        sessionData?.session?.user;
+
+                    if (!usuarioLogado) {
+
+                        console.log(
+                            'Nenhum usuário logado.'
+                        );
+
+                        navigate('/Login');
+
+                        return;
+                    }
+
+                    // =====================================================
+                    // 1. Tenta pelo auth_id
+                    // =====================================================
+
+                    const {
+                        data: usuarioPorAuthId,
+                        error: erroAuthId
+                    } = await supabase
+                        .from('usuarios')
+                        .select('*')
+                        .eq('auth_id', usuarioLogado.id)
+                        .maybeSingle();
+
+                    if (erroAuthId) {
+
+                        console.error(
+                            'Erro ao buscar perfil pelo auth_id:',
+                            erroAuthId
+                        );
+
+                    }
+
+                    if (usuarioPorAuthId) {
+
+                        dadosUsuario =
+                            usuarioPorAuthId;
+
+                    }
+
+                    // =====================================================
+                    // 2. Se não encontrou, tenta pelo e-mail
+                    // =====================================================
+
+                    if (
+                        !dadosUsuario &&
+                        usuarioLogado.email
+                    ) {
+
+                        const {
+                            data: usuarioPorEmail,
+                            error: erroEmail
+                        } = await supabase
+                            .from('usuarios')
+                            .select('*')
+                            .eq(
+                                'email',
+                                usuarioLogado.email
+                            )
+                            .maybeSingle();
+
+                        if (erroEmail) {
+
+                            console.error(
+                                'Erro ao buscar perfil pelo e-mail:',
+                                erroEmail
+                            );
+
+                        }
+
+                        if (usuarioPorEmail) {
+
+                            dadosUsuario =
+                                usuarioPorEmail;
+
+                        }
+                    }
+
+                    // =====================================================
+                    // 3. Último recurso: usa o usuario_id salvo no login
+                    // =====================================================
+
+                    if (!dadosUsuario) {
+
+                        const idSalvo =
+                            localStorage.getItem(
+                                'usuario_id'
+                            );
+
+                        if (idSalvo) {
+
+                            const {
+                                data: usuarioPorIdSalvo,
+                                error: erroIdSalvo
+                            } = await supabase
+                                .from('usuarios')
+                                .select('*')
+                                .eq(
+                                    'id',
+                                    idSalvo
+                                )
+                                .maybeSingle();
+
+                            if (erroIdSalvo) {
+
+                                console.error(
+                                    'Erro ao buscar pelo usuario_id salvo:',
+                                    erroIdSalvo
+                                );
+
+                            }
+
+                            if (usuarioPorIdSalvo) {
+
+                                dadosUsuario =
+                                    usuarioPorIdSalvo;
+
+                            }
+                        }
+                    }
                 }
 
-                const {
-                    data: dadosUsuario,
-                    error
-                } = await query.single();
-
-                if (error) {
-                    throw error;
-                }
+                // =========================================
+                // VERIFICAR SE O PERFIL FOI ENCONTRADO
+                // =========================================
 
                 if (!dadosUsuario) {
 
                     throw new Error(
-                        'Usuário não encontrado.'
+                        'O login foi realizado, mas o perfil não foi encontrado na tabela usuarios.'
                     );
+
                 }
 
                 const idDoUsuario =
@@ -369,7 +502,9 @@ function Perfil() {
                     );
 
                 if (erroPosts) {
+
                     throw erroPosts;
+
                 }
 
                 setMeusPosts(
@@ -406,56 +541,6 @@ function Perfil() {
 
     useEffect(() => {
 
-        // =========================================
-        // BUSCAR SEGUIDORES
-        // =========================================
-
-        async function buscarSeguidores() {
-            if (!userId) return;
-
-            const meuId = Number(localStorage.getItem('usuario_id'));
-
-            const [resSeguidores, resSeguindo] = await Promise.all([
-                supabase
-                    .from('seguidores')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('id_seguido', userId),
-
-                supabase
-                    .from('seguidores')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('id_seguidor', userId),
-            ]);
-
-            if (resSeguidores.error || resSeguindo.error) {
-                console.error(
-                    'Erro ao contar seguidores:',
-                    resSeguidores.error || resSeguindo.error,
-                );
-            }
-
-            setTotalSeguidores(resSeguidores.count || 0);
-            setTotalSeguindo(resSeguindo.count || 0);
-
-            // Só verifica se eu sigo quando o perfil é de outra pessoa
-            if (meuId && meuId !== Number(userId)) {
-                const { data } = await supabase
-                    .from('seguidores')
-                    .select('id')
-                    .eq('id_seguidor', meuId)
-                    .eq('id_seguido', userId)
-                    .maybeSingle();
-
-                setSeguindo(!!data);
-            } else {
-                setSeguindo(false);
-            }
-        }
-
-        buscarSeguidores();
-    }, [userId]);
-
-    useEffect(() => {
         async function buscarMinhaLista() {
 
             if (!userId) {
@@ -615,73 +700,28 @@ function Perfil() {
     }, [userId]);
 
     // =========================================
-    // SEGUIR / DEIXAR DE SEGUIR
-    // =========================================
-
-    const alternarSeguir = async () => {
-        const meuId = Number(localStorage.getItem('usuario_id'));
-
-        if (!meuId) {
-            alert('Você precisa estar logado para seguir alguém!');
-            return;
-        }
-
-        if (!userId || meuId === Number(userId) || carregandoSeguir) return;
-
-        setCarregandoSeguir(true);
-
-        try {
-            if (seguindo) {
-                const { error } = await supabase
-                    .from('seguidores')
-                    .delete()
-                    .eq('id_seguidor', meuId)
-                    .eq('id_seguido', userId);
-
-                if (error) throw error;
-
-                setSeguindo(false);
-                setTotalSeguidores((n) => Math.max(n - 1, 0));
-            } else {
-                const { error } = await supabase
-                    .from('seguidores')
-                    .insert({
-                        id_seguidor: meuId,
-                        id_seguido: Number(userId),
-                    });
-
-                // 23505 = já seguia, só sincroniza a tela
-                if (error && error.code !== '23505') throw error;
-
-                setSeguindo(true);
-
-                if (!error) setTotalSeguidores((n) => n + 1);
-            }
-        } catch (error) {
-            console.error('Erro ao seguir:', error);
-            alert('Não foi possível atualizar o seguimento.');
-        } finally {
-            setCarregandoSeguir(false);
-        }
-    };
-
-    // =========================================
     // LOGOUT
     // =========================================
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
 
-        localStorage.removeItem(
-            'usuario_email'
-        );
+        const {
+            error
+        } = await supabase.auth.signOut();
 
-        localStorage.removeItem(
-            'usuario_id'
-        );
+        if (error) {
 
-        localStorage.removeItem(
-            'username'
-        );
+            console.error(
+                'Erro ao sair:',
+                error
+            );
+
+            alert(
+                'Erro ao sair da conta.'
+            );
+
+            return;
+        }
 
         navigate('/Login');
     };
@@ -760,6 +800,7 @@ function Perfil() {
                 throw new Error(
                     `Erro ao enviar a foto: ${uploadError.message}`
                 );
+
             }
 
             const {
@@ -792,6 +833,7 @@ function Perfil() {
                 throw new Error(
                     `Erro ao atualizar a foto no banco: ${dbError.message}`
                 );
+
             }
 
             setFotoUrl(
@@ -959,10 +1001,6 @@ function Perfil() {
             let linkDaFoto =
                 fotoUrl;
 
-            // =========================================
-            // ENVIAR NOVA FOTO
-            // =========================================
-
             if (novaFotoPerfil) {
 
                 const extensao =
@@ -990,6 +1028,7 @@ function Perfil() {
                     throw new Error(
                         `Erro ao enviar a foto: ${uploadError.message}`
                     );
+
                 }
 
                 const {
@@ -1005,10 +1044,6 @@ function Perfil() {
                 linkDaFoto =
                     urlData.publicUrl;
             }
-
-            // =========================================
-            // ATUALIZAR USUÁRIO
-            // =========================================
 
             const {
                 error: erroUpdate
@@ -1036,11 +1071,8 @@ function Perfil() {
                 throw new Error(
                     `Erro ao salvar no banco: ${erroUpdate.message}`
                 );
-            }
 
-            // =========================================
-            // ATUALIZAR NA TELA
-            // =========================================
+            }
 
             const novoNome =
                 nomeEditado.trim();
@@ -1051,11 +1083,6 @@ function Perfil() {
 
             setFotoUrl(
                 linkDaFoto
-            );
-
-            localStorage.setItem(
-                'username',
-                novoNome
             );
 
             setModalEditarPerfil(
@@ -1211,6 +1238,7 @@ function Perfil() {
                     throw new Error(
                         `Erro ao enviar imagem: ${uploadError.message}`
                     );
+
                 }
 
                 const {
@@ -1413,10 +1441,6 @@ function Perfil() {
 
                 <div className="profile-layout">
 
-                    {/* =========================================
-                        SIDEBAR
-                    ========================================= */}
-
                     {isMeuPerfil && (
 
                         <aside className="profile-sidebar">
@@ -1425,10 +1449,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'perfil'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'perfil'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'perfil'
@@ -1445,10 +1470,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'configuracoes'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'configuracoes'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'configuracoes'
@@ -1487,28 +1513,13 @@ function Perfil() {
                     )}
 
 
-                    {/* =========================================
-                        CONTEÚDO
-                    ========================================= */}
-
                     <div className="profile-container">
-
-
-                        {/* =========================================
-                            PERFIL
-                        ========================================= */}
 
                         {activeTab === 'perfil' && (
 
                             <>
 
-                                {/* =========================================
-                                    CABEÇALHO
-                                ========================================= */}
-
                                 <div className="profile-header-row">
-
-                                    {/* USUÁRIO */}
 
                                     <section className="user-info-section">
 
@@ -1616,45 +1627,6 @@ function Perfil() {
                                                         }
                                                     </span>
 
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '20px',
-                                                            marginTop: '14px',
-                                                            flexWrap: 'wrap',
-                                                        }}
-                                                    >
-                                                        <span style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                                                            <strong style={{ color: '#fff' }}>{totalSeguidores}</strong>{' '}
-                                                            {totalSeguidores === 1 ? 'seguidor' : 'seguidores'}
-                                                        </span>
-
-                                                        <span style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                                                            <strong style={{ color: '#fff' }}>{totalSeguindo}</strong> seguindo
-                                                        </span>
-
-                                                        {!isMeuPerfil && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={alternarSeguir}
-                                                                disabled={carregandoSeguir}
-                                                                style={{
-                                                                    padding: '6px 18px',
-                                                                    borderRadius: '999px',
-                                                                    fontSize: '0.85rem',
-                                                                    fontWeight: 600,
-                                                                    cursor: carregandoSeguir ? 'default' : 'pointer',
-                                                                    border: seguindo ? '1px solid #444' : '1px solid #a855f7',
-                                                                    background: seguindo ? 'transparent' : '#a855f7',
-                                                                    color: '#fff',
-                                                                }}
-                                                            >
-                                                                {seguindo ? 'Seguindo' : 'Seguir'}
-                                                            </button>
-                                                        )}
-                                                    </div>
-
                                                 </div>
 
                                             </div>
@@ -1708,8 +1680,6 @@ function Perfil() {
                                     </section>
 
 
-                                    {/* PLANO */}
-
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
@@ -1748,8 +1718,6 @@ function Perfil() {
                                     </section>
 
 
-                                    {/* MOEDAS */}
-
                                     <section className="plan-section">
 
                                         <h2 className="plan-title">
@@ -1787,10 +1755,6 @@ function Perfil() {
                                 </div>
 
 
-                                {/* =========================================
-                                    PREFERÊNCIAS
-                                ========================================= */}
-
                                 {isMeuPerfil && (
 
                                     <section className="preferences-section">
@@ -1805,13 +1769,11 @@ function Perfil() {
 
 
                                         <p className="section-subtitle">
-                                            Personalize suas experiências no site.
+                                            Personalize sua experiência no site.
                                         </p>
 
 
                                         <div className="prefs-grid">
-
-                                            {/* ANIMES */}
 
                                             <div className="pref-col">
 
@@ -1887,8 +1849,6 @@ function Perfil() {
                                             </div>
 
 
-                                            {/* GÊNEROS */}
-
                                             <div className="pref-col">
 
                                                 <i
@@ -1962,8 +1922,6 @@ function Perfil() {
 
                                             </div>
 
-
-                                            {/* TAGS */}
 
                                             <div className="pref-col">
 
@@ -2041,8 +1999,6 @@ function Perfil() {
                                         </div>
 
 
-                                        {/* PAINEL */}
-
                                         {categoriaAberta && (
 
                                             <div className="painel-preferencias">
@@ -2053,7 +2009,7 @@ function Perfil() {
 
                                                         {
                                                             categoriaAberta ===
-                                                                'animes'
+                                                            'animes'
                                                                 ? 'Escolha seus animes'
                                                                 : categoriaAberta ===
                                                                     'generos'
@@ -2093,7 +2049,7 @@ function Perfil() {
                                                         }
                                                         placeholder={
                                                             categoriaAberta ===
-                                                                'animes'
+                                                            'animes'
                                                                 ? 'Procure um anime...'
                                                                 : categoriaAberta ===
                                                                     'generos'
@@ -2107,193 +2063,187 @@ function Perfil() {
 
                                                 <div className="opcoes-preferencias">
 
-                                                    {/* ANIMES */}
-
                                                     {categoriaAberta ===
                                                         'animes' && (
 
-                                                            animesFiltrados.length >
-                                                                0 ? (
+                                                        animesFiltrados.length >
+                                                        0 ? (
 
-                                                                animesFiltrados.map(
-                                                                    (anime) => (
+                                                            animesFiltrados.map(
+                                                                (anime) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            anime
+                                                                        }
+                                                                        className={
+                                                                            animesSelecionados.includes(
+                                                                                anime
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                anime,
+                                                                                'animes'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 anime
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 animesSelecionados.includes(
                                                                                     anime
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    anime,
-                                                                                    'animes'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    anime
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    animesSelecionados.includes(
-                                                                                        anime
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum anime encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
 
+                                                        ) : (
 
-                                                    {/* GÊNEROS */}
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum anime encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
+
 
                                                     {categoriaAberta ===
                                                         'generos' && (
 
-                                                            generosFiltrados.length >
-                                                                0 ? (
+                                                        generosFiltrados.length >
+                                                        0 ? (
 
-                                                                generosFiltrados.map(
-                                                                    (genero) => (
+                                                            generosFiltrados.map(
+                                                                (genero) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            genero
+                                                                        }
+                                                                        className={
+                                                                            generosSelecionados.includes(
+                                                                                genero
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                genero,
+                                                                                'generos'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 genero
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 generosSelecionados.includes(
                                                                                     genero
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    genero,
-                                                                                    'generos'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    genero
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    generosSelecionados.includes(
-                                                                                        genero
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum gênero encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
 
+                                                        ) : (
 
-                                                    {/* TAGS */}
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum gênero encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
+
 
                                                     {categoriaAberta ===
                                                         'tags' && (
 
-                                                            tagsFiltradas.length >
-                                                                0 ? (
+                                                        tagsFiltradas.length >
+                                                        0 ? (
 
-                                                                tagsFiltradas.map(
-                                                                    (tag) => (
+                                                            tagsFiltradas.map(
+                                                                (tag) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            tag
+                                                                        }
+                                                                        className={
+                                                                            tagsSelecionadas.includes(
+                                                                                tag
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                tag,
+                                                                                'tags'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 tag
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 tagsSelecionadas.includes(
                                                                                     tag
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    tag,
-                                                                                    'tags'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    tag
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    tagsSelecionadas.includes(
-                                                                                        tag
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhuma tag encontrada.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhuma tag encontrada.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
                                                 </div>
 
@@ -2305,10 +2255,6 @@ function Perfil() {
 
                                 )}
 
-
-                                {/* =========================================
-                                    MINHA LISTA
-                                ========================================= */}
 
                                 <section className="minha-lista-section">
 
@@ -2451,10 +2397,6 @@ function Perfil() {
 
                                 </section>
 
-
-                                {/* =========================================
-                                    PUBLICAÇÕES
-                                ========================================= */}
 
                                 <div className="meus-posts-secao">
 
@@ -2736,300 +2678,98 @@ function Perfil() {
                         )}
 
 
-                        {/* =========================================
-                            CONFIGURAÇÕES
-                        ========================================= */}
-
                         {activeTab ===
                             'configuracoes' && (
 
-                                <div className="settings-container">
+                            <div className="settings-container">
 
-                                    {/* =========================================
-                                    DADOS PESSOAIS
-                                ========================================= */}
+                                <div className="settings-section card-bg">
 
-                                    <div className="settings-section card-bg">
+                                    <h2 className="section-title">
 
-                                        <h2 className="section-title">
+                                        <i className="ph-fill ph-user-list"></i>
 
-                                            <i className="ph-fill ph-user-list"></i>
+                                        Dados Pessoais
 
-                                            Dados Pessoais
-
-                                        </h2>
+                                    </h2>
 
 
-                                        <div className="settings-group">
+                                    <div className="settings-group">
 
-                                            <div className="settings-item">
+                                        <div className="settings-item">
 
-                                                <div className="settings-item-info">
+                                            <div className="settings-item-info">
 
-                                                    <h4>
-                                                        Nome e foto
-                                                    </h4>
+                                                <h4>
+                                                    Nome e foto
+                                                </h4>
 
-                                                    <p>
-                                                        Atualize seu nome de exibição e imagem de perfil.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                    onClick={
-                                                        abrirEditarPerfil
-                                                    }
-                                                >
-                                                    Editar
-                                                </button>
+                                                <p>
+                                                    Atualize seu nome de exibição e imagem de perfil.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        E-mail e telefone
-                                                    </h4>
-
-                                                    <p>
-                                                        Gerencie suas informações de contato.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Editar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Data de nascimento
-                                                    </h4>
-
-                                                    <p>
-                                                        Atualize a data do seu nascimento.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Editar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                                onClick={
+                                                    abrirEditarPerfil
+                                                }
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
-                                    </div>
 
+                                        <div className="settings-item">
 
-                                    {/* =========================================
-                                    SEGURANÇA
-                                ========================================= */}
+                                            <div className="settings-item-info">
 
-                                    <div className="settings-section card-bg">
+                                                <h4>
+                                                    E-mail e telefone
+                                                </h4>
 
-                                        <h2 className="section-title">
-
-                                            <i className="ph-fill ph-lock-key"></i>
-
-                                            Segurança
-
-                                        </h2>
-
-
-                                        <div className="settings-group">
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Senha de acesso
-                                                    </h4>
-
-                                                    <p>
-                                                        Altere sua senha de login atual.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Mudar senha
-                                                </button>
+                                                <p>
+                                                    Gerencie suas informações de contato.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Confirmação em duas etapas
-                                                    </h4>
-
-                                                    <p>
-                                                        Adicione uma camada extra de segurança.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Ativar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Dispositivos conectados
-                                                    </h4>
-
-                                                    <p>
-                                                        Gerencie as sessões ativas na sua conta.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Visualizar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
-                                    </div>
 
+                                        <div className="settings-item">
 
-                                    {/* =========================================
-                                    PREFERÊNCIAS
-                                ========================================= */}
+                                            <div className="settings-item-info">
 
-                                    <div className="settings-section card-bg">
+                                                <h4>
+                                                    Data de nascimento
+                                                </h4>
 
-                                        <h2 className="section-title">
-
-                                            <i className="ph-fill ph-gear"></i>
-
-                                            Preferências
-
-                                        </h2>
-
-
-                                        <div className="settings-group">
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Idioma e região
-                                                    </h4>
-
-                                                    <p>
-                                                        Personalize o idioma da interface.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Alterar
-                                                </button>
+                                                <p>
+                                                    Atualize a data do seu nascimento.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Tema visual
-                                                    </h4>
-
-                                                    <p>
-                                                        Alterne entre o tema escuro e claro.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Ajustar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Notificações
-                                                    </h4>
-
-                                                    <p>
-                                                        Escolha o que deseja receber por e-mail.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Configurar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
@@ -3037,7 +2777,193 @@ function Perfil() {
 
                                 </div>
 
-                            )}
+
+                                <div className="settings-section card-bg">
+
+                                    <h2 className="section-title">
+
+                                        <i className="ph-fill ph-lock-key"></i>
+
+                                        Segurança
+
+                                    </h2>
+
+
+                                    <div className="settings-group">
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Senha de acesso
+                                                </h4>
+
+                                                <p>
+                                                    Altere sua senha de login atual.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Mudar senha
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Confirmação em duas etapas
+                                                </h4>
+
+                                                <p>
+                                                    Adicione uma camada extra de segurança.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Ativar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Dispositivos conectados
+                                                </h4>
+
+                                                <p>
+                                                    Gerencie as sessões ativas na sua conta.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Visualizar
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div className="settings-section card-bg">
+
+                                    <h2 className="section-title">
+
+                                        <i className="ph-fill ph-gear"></i>
+
+                                        Preferências
+
+                                    </h2>
+
+
+                                    <div className="settings-group">
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Idioma e região
+                                                </h4>
+
+                                                <p>
+                                                    Personalize o idioma da interface.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Alterar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Tema visual
+                                                </h4>
+
+                                                <p>
+                                                    Alterne entre o tema escuro e claro.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Ajustar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Notificações
+                                                </h4>
+
+                                                <p>
+                                                    Escolha o que deseja receber por e-mail.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Configurar
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        )}
 
                     </div>
 
@@ -3045,10 +2971,6 @@ function Perfil() {
 
             </main>
 
-
-            {/* =========================================
-                MODAL EDITAR PERFIL
-            ========================================= */}
 
             {modalEditarPerfil && (
 
@@ -3069,8 +2991,6 @@ function Perfil() {
                 >
 
                     <div className="modal-editar-perfil">
-
-                        {/* CABEÇALHO */}
 
                         <div className="modal-header">
 
@@ -3096,10 +3016,6 @@ function Perfil() {
 
 
                         <div className="modal-conteudo">
-
-                            {/* =========================================
-                                FOTO
-                            ========================================= */}
 
                             <div className="editar-foto-area">
 
@@ -3163,10 +3079,6 @@ function Perfil() {
                             </div>
 
 
-                            {/* =========================================
-                                NOME
-                            ========================================= */}
-
                             <div className="campo-editar-perfil">
 
                                 <label>
@@ -3193,10 +3105,6 @@ function Perfil() {
 
                             </div>
 
-
-                            {/* =========================================
-                                BOTÕES
-                            ========================================= */}
 
                             <div className="modal-acoes">
 
