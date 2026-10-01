@@ -39,16 +39,7 @@ function Moedas() {
 
         const moedasAtuais = usuario.moedas || 0;
 
-        if (moedasAtuais >= 150) {
-            alert('Você já possui o máximo de 150 moedas.');
-            return;
-        }
-
-        if (moedasAtuais + quantidade > 150) {
-            alert('Você pode ter no máximo 150 moedas.');
-            return;
-        }
-
+        // Soma as novas moedas sem limite máximo
         const novasMoedas = moedasAtuais + quantidade;
 
         const { error } = await supabase

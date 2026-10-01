@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 import Navbar from '../components/Navbar';
@@ -12,12 +11,17 @@ import '../css/login.css';
 function Login() {
 
     const [email, setEmail] = useState('');
+
     const [senha, setSenha] = useState('');
+
     const [carregando, setCarregando] = useState(false);
+
+    const [enviandoEmail, setEnviandoEmail] = useState(false);
 
     const navigate = useNavigate();
 
-    // Função executada ao enviar o formulário de login
+
+    // LOGIN
     const handleLogin = async (e) => {
 
         e.preventDefault();
@@ -33,58 +37,175 @@ function Login() {
 
         try {
 
-            // Faz login usando o Supabase Auth
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: senha
-            });
+            // Login pelo Supabase Auth
+            const { data, error } =
+                await supabase.auth.signInWithPassword({
 
+                    email: email,
+
+                    password: senha
+
+                });
+
+
+            // Se o Supabase encontrou algum erro
             if (error) {
 
-                console.error('Erro no login:', error);
-
-                alert('E-mail ou senha incorretos!');
-
-                return;
-            }
-
-            // Usuário autenticado pelo Supabase
-            const usuarioAuth = data.user;
-
-            if (!usuarioAuth) {
-
-                alert('Não foi possível identificar o usuário.');
-
-                return;
-            }
-
-            // Busca o perfil do usuário na tabela usuarios
-            // usando o id do Supabase Auth
-            const { data: usuario, error: erroUsuario } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('auth_id', usuarioAuth.id)
-                .single();
-
-            if (erroUsuario) {
-
-                console.error('Erro ao buscar usuário:', erroUsuario);
+                console.error('ERRO NO LOGIN:', error);
 
                 alert(
-                    'Login realizado, mas não foi possível carregar o perfil.'
+                    'Erro ao fazer login:\n\n' +
+                    error.message
                 );
 
                 return;
             }
 
-            if (!usuario) {
 
-                alert('Perfil do usuário não encontrado.');
+            // Verifica se o usuário foi encontrado
+            if (!data || !data.user) {
+
+                console.error('Usuário não encontrado.');
+
+                alert(
+                    'Não foi possível identificar o usuário.'
+                );
 
                 return;
             }
 
-            // Salva os dados do usuário no localStorage
+
+            console.log(
+                'LOGIN REALIZADO COM SUCESSO!'
+            );
+
+            console.log(
+                'ID DO AUTH:',
+                data.user.id
+            );
+
+            console.log(
+                'E-MAIL:',
+                data.user.email
+            );
+
+
+            // Verifica se a sessão realmente existe
+            const { data: sessionData, error: sessionError } =
+                await supabase.auth.getSession();
+
+
+            if (sessionError) {
+
+                console.error(
+                    'ERRO AO VERIFICAR SESSÃO:',
+                    sessionError
+                );
+
+                alert(
+                    'O login foi realizado, mas não foi possível verificar a sessão.'
+                );
+
+                return;
+            }
+
+
+            if (!sessionData.session) {
+
+                console.error(
+                    'NENHUMA SESSÃO FOI ENCONTRADA.'
+                );
+
+                alert(
+                    'A sessão não foi criada. Tente fazer login novamente.'
+                );
+
+                return;
+            }
+
+
+            console.log(
+                'SESSÃO CRIADA COM SUCESSO!'
+            );
+
+            console.log(
+                'USUÁRIO DA SESSÃO:',
+                sessionData.session.user
+            );
+
+
+            // =====================================================
+            // BUSCAR O PERFIL NA TABELA usuarios
+            // =====================================================
+
+            let usuario = null;
+
+            // Primeiro tenta pelo auth_id
+            const {
+                data: usuarioPorAuthId,
+                error: erroAuthId
+            } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('auth_id', data.user.id)
+                .maybeSingle();
+
+            if (erroAuthId) {
+                console.error(
+                    'ERRO AO BUSCAR PERFIL PELO auth_id:',
+                    erroAuthId
+                );
+            }
+
+            if (usuarioPorAuthId) {
+                usuario = usuarioPorAuthId;
+            }
+
+            // Se não encontrou, tenta pelo e-mail.
+            // Isso permite recuperar um perfil antigo que ficou sem auth_id.
+            if (!usuario && data.user.email) {
+
+                const {
+                    data: usuarioPorEmail,
+                    error: erroEmail
+                } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', data.user.email)
+                    .maybeSingle();
+
+                if (erroEmail) {
+                    console.error(
+                        'ERRO AO BUSCAR PERFIL PELO E-MAIL:',
+                        erroEmail
+                    );
+                }
+
+                if (usuarioPorEmail) {
+                    usuario = usuarioPorEmail;
+                }
+            }
+
+            // Se o Auth entrou, mas não existe perfil na tabela usuarios,
+            // não criamos outra conta e não apagamos a conta antiga.
+            if (!usuario) {
+
+                console.error(
+                    'Login realizado, mas nenhum perfil foi encontrado na tabela usuarios.'
+                );
+
+                alert(
+                    'Login realizado, mas não foi possível carregar o perfil.\n\n' +
+                    'A conta existe no Supabase Auth, porém o perfil não foi encontrado na tabela usuarios.'
+                );
+
+                return;
+            }
+
+            // =====================================================
+            // SALVAR OS IDs CORRETOS NO LOCALSTORAGE
+            // =====================================================
+
             localStorage.setItem(
                 'usuario_id',
                 String(usuario.id)
@@ -92,28 +213,43 @@ function Login() {
 
             localStorage.setItem(
                 'usuario_auth_id',
-                usuario.auth_id
+                String(data.user.id)
             );
 
             localStorage.setItem(
                 'usuario_email',
-                usuario.email
+                usuario.email || data.user.email || ''
             );
 
             localStorage.setItem(
-                'username',
-                usuario.username
+                'usuario_username',
+                usuario.username || ''
             );
 
-            console.log('LOGIN REALIZADO!');
-            console.log('USUÁRIO:', usuario);
+            console.log(
+                'PERFIL ENCONTRADO:',
+                usuario
+            );
 
-            // Redireciona para o perfil
+            console.log(
+                'ID DA TABELA usuarios:',
+                usuario.id
+            );
+
+            console.log(
+                'ID DO AUTH:',
+                data.user.id
+            );
+
+            // Agora sim vai para o Perfil
             navigate('/Perfil');
 
-        } catch (err) {
+        } catch (erro) {
 
-            console.error('Erro no login:', err);
+            console.error(
+                'ERRO NO LOGIN:',
+                erro
+            );
 
             alert(
                 'Ocorreu um erro ao tentar fazer login.'
@@ -126,46 +262,95 @@ function Login() {
         }
     };
 
-    const handleLogout = async () => {
+
+    // RECUPERAR SENHA
+    const handleEsqueceuSenha = async (e) => {
+
+        e.preventDefault();
+
+        if (!email) {
+
+            alert(
+                'Digite seu e-mail primeiro.'
+            );
+
+            return;
+        }
+
+        setEnviandoEmail(true);
 
         try {
 
-            // Faz logout do Supabase Auth
-            const { error } = await supabase.auth.signOut();
+            const redirectTo =
+                window.location.origin +
+                '/RedefinirSenha';
+
+
+            const { error } =
+                await supabase.auth.resetPasswordForEmail(
+
+                    email,
+
+                    {
+                        redirectTo: redirectTo
+                    }
+
+                );
+
 
             if (error) {
 
-                console.error('Erro ao sair:', error);
+                console.error(
+                    'ERRO AO ENVIAR RECUPERAÇÃO:',
+                    error
+                );
+
+                alert(
+                    'Erro ao enviar o e-mail: ' +
+                    error.message
+                );
 
                 return;
             }
 
-            // Remove os dados do usuário
-            localStorage.removeItem('usuario_id');
-            localStorage.removeItem('usuario_auth_id');
-            localStorage.removeItem('usuario_email');
-            localStorage.removeItem('username');
 
-            // Volta para a tela de login
-            navigate('/Login');
+            alert(
+                'Confira seu e-mail para redefinir sua senha.'
+            );
 
-        } catch (err) {
+        } catch (erro) {
 
-            console.error('Erro ao sair:', err);
+            console.error(
+                'ERRO NA RECUPERAÇÃO:',
+                erro
+            );
+
+            alert(
+                'Ocorreu um erro ao enviar o e-mail.'
+            );
+
+        } finally {
+
+            setEnviandoEmail(false);
 
         }
     };
 
+
     return (
 
         <>
+
             <Navbar />
+
 
             <div
                 className="stars"
                 id="stars"
                 aria-hidden="true"
-            ></div>
+            >
+            </div>
+
 
             <main className="page-wrapper">
 
@@ -175,12 +360,18 @@ function Login() {
                 >
 
                     <h1 className="welcome-title">
+
                         Boas vindas ao AnimeSpot
+
                     </h1>
 
+
                     <p className="subtitle">
+
                         Faça login para continuar:
+
                     </p>
+
 
                     <form
                         id="login-form"
@@ -188,14 +379,19 @@ function Login() {
                         noValidate
                     >
 
+                        {/* E-MAIL */}
+
                         <div className="form-group">
 
                             <label
                                 className="form-label"
                                 htmlFor="input-email"
                             >
+
                                 E-mail
+
                             </label>
+
 
                             <div className="input-wrapper">
 
@@ -222,6 +418,7 @@ function Login() {
 
                                 </svg>
 
+
                                 <input
                                     type="email"
                                     id="input-email"
@@ -230,13 +427,18 @@ function Login() {
                                     placeholder="seu@email.com"
                                     autoComplete="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) =>
+                                        setEmail(e.target.value)
+                                    }
                                     required
                                 />
 
                             </div>
 
                         </div>
+
+
+                        {/* SENHA */}
 
                         <div className="form-group">
 
@@ -245,21 +447,31 @@ function Login() {
                                 <label
                                     className="form-label"
                                     htmlFor="input-senha"
-                                    style={{ marginBottom: 0 }}
+                                    style={{
+                                        marginBottom: 0
+                                    }}
                                 >
+
                                     Senha
+
                                 </label>
+
 
                                 <a
                                     href="#"
                                     className="forgot-link"
                                     id="link-esqueceu-senha"
-                                    onClick={(e) => e.preventDefault()}
+                                    onClick={handleEsqueceuSenha}
                                 >
-                                    Esqueceu sua senha?
+
+                                    {enviandoEmail
+                                        ? 'Enviando...'
+                                        : 'Esqueceu sua senha?'}
+
                                 </a>
 
                             </div>
+
 
                             <div className="input-wrapper">
 
@@ -282,9 +494,12 @@ function Login() {
                                         rx="2"
                                     />
 
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    <path
+                                        d="M7 11V7a5 5 0 0 1 10 0v4"
+                                    />
 
                                 </svg>
+
 
                                 <input
                                     type="password"
@@ -294,7 +509,9 @@ function Login() {
                                     placeholder="••••••••"
                                     autoComplete="current-password"
                                     value={senha}
-                                    onChange={(e) => setSenha(e.target.value)}
+                                    onChange={(e) =>
+                                        setSenha(e.target.value)
+                                    }
                                     required
                                 />
 
@@ -302,23 +519,34 @@ function Login() {
 
                         </div>
 
+
+                        {/* BOTÃO ENTRAR */}
+
                         <button
                             type="submit"
                             className="btn btn-primary"
                             id="btn-entrar"
                             disabled={carregando}
                         >
+
                             {carregando
                                 ? 'Entrando...'
                                 : 'Entrar'}
+
                         </button>
+
 
                         <div
                             className="divider"
                             aria-hidden="true"
                         >
+
                             Ou
+
                         </div>
+
+
+                        {/* CADASTRO */}
 
                         <Link
                             to="/Cadastro"
@@ -331,7 +559,9 @@ function Login() {
                                 textDecoration: 'none'
                             }}
                         >
+
                             Criar uma conta
+
                         </Link>
 
                     </form>
@@ -339,10 +569,11 @@ function Login() {
                 </div>
 
             </main>
+
         </>
 
     );
+
 }
 
 export default Login;
-
