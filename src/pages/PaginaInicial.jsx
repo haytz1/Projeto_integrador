@@ -70,6 +70,8 @@ function PaginaInicial() {
     const [modoEdicao, setModoEdicao] = useState(false);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [imagemEdicao, setImagemEdicao] = useState(null);
+    // eslint-disable-next-line no-unused-vars
+    const [usuariosBloqueados, setUsuariosBloqueados] = useState([]);
     
     const [modalDenunciaAberto, setModalDenunciaAberto] = useState(false);
     const [alvoDenuncia, setAlvoDenuncia] = useState(null);
