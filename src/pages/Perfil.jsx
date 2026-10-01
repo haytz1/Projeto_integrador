@@ -27,6 +27,15 @@ function Perfil() {
     const [plano, setPlano] = useState('');
     const [moedas, setMoedas] = useState(0);
 
+    // =========================================
+    // SEGUIDORES
+    // =========================================
+
+    const [seguindo, setSeguindo] = useState(false);
+    const [seguidoresCount, setSeguidoresCount] = useState(0);
+    const [seguindoCount, setSeguindoCount] = useState(0);
+    const [carregandoSeguir, setCarregandoSeguir] = useState(false);
+
     const [carregandoUpload, setCarregandoUpload] = useState(false);
 
     // =========================================
@@ -785,6 +794,193 @@ function Perfil() {
         buscarMinhaLista();
 
     }, [userId]);
+
+    // =========================================
+    // BUSCAR SEGUIDORES / SEGUINDO
+    // =========================================
+
+    useEffect(() => {
+
+        async function buscarRelacionamentos() {
+
+            if (!userId) {
+                return;
+            }
+
+            try {
+
+                const {
+                    count: totalSeguidores,
+                    error: erroSeguidores
+                } = await supabase
+                    .from('seguidores')
+                    .select('id', {
+                        count: 'exact',
+                        head: true
+                    })
+                    .eq('id_seguido', userId);
+
+                if (erroSeguidores) {
+                    console.error(
+                        'Erro ao buscar seguidores:',
+                        erroSeguidores
+                    );
+                }
+
+                const {
+                    count: totalSeguindo,
+                    error: erroSeguindo
+                } = await supabase
+                    .from('seguidores')
+                    .select('id', {
+                        count: 'exact',
+                        head: true
+                    })
+                    .eq('id_seguidor', userId);
+
+                if (erroSeguindo) {
+                    console.error(
+                        'Erro ao buscar seguindo:',
+                        erroSeguindo
+                    );
+                }
+
+                setSeguidoresCount(totalSeguidores || 0);
+                setSeguindoCount(totalSeguindo || 0);
+
+                if (
+                    loggedUserId &&
+                    String(loggedUserId) !== String(userId)
+                ) {
+
+                    const {
+                        data: relacionamento,
+                        error: erroRelacionamento
+                    } = await supabase
+                        .from('seguidores')
+                        .select('id')
+                        .eq('id_seguidor', loggedUserId)
+                        .eq('id_seguido', userId)
+                        .maybeSingle();
+
+                    if (erroRelacionamento) {
+                        console.error(
+                            'Erro ao verificar seguimento:',
+                            erroRelacionamento
+                        );
+                        setSeguindo(false);
+                    } else {
+                        setSeguindo(
+                            Boolean(relacionamento)
+                        );
+                    }
+
+                } else {
+
+                    setSeguindo(false);
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    'Erro ao carregar seguidores:',
+                    error
+                );
+
+            }
+
+        }
+
+        buscarRelacionamentos();
+
+    }, [userId, loggedUserId]);
+
+
+    // =========================================
+    // SEGUIR / DEIXAR DE SEGUIR
+    // =========================================
+
+    const alternarSeguir = async () => {
+
+        if (!loggedUserId) {
+            alert(
+                'Você precisa estar logado para seguir alguém.'
+            );
+            return;
+        }
+
+        if (!userId) {
+            return;
+        }
+
+        if (
+            String(loggedUserId) === String(userId)
+        ) {
+            return;
+        }
+
+        setCarregandoSeguir(true);
+
+        try {
+
+            if (seguindo) {
+
+                const { error } = await supabase
+                    .from('seguidores')
+                    .delete()
+                    .eq('id_seguidor', loggedUserId)
+                    .eq('id_seguido', userId);
+
+                if (error) {
+                    throw error;
+                }
+
+                setSeguindo(false);
+                setSeguidoresCount(
+                    (valor) => Math.max(0, valor - 1)
+                );
+
+            } else {
+
+                const { error } = await supabase
+                    .from('seguidores')
+                    .insert({
+                        id_seguidor: loggedUserId,
+                        id_seguido: userId
+                    });
+
+                if (error) {
+                    throw error;
+                }
+
+                setSeguindo(true);
+                setSeguidoresCount(
+                    (valor) => valor + 1
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao seguir/deixar de seguir:',
+                error
+            );
+
+            alert(
+                error.message ||
+                'Não foi possível alterar o seguimento.'
+            );
+
+        } finally {
+
+            setCarregandoSeguir(false);
+
+        }
+
+    };
+
 
     // =========================================
     // LOGOUT
@@ -1810,6 +2006,82 @@ function Perfil() {
                                             </div>
 
                                         </div>
+
+
+                                        {!isMeuPerfil && (
+                                            <button
+                                                type="button"
+                                                onClick={alternarSeguir}
+                                                disabled={carregandoSeguir}
+                                                style={{
+                                                    marginTop: '20px',
+                                                    border: 'none',
+                                                    borderRadius: '10px',
+                                                    padding: '10px 22px',
+                                                    cursor: carregandoSeguir
+                                                        ? 'wait'
+                                                        : 'pointer',
+                                                    fontWeight: '600',
+                                                    fontSize: '15px',
+                                                    background: seguindo
+                                                        ? '#2f2f3a'
+                                                        : '#7c3aed',
+                                                    color: '#fff',
+                                                    opacity: carregandoSeguir
+                                                        ? 0.7
+                                                        : 1
+                                                }}
+                                            >
+                                                {carregandoSeguir
+                                                    ? 'Aguarde...'
+                                                    : seguindo
+                                                        ? '✓ Seguindo'
+                                                        : 'Seguir'}
+                                            </button>
+                                        )}
+
+
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: '28px',
+                                                marginTop: '22px',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                <strong
+                                                    style={{
+                                                        display: 'block',
+                                                        fontSize: '20px'
+                                                    }}
+                                                >
+                                                    {seguidoresCount}
+                                                </strong>
+                                                <span>Seguidores</span>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                <strong
+                                                    style={{
+                                                        display: 'block',
+                                                        fontSize: '20px'
+                                                    }}
+                                                >
+                                                    {seguindoCount}
+                                                </strong>
+                                                <span>Seguindo</span>
+                                            </div>
+                                        </div>
+
 
                                     </section>
 
