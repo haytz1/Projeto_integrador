@@ -4,6 +4,7 @@ import '../css/obras_mangas.css';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { supabase } from '/supabase';
+import person from '../public/person.png';
 
 // Subcomponente de Card otimizado com fallback visual de segurança
 function CardObra({ obra }) {
@@ -63,6 +64,10 @@ function ObrasMangas() {
 
     // Estado para os gêneros selecionados
     const [generosSelecionados, setGenerosSelecionados] = useState([]);
+
+    // Paginação
+    const OBRAS_POR_PAGINA = 9;
+    const [paginaAtual, setPaginaAtual] = useState(1);
 
     // 1. Lê o utilizador guardado no localStorage e busca a foto atualizada no Supabase
     useEffect(() => {
@@ -212,7 +217,8 @@ function ObrasMangas() {
                 {/* Cabeçalho Fixo Superior Limpo */}
                 <header className="cabecalho-obras">
                     <div className="acoes-esquerda">
-                        <Link to="/" className="btn-voltar"> ⭠ Voltar para o Menu </Link>
+                        <Link to="/" className="btn-voltar">⭠ Voltar ao Menu</Link>
+                        {/* Botão Voltar movido para a secao-hero abaixo */}
                     </div>
 
                     <div className="acoes-direita">
@@ -321,13 +327,25 @@ function ObrasMangas() {
 
                     {/* Grade de Cards das Obras */}
                     <main className="conteudo-principal">
+                        {/* Cabeçalho Hero da Seção */}
+                        <div className="secao-hero">
+                            <div className="secao-hero-esquerda">
+                                <div className="secao-hero-icone">📚</div>
+                                <div className="secao-hero-texto">
+                                    <h1>Biblioteca de <span>Mangás</span></h1>
+                                    <p>Explore, leia e acompanhe suas histórias favoritas.</p>
+                                </div>
+                            </div>
+                            
+                        </div>
+
                         <section className="grade-obras">
                             {loading ? (
                                 <p style={{ color: '#fff' }}>Carregando obras...</p>
                             ) : obras.length === 0 ? (
                                 <p style={{ color: '#fff' }}>Nenhuma obra cadastrada.</p>
-                            ) : (
-                                obras
+                            ) : (() => {
+                                const obrasFiltradas = obras
                                     .filter(obra => obra.titulo.toLowerCase().includes(termoPesquisa.toLowerCase()))
                                     .filter(obra => {
                                         if (generosSelecionados.length === 0) return true;
@@ -355,12 +373,67 @@ function ObrasMangas() {
                                             const gNorm = labelsMap[g] ? labelsMap[g].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : g.toLowerCase();
                                             return principalNormalizado === gNorm || principalGenero.includes(gNorm);
                                         });
-                                    })
-                                    .map((i, index) => (
-                                        <CardObra key={`obra-card-${index}`} obra={i} />
-                                    ))
-                            )}
+                                    });
+
+                                const totalPaginas = Math.ceil(obrasFiltradas.length / OBRAS_POR_PAGINA);
+                                const paginaSegura = Math.min(paginaAtual, totalPaginas || 1);
+                                const inicio = (paginaSegura - 1) * OBRAS_POR_PAGINA;
+                                const obrasPagina = obrasFiltradas.slice(inicio, inicio + OBRAS_POR_PAGINA);
+
+                                return obrasPagina.map((i, index) => (
+                                    <CardObra key={`obra-card-${index}`} obra={i} />
+                                ));
+                            })()}
                         </section>
+
+                        {/* Controles de Paginação */}
+                        {(() => {
+                            const obrasFiltradas = obras
+                                .filter(obra => obra.titulo.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                                .filter(obra => {
+                                    if (generosSelecionados.length === 0) return true;
+                                    if (!obra.genero_principal) return false;
+                                    const labelsMap = {
+                                        'acao': 'Ação', 'aventura': 'Aventura', 'comedia': 'Comédia',
+                                        'drama': 'Drama', 'esporte': 'Esporte', 'fantasia': 'Fantasia',
+                                        'ficcao': 'Ficção Científica', 'misterio': 'Mistério',
+                                        'romance': 'Romance', 'sobrenatural': 'Sobrenatural', 'terror': 'Terror'
+                                    };
+                                    let principalGenero = obra.genero_principal.trim().toLowerCase();
+                                    const tituloLower = obra.titulo.toLowerCase();
+                                    if (tituloLower.includes("dr stone") || tituloLower.includes("dr. stone")) {
+                                        principalGenero = "ficção científica";
+                                    }
+                                    const principalNormalizado = principalGenero.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                    return generosSelecionados.some(g => {
+                                        const gNorm = labelsMap[g] ? labelsMap[g].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : g.toLowerCase();
+                                        return principalNormalizado === gNorm || principalGenero.includes(gNorm);
+                                    });
+                                });
+                            const totalPaginas = Math.ceil(obrasFiltradas.length / OBRAS_POR_PAGINA);
+                            if (totalPaginas <= 1) return null;
+                            return (
+                                <div className="paginacao">
+                                    <button
+                                        className="btn-paginacao"
+                                        onClick={() => { setPaginaAtual(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                                        disabled={paginaAtual === 1}
+                                    >
+                                        ← Anterior
+                                    </button>
+                                    <span className="paginacao-info">
+                                        Página {paginaAtual} de {totalPaginas}
+                                    </span>
+                                    <button
+                                        className="btn-paginacao"
+                                        onClick={() => { setPaginaAtual(p => Math.min(totalPaginas, p + 1)); window.scrollTo(0, 0); }}
+                                        disabled={paginaAtual === totalPaginas}
+                                    >
+                                        Próxima →
+                                    </button>
+                                </div>
+                            );
+                        })()}
                     </main>
                 </div>
 
