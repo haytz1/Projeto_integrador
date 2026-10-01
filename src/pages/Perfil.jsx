@@ -19,6 +19,7 @@ function Perfil() {
     // =========================================
 
     const [userId, setUserId] = useState(null);
+    const [loggedUserId, setLoggedUserId] = useState(null);
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [registro, setRegistro] = useState('');
@@ -40,10 +41,6 @@ function Perfil() {
     const [novaImagem, setNovaImagem] = useState(null);
     const [previewImagem, setPreviewImagem] = useState('');
     const [publicando, setPublicando] = useState(false);
-    const [totalSeguidores, setTotalSeguidores] = useState(0);
-    const [totalSeguindo, setTotalSeguindo] = useState(0);
-    const [seguindo, setSeguindo] = useState(false);
-    const [carregandoSeguir, setCarregandoSeguir] = useState(false);
 
     // =========================================
     // MINHA LISTA
@@ -75,6 +72,8 @@ function Perfil() {
     const [categoriaAberta, setCategoriaAberta] = useState(null);
     const [buscaPreferencia, setBuscaPreferencia] = useState('');
 
+    // As preferências são carregadas do Supabase.
+    // Não deixamos valores fixos aqui para não sobrescrever o que está no banco.
     const [animesSelecionados, setAnimesSelecionados] = useState([]);
 
     const [generosSelecionados, setGenerosSelecionados] = useState([]);
@@ -132,7 +131,8 @@ function Perfil() {
 
     const isMeuPerfil =
         !routeId ||
-        routeId === String(userId);
+        (loggedUserId !== null &&
+            routeId === String(loggedUserId));
 
     // =========================================
     // FILTROS
@@ -177,91 +177,450 @@ function Perfil() {
 
             try {
 
-                const { data: { user: usuarioLogado }, error: erroAuth } =
-                    await supabase.auth.getUser();
+                let idUsuario;
+                let usuarioLogado = null;
+                let dadosUsuario = null;
 
-                if (erroAuth || !usuarioLogado) {
-                    console.error('Erro ao verificar usuário autenticado:', erroAuth);
-                    navigate('/Login');
-                    return;
+                // =========================================
+                // PERFIL DE OUTRA PESSOA
+                // =========================================
+
+                if (routeId) {
+
+                    idUsuario = routeId;
+
+                    // =========================================
+                    // IDENTIFICAR QUEM ESTÁ LOGADO
+                    // =========================================
+                    // Isso é separado do usuário que estamos visualizando.
+                    // Assim, abrir /Perfil/ID-DE-OUTRA-PESSOA não transforma
+                    // essa pessoa no usuário logado.
+                    const {
+                        data: authData
+                    } = await supabase.auth.getUser();
+
+                    if (authData?.user) {
+
+                        const {
+                            data: usuarioLogadoAtual
+                        } = await supabase
+                            .from('usuarios')
+                            .select('id')
+                            .eq('auth_id', authData.user.id)
+                            .maybeSingle();
+
+                        if (usuarioLogadoAtual) {
+                            setLoggedUserId(
+                                usuarioLogadoAtual.id
+                            );
+                        }
+
+                    }
+
+                    // Quando é o perfil de outra pessoa, o ID da rota
+                    // continua sendo o ID da tabela usuarios.
+                    const {
+                        data: usuarioPorId,
+                        error: erroPorId
+                    } = await supabase
+                        .from('usuarios')
+                        .select('*')
+                        .eq('id', idUsuario)
+                        .maybeSingle();
+
+                    if (erroPorId) {
+                        throw erroPorId;
+                    }
+
+                    dadosUsuario = usuarioPorId;
+
+                } else {
+
+                    // =========================================
+                    // PEGAR USUÁRIO DO SUPABASE AUTH
+                    // =========================================
+
+                    const {
+                        data: sessionData,
+                        error: sessionError
+                    } = await supabase.auth.getSession();
+
+                    if (sessionError) {
+
+                        console.error(
+                            'Erro ao verificar sessão:',
+                            sessionError
+                        );
+
+                        navigate('/Login');
+
+                        return;
+                    }
+
+                    usuarioLogado =
+                        sessionData?.session?.user;
+
+                    if (!usuarioLogado) {
+
+                        console.log(
+                            'Nenhum usuário logado.'
+                        );
+
+                        navigate('/Login');
+
+                        return;
+                    }
+
+                    // =====================================================
+                    // 1. Tenta pelo auth_id
+                    // =====================================================
+
+                    const {
+                        data: usuarioPorAuthId,
+                        error: erroAuthId
+                    } = await supabase
+                        .from('usuarios')
+                        .select('*')
+                        .eq('auth_id', usuarioLogado.id)
+                        .maybeSingle();
+
+                    if (erroAuthId) {
+
+                        console.error(
+                            'Erro ao buscar perfil pelo auth_id:',
+                            erroAuthId
+                        );
+
+                    }
+
+                    if (usuarioPorAuthId) {
+
+                        dadosUsuario =
+                            usuarioPorAuthId;
+
+                    }
+
+                    // =====================================================
+                    // 2. Se não encontrou, tenta pelo e-mail
+                    // =====================================================
+
+                    if (
+                        !dadosUsuario &&
+                        usuarioLogado.email
+                    ) {
+
+                        const {
+                            data: usuarioPorEmail,
+                            error: erroEmail
+                        } = await supabase
+                            .from('usuarios')
+                            .select('*')
+                            .eq(
+                                'email',
+                                usuarioLogado.email
+                            )
+                            .maybeSingle();
+
+                        if (erroEmail) {
+
+                            console.error(
+                                'Erro ao buscar perfil pelo e-mail:',
+                                erroEmail
+                            );
+
+                        }
+
+                        if (usuarioPorEmail) {
+
+                            dadosUsuario =
+                                usuarioPorEmail;
+
+                            // Vincula a conta antiga ao usuário do Auth.
+                            // Se a política do banco impedir o update, o perfil
+                            // continua funcionando pelo e-mail.
+                            const { error: erroVinculo } =
+                                await supabase
+                                    .from('usuarios')
+                                    .update({
+                                        auth_id: usuarioLogado.id
+                                    })
+                                    .eq(
+                                        'id',
+                                        usuarioPorEmail.id
+                                    );
+
+                            if (erroVinculo) {
+
+                                console.warn(
+                                    'Não foi possível preencher auth_id automaticamente:',
+                                    erroVinculo
+                                );
+
+                            }
+                        }
+                    }
+
+                    // =====================================================
+                    // 3. Último recurso: usa o usuario_id salvo no login
+                    // =====================================================
+
+                    if (!dadosUsuario) {
+
+                        const idSalvo =
+                            localStorage.getItem(
+                                'usuario_id'
+                            );
+
+                        if (idSalvo) {
+
+                            const {
+                                data: usuarioPorIdSalvo,
+                                error: erroIdSalvo
+                            } = await supabase
+                                .from('usuarios')
+                                .select('*')
+                                .eq(
+                                    'id',
+                                    idSalvo
+                                )
+                                .maybeSingle();
+
+                            if (erroIdSalvo) {
+
+                                console.error(
+                                    'Erro ao buscar pelo usuario_id salvo:',
+                                    erroIdSalvo
+                                );
+
+                            }
+
+                            if (usuarioPorIdSalvo) {
+
+                                dadosUsuario =
+                                    usuarioPorIdSalvo;
+
+                            }
+                        }
+                    }
                 }
 
-                // A identidade verdadeira vem do Supabase Auth.
-                // Alterar localStorage ou o ID na URL não troca de conta.
-                if (routeId && routeId !== String(usuarioLogado.id)) {
-                    navigate('/Perfil', { replace: true });
-                    return;
-                }
-
-                const { data: dadosUsuario, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('auth_id', usuarioLogado.id)
-                    .maybeSingle();
-
-                if (error) throw error;
+                // =========================================
+                // VERIFICAR SE O PERFIL FOI ENCONTRADO
+                // =========================================
 
                 if (!dadosUsuario) {
+
                     throw new Error(
-                        'Seu usuário foi autenticado, mas o perfil não foi encontrado na tabela usuarios.'
+                        'O login foi realizado, mas o perfil não foi encontrado na tabela usuarios.'
+                    );
+
+                }
+
+                const idDoUsuario =
+                    dadosUsuario.id;
+
+                setUserId(
+                    idDoUsuario
+                );
+
+                if (!routeId) {
+                    setLoggedUserId(
+                        idDoUsuario
                     );
                 }
 
-                const idDoUsuario = dadosUsuario.id;
-                setUserId(idDoUsuario);
+                // =========================================
+                // NOME
+                // =========================================
 
-                // localStorage é apenas auxiliar. Não é usado para autenticação.
-                localStorage.setItem('usuario_id', String(idDoUsuario));
-                localStorage.setItem('usuario_auth_id', String(usuarioLogado.id));
-                localStorage.setItem('usuario_email', dadosUsuario.email || usuarioLogado.email || '');
-                localStorage.setItem('usuario_username', dadosUsuario.username || '');
+                setNome(
+                    dadosUsuario.username ||
+                    ''
+                );
 
-                setNome(dadosUsuario.username || '');
-                setEmail(dadosUsuario.email || usuarioLogado.email || '');
+                // =========================================
+                // EMAIL
+                // =========================================
+
+                setEmail(
+                    dadosUsuario.email ||
+                    ''
+                );
+
+                // =========================================
+                // DATA DE CADASTRO
+                // =========================================
 
                 if (dadosUsuario.registro) {
-                    setRegistro(new Date(dadosUsuario.registro).toLocaleDateString('pt-BR'));
+
+                    setRegistro(
+                        new Date(
+                            dadosUsuario.registro
+                        ).toLocaleDateString(
+                            'pt-BR'
+                        )
+                    );
+
                 } else {
+
                     setRegistro('');
+
                 }
 
-                setFotoUrl(dadosUsuario.foto || '');
+                // =========================================
+                // FOTO
+                // =========================================
 
-                let planoAtual = String(dadosUsuario.plano || 'Gratuito')
-                    .replace(/['\"]/g, '')
-                    .replace(/::text/gi, '')
+                setFotoUrl(
+                    dadosUsuario.foto ||
+                    ''
+                );
+
+                // =========================================
+                // PLANO
+                // =========================================
+
+                let planoAtual = String(
+                    dadosUsuario.plano ||
+                    'Gratuito'
+                )
+                    .replace(
+                        /['"]/g,
+                        ''
+                    )
+                    .replace(
+                        /::text/gi,
+                        ''
+                    )
                     .trim();
 
-                if (planoAtual.toLowerCase() === 'gratuito') planoAtual = 'Gratuito';
-                if (planoAtual.toLowerCase() === 'premium') planoAtual = 'Premium';
+                if (
+                    planoAtual.toLowerCase() ===
+                    'gratuito'
+                ) {
 
-                setPlano(planoAtual);
-                setMoedas(dadosUsuario.moedas || 0);
+                    planoAtual = 'Gratuito';
 
-                // Preferências vêm do banco.
-                setAnimesSelecionados(Array.isArray(dadosUsuario.animes_favoritos) ? dadosUsuario.animes_favoritos : []);
-                setGenerosSelecionados(Array.isArray(dadosUsuario.generos_favoritos) ? dadosUsuario.generos_favoritos : []);
-                setTagsSelecionadas(Array.isArray(dadosUsuario.tags_interesse) ? dadosUsuario.tags_interesse : []);
+                }
 
-                const { data: dadosPosts, error: erroPosts } = await supabase
+                if (
+                    planoAtual.toLowerCase() ===
+                    'premium'
+                ) {
+
+                    planoAtual = 'Premium';
+
+                }
+
+                setPlano(
+                    planoAtual
+                );
+
+                // =========================================
+                // MOEDAS
+                // =========================================
+
+                setMoedas(
+                    dadosUsuario.moedas ||
+                    0
+                );
+
+                // =========================================
+                // PREFERÊNCIAS VINDAS DO SUPABASE
+                // =========================================
+
+                setAnimesSelecionados(
+                    Array.isArray(dadosUsuario.animes_favoritos)
+                        ? dadosUsuario.animes_favoritos
+                        : []
+                );
+
+                setGenerosSelecionados(
+                    Array.isArray(dadosUsuario.generos_favoritos)
+                        ? dadosUsuario.generos_favoritos
+                        : []
+                );
+
+                setTagsSelecionadas(
+                    Array.isArray(dadosUsuario.tags_interesse)
+                        ? dadosUsuario.tags_interesse
+                        : []
+                );
+
+                // O localStorage guarda o usuário LOGADO, não o perfil visitado.
+                if (!routeId) {
+
+                    localStorage.setItem(
+                        'usuario_id',
+                        String(idDoUsuario)
+                    );
+
+                    localStorage.setItem(
+                        'usuario_auth_id',
+                        String(usuarioLogado?.id || '')
+                    );
+
+                    localStorage.setItem(
+                        'usuario_email',
+                        dadosUsuario.email || ''
+                    );
+
+                }
+
+                // =========================================
+                // PUBLICAÇÕES
+                // =========================================
+
+                const {
+                    data: dadosPosts,
+                    error: erroPosts
+                } = await supabase
                     .from('postagens')
                     .select('*')
-                    .eq('id_usuario', idDoUsuario)
-                    .order('criado_em', { ascending: false });
+                    .eq(
+                        'id_usuario',
+                        idDoUsuario
+                    )
+                    .order(
+                        'criado_em',
+                        {
+                            ascending: false
+                        }
+                    );
 
-                if (erroPosts) throw erroPosts;
-                setMeusPosts(dadosPosts || []);
+                if (erroPosts) {
+
+                    throw erroPosts;
+
+                }
+
+                setMeusPosts(
+                    dadosPosts ||
+                    []
+                );
 
             } catch (error) {
-                console.error('Erro ao buscar dados:', error);
+
+                console.error(
+                    'Erro ao buscar dados:',
+                    error
+                );
+
             } finally {
-                setCarregandoPosts(false);
+
+                setCarregandoPosts(
+                    false
+                );
+
             }
         }
 
         buscarDadosDoBanco();
 
-    }, [navigate, routeId]);
+    }, [
+        navigate,
+        routeId
+    ]);
 
     // =========================================
     // BUSCAR MINHA LISTA
@@ -428,131 +787,28 @@ function Perfil() {
     }, [userId]);
 
     // =========================================
-    // BUSCAR SEGUIDORES / SEGUINDO
-    // =========================================
-
-    useEffect(() => {
-
-        async function buscarContagens() {
-
-            if (!userId) return;
-
-            try {
-
-                const [resSeguidores, resSeguindo] = await Promise.all([
-                    supabase
-                        .from('seguidores')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('id_seguido', userId),
-
-                    supabase
-                        .from('seguidores')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('id_seguidor', userId),
-                ]);
-
-                if (resSeguidores.error) throw resSeguidores.error;
-                if (resSeguindo.error) throw resSeguindo.error;
-
-                setTotalSeguidores(resSeguidores.count || 0);
-                setTotalSeguindo(resSeguindo.count || 0);
-
-                // Se for o perfil de outra pessoa, verifica se eu já sigo
-                const meuId = Number(localStorage.getItem('usuario_id'));
-
-                if (meuId && meuId !== Number(userId)) {
-
-                    const { data, error } = await supabase
-                        .from('seguidores')
-                        .select('id_seguidor')
-                        .eq('id_seguidor', meuId)
-                        .eq('id_seguido', userId)
-                        .maybeSingle();
-
-                    if (error) throw error;
-
-                    setSeguindo(!!data);
-                }
-
-            } catch (error) {
-                console.error('Erro ao buscar seguidores:', error);
-            }
-        }
-
-        buscarContagens();
-
-    }, [userId]);
-
-    // =========================================
-    // SEGUIR / DEIXAR DE SEGUIR
-    // =========================================
-
-    const alternarSeguir = async () => {
-        const meuId = Number(localStorage.getItem('usuario_id'));
-
-        if (!meuId) {
-            alert('Você precisa estar logado para seguir alguém!');
-            return;
-        }
-
-        if (!userId || meuId === Number(userId) || carregandoSeguir) return;
-
-        setCarregandoSeguir(true);
-
-        try {
-            if (seguindo) {
-                const { error } = await supabase
-                    .from('seguidores')
-                    .delete()
-                    .eq('id_seguidor', meuId)
-                    .eq('id_seguido', userId);
-
-                if (error) throw error;
-
-                setSeguindo(false);
-                setTotalSeguidores((n) => Math.max(n - 1, 0));
-            } else {
-                const { error } = await supabase
-                    .from('seguidores')
-                    .insert({
-                        id_seguidor: meuId,
-                        id_seguido: Number(userId),
-                    });
-
-                // 23505 = já seguia, só sincroniza a tela
-                if (error && error.code !== '23505') throw error;
-
-                setSeguindo(true);
-
-                if (!error) setTotalSeguidores((n) => n + 1);
-            }
-        } catch (error) {
-            console.error('Erro ao seguir:', error);
-            alert('Não foi possível atualizar o seguimento.');
-        } finally {
-            setCarregandoSeguir(false);
-        }
-    };
-
-
-    // =========================================
     // LOGOUT
     // =========================================
 
     const handleLogout = async () => {
 
-        const { error } = await supabase.auth.signOut();
+        const {
+            error
+        } = await supabase.auth.signOut();
 
         if (error) {
-            console.error('Erro ao sair:', error);
-            alert('Erro ao sair da conta.');
+
+            console.error(
+                'Erro ao sair:',
+                error
+            );
+
+            alert(
+                'Erro ao sair da conta.'
+            );
+
             return;
         }
-
-        localStorage.removeItem('usuario_id');
-        localStorage.removeItem('usuario_auth_id');
-        localStorage.removeItem('usuario_email');
-        localStorage.removeItem('usuario_username');
 
         navigate('/Login');
     };
@@ -562,6 +818,10 @@ function Perfil() {
     // =========================================
 
     const handleFileChange = async (e) => {
+
+        if (!isMeuPerfil || !userId) {
+            return;
+        }
 
         const arquivo =
             e.target.files[0];
@@ -701,6 +961,10 @@ function Perfil() {
 
     const abrirEditarPerfil = () => {
 
+        if (!isMeuPerfil) {
+            return;
+        }
+
         setNomeEditado(
             nome
         );
@@ -750,6 +1014,10 @@ function Perfil() {
     // =========================================
 
     const handleNovaFotoPerfil = (e) => {
+
+        if (!isMeuPerfil) {
+            return;
+        }
 
         const arquivo =
             e.target.files[0];
@@ -806,6 +1074,10 @@ function Perfil() {
     // =========================================
 
     const salvarPerfil = async () => {
+
+        if (!isMeuPerfil || !userId) {
+            return;
+        }
 
         if (!userId) {
 
@@ -959,6 +1231,10 @@ function Perfil() {
 
     const handleImagemPublicacao = (e) => {
 
+        if (!isMeuPerfil) {
+            return;
+        }
+
         const arquivo =
             e.target.files[0];
 
@@ -1014,6 +1290,10 @@ function Perfil() {
     // =========================================
 
     const handlePublicar = async () => {
+
+        if (!isMeuPerfil || !userId) {
+            return;
+        }
 
         if (!userId) {
 
@@ -1156,45 +1436,87 @@ function Perfil() {
     // PREFERÊNCIAS
     // =========================================
 
-    const alternarOpcao = async (opcao, categoria) => {
+    const alternarOpcao = async (
+        opcao,
+        categoria
+    ) => {
 
-        if (!isMeuPerfil || !userId) return;
+        if (!isMeuPerfil || !userId) {
+
+            return;
+
+        }
 
         let listaAtual = [];
         let colunaBanco = '';
         let atualizarEstado;
 
         if (categoria === 'animes') {
+
             listaAtual = animesSelecionados;
             colunaBanco = 'animes_favoritos';
             atualizarEstado = setAnimesSelecionados;
+
         } else if (categoria === 'generos') {
+
             listaAtual = generosSelecionados;
             colunaBanco = 'generos_favoritos';
             atualizarEstado = setGenerosSelecionados;
+
         } else if (categoria === 'tags') {
+
             listaAtual = tagsSelecionadas;
             colunaBanco = 'tags_interesse';
             atualizarEstado = setTagsSelecionadas;
+
         } else {
+
+            return;
+
+        }
+
+        const novaLista =
+            listaAtual.includes(opcao)
+                ? listaAtual.filter(
+                    (item) => item !== opcao
+                )
+                : [
+                    ...listaAtual,
+                    opcao
+                ];
+
+        // Atualiza a tela.
+        atualizarEstado(novaLista);
+
+        // Salva a mesma lista no Supabase.
+        const { error } = await supabase
+            .from('usuarios')
+            .update({
+                [colunaBanco]: novaLista
+            })
+            .eq(
+                'id',
+                userId
+            );
+
+        if (error) {
+
+            console.error(
+                `Erro ao salvar ${categoria}:`,
+                error
+            );
+
+            alert(
+                `Não foi possível salvar a preferência: ${error.message}`
+            );
+
             return;
         }
 
-        const novaLista = listaAtual.includes(opcao)
-            ? listaAtual.filter((item) => item !== opcao)
-            : [...listaAtual, opcao];
-
-        atualizarEstado(novaLista);
-
-        const { error } = await supabase
-            .from('usuarios')
-            .update({ [colunaBanco]: novaLista })
-            .eq('id', userId);
-
-        if (error) {
-            console.error('Erro ao salvar preferência:', error);
-            alert('Não foi possível salvar essa preferência no banco.');
-        }
+        console.log(
+            `Preferências de ${categoria} salvas:`,
+            novaLista
+        );
     };
 
     // =========================================
@@ -1261,10 +1583,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'perfil'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'perfil'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'perfil'
@@ -1281,10 +1604,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'configuracoes'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'configuracoes'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'configuracoes'
@@ -1441,35 +1765,6 @@ function Perfil() {
 
                                             </div>
 
-                                            <div className="follow-stats">
-
-                                                <div className="follow-stat">
-                                                    <strong>{totalSeguidores}</strong>
-                                                    <span>{totalSeguidores === 1 ? 'Seguidor' : 'Seguidores'}</span>
-                                                </div>
-
-                                                <div className="follow-stat">
-                                                    <strong>{totalSeguindo}</strong>
-                                                    <span>seguindo</span>
-                                                </div>
-
-                                                {!isMeuPerfil && (
-                                                    <button
-                                                        type="button"
-                                                        className={`btn-seguir ${seguindo ? 'seguindo' : ''}`}
-                                                        onClick={alternarSeguir}
-                                                        disabled={carregandoSeguir}
-                                                    >
-                                                        {carregandoSeguir
-                                                            ? '...'
-                                                            : seguindo
-                                                                ? 'Seguindo'
-                                                                : 'Seguidores'}
-                                                    </button>
-                                                )}
-
-                                            </div>
-
 
                                             <div className="info-item">
 
@@ -1547,12 +1842,14 @@ function Perfil() {
                                         </p>
 
 
-                                        <Link
-                                            to="/Planos"
-                                            className="plan-link"
-                                        >
-                                            Ver planos
-                                        </Link>
+                                        {isMeuPerfil && (
+                                            <Link
+                                                to="/Planos"
+                                                className="plan-link"
+                                            >
+                                                Ver planos
+                                            </Link>
+                                        )}
 
                                     </section>
 
@@ -1578,16 +1875,18 @@ function Perfil() {
 
 
                                         <p className="plan-desc">
-                                            Não há limite de moedas: compre e acumule à vontade!
+                                            Você pode ter até 150 moedas.
                                         </p>
 
 
-                                        <Link
-                                            to="/Moedas"
-                                            className="plan-link"
-                                        >
-                                            Comprar moedas
-                                        </Link>
+                                        {isMeuPerfil && (
+                                            <Link
+                                                to="/Moedas"
+                                                className="plan-link"
+                                            >
+                                                Comprar moedas
+                                            </Link>
+                                        )}
 
                                     </section>
 
@@ -1848,7 +2147,7 @@ function Perfil() {
 
                                                         {
                                                             categoriaAberta ===
-                                                                'animes'
+                                                            'animes'
                                                                 ? 'Escolha seus animes'
                                                                 : categoriaAberta ===
                                                                     'generos'
@@ -1888,7 +2187,7 @@ function Perfil() {
                                                         }
                                                         placeholder={
                                                             categoriaAberta ===
-                                                                'animes'
+                                                            'animes'
                                                                 ? 'Procure um anime...'
                                                                 : categoriaAberta ===
                                                                     'generos'
@@ -1905,184 +2204,184 @@ function Perfil() {
                                                     {categoriaAberta ===
                                                         'animes' && (
 
-                                                            animesFiltrados.length >
-                                                                0 ? (
+                                                        animesFiltrados.length >
+                                                        0 ? (
 
-                                                                animesFiltrados.map(
-                                                                    (anime) => (
+                                                            animesFiltrados.map(
+                                                                (anime) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            anime
+                                                                        }
+                                                                        className={
+                                                                            animesSelecionados.includes(
+                                                                                anime
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                anime,
+                                                                                'animes'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 anime
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 animesSelecionados.includes(
                                                                                     anime
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    anime,
-                                                                                    'animes'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    anime
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    animesSelecionados.includes(
-                                                                                        anime
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum anime encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum anime encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
 
                                                     {categoriaAberta ===
                                                         'generos' && (
 
-                                                            generosFiltrados.length >
-                                                                0 ? (
+                                                        generosFiltrados.length >
+                                                        0 ? (
 
-                                                                generosFiltrados.map(
-                                                                    (genero) => (
+                                                            generosFiltrados.map(
+                                                                (genero) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            genero
+                                                                        }
+                                                                        className={
+                                                                            generosSelecionados.includes(
+                                                                                genero
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                genero,
+                                                                                'generos'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 genero
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 generosSelecionados.includes(
                                                                                     genero
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    genero,
-                                                                                    'generos'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    genero
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    generosSelecionados.includes(
-                                                                                        genero
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum gênero encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum gênero encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
 
                                                     {categoriaAberta ===
                                                         'tags' && (
 
-                                                            tagsFiltradas.length >
-                                                                0 ? (
+                                                        tagsFiltradas.length >
+                                                        0 ? (
 
-                                                                tagsFiltradas.map(
-                                                                    (tag) => (
+                                                            tagsFiltradas.map(
+                                                                (tag) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            tag
+                                                                        }
+                                                                        className={
+                                                                            tagsSelecionadas.includes(
+                                                                                tag
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                tag,
+                                                                                'tags'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 tag
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 tagsSelecionadas.includes(
                                                                                     tag
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    tag,
-                                                                                    'tags'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    tag
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    tagsSelecionadas.includes(
-                                                                                        tag
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhuma tag encontrada.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhuma tag encontrada.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
                                                 </div>
 
@@ -2520,281 +2819,95 @@ function Perfil() {
                         {activeTab ===
                             'configuracoes' && (
 
-                                <div className="settings-container">
+                            <div className="settings-container">
 
-                                    <div className="settings-section card-bg">
+                                <div className="settings-section card-bg">
 
-                                        <h2 className="section-title">
+                                    <h2 className="section-title">
 
-                                            <i className="ph-fill ph-user-list"></i>
+                                        <i className="ph-fill ph-user-list"></i>
 
-                                            Dados Pessoais
+                                        Dados Pessoais
 
-                                        </h2>
-
-
-                                        <div className="settings-group">
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Nome e foto
-                                                    </h4>
-
-                                                    <p>
-                                                        Atualize seu nome de exibição e imagem de perfil.
-                                                    </p>
-
-                                                </div>
+                                    </h2>
 
 
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                    onClick={
-                                                        abrirEditarPerfil
-                                                    }
-                                                >
-                                                    Editar
-                                                </button>
+                                    <div className="settings-group">
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Nome e foto
+                                                </h4>
+
+                                                <p>
+                                                    Atualize seu nome de exibição e imagem de perfil.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        E-mail e telefone
-                                                    </h4>
-
-                                                    <p>
-                                                        Gerencie suas informações de contato.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Editar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Data de nascimento
-                                                    </h4>
-
-                                                    <p>
-                                                        Atualize a data do seu nascimento.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Editar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                                onClick={
+                                                    abrirEditarPerfil
+                                                }
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
-                                    </div>
 
+                                        <div className="settings-item">
 
-                                    <div className="settings-section card-bg">
+                                            <div className="settings-item-info">
 
-                                        <h2 className="section-title">
+                                                <h4>
+                                                    E-mail e telefone
+                                                </h4>
 
-                                            <i className="ph-fill ph-lock-key"></i>
-
-                                            Segurança
-
-                                        </h2>
-
-
-                                        <div className="settings-group">
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Senha de acesso
-                                                    </h4>
-
-                                                    <p>
-                                                        Altere sua senha de login atual.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Mudar senha
-                                                </button>
+                                                <p>
+                                                    Gerencie suas informações de contato.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Confirmação em duas etapas
-                                                    </h4>
-
-                                                    <p>
-                                                        Adicione uma camada extra de segurança.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Ativar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Dispositivos conectados
-                                                    </h4>
-
-                                                    <p>
-                                                        Gerencie as sessões ativas na sua conta.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Visualizar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
-                                    </div>
 
+                                        <div className="settings-item">
 
-                                    <div className="settings-section card-bg">
+                                            <div className="settings-item-info">
 
-                                        <h2 className="section-title">
+                                                <h4>
+                                                    Data de nascimento
+                                                </h4>
 
-                                            <i className="ph-fill ph-gear"></i>
-
-                                            Preferências
-
-                                        </h2>
-
-
-                                        <div className="settings-group">
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Idioma e região
-                                                    </h4>
-
-                                                    <p>
-                                                        Personalize o idioma da interface.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Alterar
-                                                </button>
+                                                <p>
+                                                    Atualize a data do seu nascimento.
+                                                </p>
 
                                             </div>
 
 
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Tema visual
-                                                    </h4>
-
-                                                    <p>
-                                                        Alterne entre o tema escuro e claro.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Ajustar
-                                                </button>
-
-                                            </div>
-
-
-                                            <div className="settings-item">
-
-                                                <div className="settings-item-info">
-
-                                                    <h4>
-                                                        Notificações
-                                                    </h4>
-
-                                                    <p>
-                                                        Escolha o que deseja receber por e-mail.
-                                                    </p>
-
-                                                </div>
-
-
-                                                <button
-                                                    type="button"
-                                                    className="settings-btn"
-                                                >
-                                                    Configurar
-                                                </button>
-
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Editar
+                                            </button>
 
                                         </div>
 
@@ -2802,7 +2915,193 @@ function Perfil() {
 
                                 </div>
 
-                            )}
+
+                                <div className="settings-section card-bg">
+
+                                    <h2 className="section-title">
+
+                                        <i className="ph-fill ph-lock-key"></i>
+
+                                        Segurança
+
+                                    </h2>
+
+
+                                    <div className="settings-group">
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Senha de acesso
+                                                </h4>
+
+                                                <p>
+                                                    Altere sua senha de login atual.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Mudar senha
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Confirmação em duas etapas
+                                                </h4>
+
+                                                <p>
+                                                    Adicione uma camada extra de segurança.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Ativar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Dispositivos conectados
+                                                </h4>
+
+                                                <p>
+                                                    Gerencie as sessões ativas na sua conta.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Visualizar
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div className="settings-section card-bg">
+
+                                    <h2 className="section-title">
+
+                                        <i className="ph-fill ph-gear"></i>
+
+                                        Preferências
+
+                                    </h2>
+
+
+                                    <div className="settings-group">
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Idioma e região
+                                                </h4>
+
+                                                <p>
+                                                    Personalize o idioma da interface.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Alterar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Tema visual
+                                                </h4>
+
+                                                <p>
+                                                    Alterne entre o tema escuro e claro.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Ajustar
+                                            </button>
+
+                                        </div>
+
+
+                                        <div className="settings-item">
+
+                                            <div className="settings-item-info">
+
+                                                <h4>
+                                                    Notificações
+                                                </h4>
+
+                                                <p>
+                                                    Escolha o que deseja receber por e-mail.
+                                                </p>
+
+                                            </div>
+
+
+                                            <button
+                                                type="button"
+                                                className="settings-btn"
+                                            >
+                                                Configurar
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        )}
 
                     </div>
 
