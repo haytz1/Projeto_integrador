@@ -1,7 +1,18 @@
+<<<<<<< Updated upstream
 import '../css/moedas.css'
 import { Link } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+=======
+import React from 'react';
+
+import '../css/moedas.css';
+
+import { Link } from 'react-router-dom';
+
 import NavbarPesquisa from '../components/Navbar_pesquisa';
+
+>>>>>>> Stashed changes
+import { createClient } from '@supabase/supabase-js';
+import Rodape from '../components/Rodape';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -22,6 +33,7 @@ function Moedas() {
             return;
         }
 
+        // Busca o saldo atual
         const { data: usuario, error: erroBusca } = await supabase
             .from('usuarios')
             .select('moedas')
@@ -29,64 +41,141 @@ function Moedas() {
             .single();
 
         if (erroBusca) {
-            console.error('Erro ao buscar moedas:', erroBusca);
-            alert('Erro ao buscar suas moedas.');
+
+            console.error(
+                'Erro ao buscar moedas:',
+                erroBusca
+            );
+
+            alert('Erro ao consultar suas moedas.');
+
             return;
         }
 
         const moedasAtuais = usuario.moedas || 0;
 
-        // Soma as novas moedas sem limite máximo
-        const novasMoedas = moedasAtuais + quantidade;
+        // Mantém o limite de 150 moedas
+        if (moedasAtuais >= 150) {
 
-        const { error } = await supabase
-            .from('usuarios')
-            .update({ moedas: novasMoedas })
-            .eq('id', usuarioId);
+            alert(
+                'Você já possui 150 moedas.'
+            );
 
-        if (error) {
-            console.error('Erro ao adicionar moedas:', error);
-            alert('Erro ao adicionar moedas.');
             return;
         }
 
-        alert(`Você recebeu ${quantidade} moedas!`);
+        // Calcula quantas moedas ainda podem ser adicionadas
+        const moedasDisponiveis = 150 - moedasAtuais;
+
+        const moedasRecebidas = Math.min(
+            quantidade,
+            moedasDisponiveis
+        );
+
+        const novoSaldo =
+            moedasAtuais + moedasRecebidas;
+
+
+        // Atualiza o saldo no banco
+        const { error: erroAtualizacao } = await supabase
+            .from('usuarios')
+            .update({
+                moedas: novoSaldo
+            })
+            .eq('id', usuarioId);
+
+        if (erroAtualizacao) {
+
+            console.error(
+                'Erro ao atualizar moedas:',
+                erroAtualizacao
+            );
+
+            alert('Erro ao adicionar moedas.');
+
+            return;
+        }
+
+
+        if (moedasRecebidas < quantidade) {
+
+            alert(
+                `Você recebeu ${moedasRecebidas} moedas.`
+            );
+
+        } else {
+
+            alert(
+                `Você recebeu ${moedasRecebidas} moedas!`
+            );
+        }
     };
 
-    return (
 
+    return (
         <>
 
             <NavbarPesquisa />
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
             <main className="container">
 
+                {/* =========================================
+                    CABEÇALHO
+                ========================================== */}
+
                 <header className="coins-header">
 
-                    <h1 className="main-title">Comprar moedas</h1>
+                    <h1 className="main-title">
+                        Comprar Moedas
+                    </h1>
 
-                    <p>Adquira suas moedas e aproveite mais vantagens no site</p>
+                    <p>
+                        Adquira moedas para utilizar nos recursos
+                        disponíveis do Anime Spot.
+                    </p>
 
                 </header>
 
+
+                {/* =========================================
+                    CARDS DE MOEDAS
+                ========================================== */}
+
                 <section className="coins-grid">
+
+
+                    {/* =====================================
+                        50 MOEDAS
+                    ====================================== */}
 
                     <article className="coin-card">
 
                         <div className="coin-header">
 
-                            <div className="coin-icon">
-                                <i className="ph ph-coin"></i>
-                            </div>
+                            <i className="ph ph-coin coin-icon"></i>
 
-                            <h2>50 Moedas</h2>
+                            <h2>
+                                50 Moedas
+                            </h2>
 
                             <div className="coin-price">
-                                <span className="currency">R$</span>
-                                <span className="amount">5,00</span>
+
+                                <span className="currency">
+                                    R$
+                                </span>
+
+                                <span className="amount">
+                                    5,00
+                                </span>
+
                             </div>
 
                         </div>
+
 
                         <div className="coin-body">
 
@@ -94,32 +183,32 @@ function Moedas() {
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Desbloquear 1 capítulo extra
+                                    50 moedas adicionadas à sua conta
                                 </li>
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Apoiar seu autor favorito
-                                </li>
-
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Badge de apoiador iniciante
+                                    Utilize para desbloquear conteúdos
                                 </li>
 
                             </ul>
 
+
                             <button
-                                className="btn-cta btn-coin"
+                                className="btn-coin"
                                 onClick={() => comprarMoedas(50)}
                             >
-                                Comprar 50 Moedas
+                                Comprar 50 moedas
                             </button>
 
                         </div>
 
                     </article>
 
+
+                    {/* =====================================
+                        100 MOEDAS
+                    ====================================== */}
 
                     <article className="coin-card coin-featured">
 
@@ -127,20 +216,29 @@ function Moedas() {
                             Mais Popular
                         </div>
 
+
                         <div className="coin-header">
 
-                            <div className="coin-icon">
-                                <i className="ph ph-coins"></i>
-                            </div>
+                            <i className="ph ph-coin coin-icon"></i>
 
-                            <h2>100 Moedas</h2>
+                            <h2>
+                                100 Moedas
+                            </h2>
 
                             <div className="coin-price">
-                                <span className="currency">R$</span>
-                                <span className="amount">10,00</span>
+
+                                <span className="currency">
+                                    R$
+                                </span>
+
+                                <span className="amount">
+                                    10,00
+                                </span>
+
                             </div>
 
                         </div>
+
 
                         <div className="coin-body">
 
@@ -148,49 +246,57 @@ function Moedas() {
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Desbloquear 2 capítulos ou 1 episódio
+                                    100 moedas adicionadas à sua conta
                                 </li>
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Apoiar autores favoritos
-                                </li>
-
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Badge de apoiador intermediário
+                                    Utilize para desbloquear conteúdos
                                 </li>
 
                             </ul>
 
+
                             <button
-                                className="btn-cta btn-coin"
+                                className="btn-coin"
                                 onClick={() => comprarMoedas(100)}
                             >
-                                Comprar 100 Moedas
+                                Comprar 100 moedas
                             </button>
 
                         </div>
 
                     </article>
 
+
+                    {/* =====================================
+                        150 MOEDAS
+                    ====================================== */}
 
                     <article className="coin-card">
 
                         <div className="coin-header">
 
-                            <div className="coin-icon">
-                                <i className="ph ph-money"></i>
-                            </div>
+                            <i className="ph ph-coin coin-icon"></i>
 
-                            <h2>150 Moedas</h2>
+                            <h2>
+                                150 Moedas
+                            </h2>
 
                             <div className="coin-price">
-                                <span className="currency">R$</span>
-                                <span className="amount">15,00</span>
+
+                                <span className="currency">
+                                    R$
+                                </span>
+
+                                <span className="amount">
+                                    15,00
+                                </span>
+
                             </div>
 
                         </div>
+
 
                         <div className="coin-body">
 
@@ -198,101 +304,60 @@ function Moedas() {
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Desbloquear 3 capítulos ou 2 episódios
+                                    150 moedas adicionadas à sua conta
                                 </li>
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-                                    Apoiar autores favoritos
-                                </li>
-
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Badge de apoiador premium
-                                </li>
-
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Destaque nos comentários
+                                    Utilize para desbloquear conteúdos
                                 </li>
 
                             </ul>
 
+
                             <button
-                                className="btn-cta btn-coin"
+                                className="btn-coin"
                                 onClick={() => comprarMoedas(150)}
                             >
-                                Comprar 150 Moedas
+                                Comprar 150 moedas
                             </button>
 
                         </div>
 
                     </article>
 
+
                 </section>
 
-            </main>
 
+                {/* =========================================
+                    LINK PARA PLANOS
+                ========================================== */}
 
-            <footer className="site-footer">
+                <div
+                    style={{
+                        textAlign: 'center',
+                        marginBottom: '40px'
+                    }}
+                >
 
-                <div className="footer-container">
+                    <p>
+                        Quer benefícios exclusivos?
+                    </p>
 
-                    <div className="footer-about">
-
-                        <h3
-                            className="site-logo"
-                            style={{ margin: 0 }}
-                        >
-                            Anime Spot
-                        </h3>
-
-                        <p>
-                            O seu destino final para ler e descobrir os
-                            melhores animes, mangás e autores em um só lugar.
-                        </p>
-
-                    </div>
-
-                    <div className="footer-links">
-
-                        <h4>Navegação</h4>
-
-                        <ul>
-
-                            <li>
-                                <Link to="/">Início</Link>
-                            </li>
-
-                            <li>
-                                <Link to="/Planos">Planos</Link>
-                            </li>
-
-                            <li>
-                                <Link to="/Moedas">Moedas</Link>
-                            </li>
-
-                        </ul>
-
-                    </div>
-
-                    <div className="footer-bottom">
-
-                        <p>
-                            &copy; 2026 Plataforma PI_UC3 - Anime Spot.
-                            Todos os direitos reservados.
-                        </p>
-
-                    </div>
+                    <Link
+                        to="/Planos"
+                        className="plan-link"
+                    >
+                        Conheça os planos Premium
+                    </Link>
 
                 </div>
 
-            </footer>
-
+            </main>
+<Rodape/>
         </>
-
     );
-
 }
 
 export default Moedas;

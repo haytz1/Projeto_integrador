@@ -1541,6 +1541,18 @@ function Perfil() {
 
                                         </div>
 
+                                        {String(plano).toLowerCase() === 'premium' && (
+
+                                            <div className="badge-apoiador">
+
+                                                <i className="ph-fill ph-star"></i>
+
+                                                Apoiador
+
+                                            </div>
+
+                                        )}
+
 
                                         <p className="plan-desc">
                                             Aproveite os recursos mais populares do nosso site.
