@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 
@@ -27,6 +27,12 @@ function Leitura() {
     const [capituloDesbloqueado, setCapituloDesbloqueado] = useState(false);
     const [desbloqueando, setDesbloqueando] = useState(false);
     const [carregandoConteudo, setCarregandoConteudo] = useState(false);
+
+    // Timer de desbloqueio automático (1 minuto = 60 segundos)
+    const TIMER_DURACAO = 1 * 60; // 60 segundos
+    const [timerSegundos, setTimerSegundos] = useState(null);
+    const timerRef = useRef(null);
+    const [desbloqueandoPorTimer, setDesbloqueandoPorTimer] = useState(false);
 
     // Modal de novo capítulo
     const [modalAberto, setModalAberto] = useState(false);
@@ -355,6 +361,131 @@ Para ler este capítulo, você precisa desbloqueá-lo por ${valor} moedas.`
         carregarConteudo();
 
     }, [capituloAtual, dadosObra]);
+
+    // =========================================================
+    // TIMER DE DESBLOQUEIO AUTOMÁTICO
+    // =========================================================
+
+    // Função para desbloquear capítulo pelo timer (sem gastar moedas)
+    const desbloquearPorTimer = useCallback(async (cap) => {
+
+        if (!cap || !cap.e_vip) return;
+
+        setDesbloqueandoPorTimer(true);
+
+        try {
+
+            const usuarioId = localStorage.getItem('usuario_id');
+
+            // Se estiver logado, tenta salvar no banco
+            if (usuarioId) {
+
+                // Verifica se já foi desbloqueado (por moedas) antes do timer terminar
+                const jaDesbloqueado = await verificarDesbloqueio(cap.id);
+
+                if (!jaDesbloqueado) {
+
+                    const { error } = await supabase
+                        .from('leitura')
+                        .upsert(
+                            {
+                                id_usuario: usuarioId,
+                                id_capitulo: cap.id,
+                                desbloqueado: true
+                            },
+                            { onConflict: 'id_usuario,id_capitulo' }
+                        );
+
+                    if (error) {
+                        console.error('Erro ao desbloquear capítulo pelo timer:', error.message);
+                    }
+                }
+            }
+
+            // Independente do login, exibe o conteúdo na tela
+            setCapituloDesbloqueado(true);
+            setConteudoCapitulo(
+                cap.conteudo ||
+                `Capítulo ${cap.numero_capitulo} sem conteúdo.`
+            );
+
+        } catch (err) {
+            console.error('Erro inesperado no timer:', err);
+            // Mesmo com erro, exibe o conteúdo localmente
+            setCapituloDesbloqueado(true);
+            setConteudoCapitulo(
+                cap.conteudo ||
+                `Capítulo ${cap.numero_capitulo} sem conteúdo.`
+            );
+        } finally {
+            setDesbloqueandoPorTimer(false);
+            setTimerSegundos(null);
+        }
+
+    }, []);
+
+    // Inicia / reinicia o timer quando o capítulo VIP muda
+    useEffect(() => {
+
+        // Limpa qualquer timer anterior
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+
+        // Só ativa o timer se:
+        //  - há um capítulo carregado
+        //  - ele é VIP
+        //  - ainda não foi desbloqueado
+        //  - não está carregando o conteúdo
+        if (
+            !capituloAtualDados ||
+            !capituloAtualDados.e_vip ||
+            capituloDesbloqueado ||
+            carregandoConteudo
+        ) {
+            setTimerSegundos(null);
+            return;
+        }
+
+        // Inicia o timer
+        setTimerSegundos(TIMER_DURACAO);
+
+        const capSnapshot = capituloAtualDados;
+
+        timerRef.current = setInterval(() => {
+
+            setTimerSegundos(prev => {
+
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                    desbloquearPorTimer(capSnapshot);
+                    return 0;
+                }
+
+                return prev - 1;
+            });
+
+        }, 1000);
+
+        // Limpeza ao desmontar ou ao trocar de capítulo
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+
+    }, [capituloAtualDados, capituloDesbloqueado, carregandoConteudo, desbloquearPorTimer]);
+
+    // Formata os segundos em mm:ss
+    function formatarTimer(segundos) {
+        if (segundos === null) return '';
+        const m = Math.floor(segundos / 60);
+        const s = segundos % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
 
     // =========================================================
     // DESBLOQUEAR CAPÍTULO
@@ -1313,8 +1444,34 @@ Para ler este capítulo, você precisa desbloqueá-lo por ${valor} moedas.`
                                             {valorCapitulo}
                                             {' '}moedas
                                         </strong>
-                                        .
+                                        {' '}ou aguarde o timer gratuito.
                                     </p>
+
+                                    {/* ===========================
+                                        TIMER DE DESBLOQUEIO (inline - resumido)
+                                    =========================== */}
+
+                                    {timerSegundos !== null && (
+                                        <p style={{ fontSize: '13px', color: '#a78bfa', margin: '12px 0 0 0' }}>
+                                            ⏳ Liberação automática em{' '}
+                                            <strong style={{ fontFamily: 'monospace', fontSize: '15px', color: '#c084fc' }}>
+                                                {formatarTimer(timerSegundos)}
+                                            </strong>
+                                            {' '}— acompanhe pelo contador flutuante.
+                                        </p>
+                                    )}
+
+                                    {desbloqueandoPorTimer && (
+                                        <p
+                                            style={{
+                                                color: '#a78bfa',
+                                                fontStyle: 'italic',
+                                                marginTop: '8px'
+                                            }}
+                                        >
+                                            ✨ Desbloqueando automaticamente...
+                                        </p>
+                                    )}
 
                                     <button
                                         className="btn"
@@ -1386,6 +1543,88 @@ Para ler este capítulo, você precisa desbloqueá-lo por ${valor} moedas.`
                 </button>
 
             </div>
+
+            {/* =================================================
+                WIDGET FLUTUANTE DO TIMER VIP
+            ================================================= */}
+
+            {timerSegundos !== null &&
+                capituloAtualDados?.e_vip &&
+                !capituloDesbloqueado && (
+
+                <div className={`vip-timer-widget${timerSegundos <= 15 ? ' vip-timer-urgent' : ''}`}>
+
+                    {/* Anel SVG circular de progresso */}
+                    <div className="vip-timer-ring-wrap">
+                        <svg
+                            className="vip-timer-svg"
+                            viewBox="0 0 80 80"
+                        >
+                            {/* Trilho de fundo */}
+                            <circle
+                                cx="40" cy="40" r="34"
+                                fill="none"
+                                stroke="rgba(139,92,246,0.2)"
+                                strokeWidth="6"
+                            />
+                            {/* Arco de progresso */}
+                            <circle
+                                cx="40" cy="40" r="34"
+                                fill="none"
+                                stroke={timerSegundos <= 15 ? '#f87171' : '#c084fc'}
+                                strokeWidth="6"
+                                strokeLinecap="round"
+                                strokeDasharray={`${2 * Math.PI * 34}`}
+                                strokeDashoffset={`${2 * Math.PI * 34 * (1 - timerSegundos / TIMER_DURACAO)}`}
+                                style={{
+                                    transform: 'rotate(-90deg)',
+                                    transformOrigin: '50% 50%',
+                                    transition: 'stroke-dashoffset 0.9s linear, stroke 0.4s'
+                                }}
+                            />
+                        </svg>
+
+                        {/* Ícone central */}
+                        <span className="vip-timer-icon">
+                            {timerSegundos <= 15 ? '🔥' : '⭐'}
+                        </span>
+                    </div>
+
+                    {/* Contador mm:ss */}
+                    <div className="vip-timer-digits">
+                        {formatarTimer(timerSegundos)}
+                    </div>
+
+                    {/* Label */}
+                    <div className="vip-timer-label">
+                        {timerSegundos <= 15
+                            ? 'Quase lá!'
+                            : 'Liberação VIP'
+                        }
+                    </div>
+
+                    {/* Barra linear de progresso */}
+                    <div className="vip-timer-bar-track">
+                        <div
+                            className="vip-timer-bar-fill"
+                            style={{
+                                width: `${(timerSegundos / TIMER_DURACAO) * 100}%`,
+                                background: timerSegundos <= 15
+                                    ? 'linear-gradient(90deg, #f87171, #ef4444)'
+                                    : 'linear-gradient(90deg, #c084fc, #8b5cf6)'
+                            }}
+                        />
+                    </div>
+
+                </div>
+            )}
+
+            {/* Animação de desbloqueio por timer */}
+            {desbloqueandoPorTimer && (
+                <div className="vip-timer-unlocking">
+                    ✨ Desbloqueando automaticamente...
+                </div>
+            )}
 
         </>
     );

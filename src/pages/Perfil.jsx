@@ -632,7 +632,7 @@ function Perfil() {
     ]);
 
     // =========================================
-    // BUSCAR MINHA LISTA
+    // BUSCAR MINHA LISTA (favoritos do Supabase)
     // =========================================
 
     useEffect(() => {
@@ -640,6 +640,7 @@ function Perfil() {
         async function buscarMinhaLista() {
 
             if (!userId) {
+                setCarregandoObras(false);
                 return;
             }
 
@@ -648,130 +649,32 @@ function Perfil() {
             try {
 
                 const {
-                    data: biblioteca,
+                    data,
                     error
                 } = await supabase
-                    .from('biblioteca')
-                    .select('anime_id')
-                    .eq(
-                        'usuario_id',
-                        userId
-                    )
-                    .order(
-                        'criado_em',
-                        {
-                            ascending: false
-                        }
-                    );
+                    .from('favoritos')
+                    .select(`
+                        id,
+                        obras (
+                            id,
+                            titulo,
+                            sinopse,
+                            capa_url
+                        )
+                    `)
+                    .eq('usuario_id', userId)
+                    .order('created_at', { ascending: false });
 
                 if (error) {
                     throw error;
                 }
 
-                if (
-                    !biblioteca ||
-                    biblioteca.length === 0
-                ) {
+                // Filtra possíveis nulos caso a obra tenha sido deletada
+                const obras = (data || [])
+                    .map(f => f.obras)
+                    .filter(o => o !== null);
 
-                    setMinhasObras([]);
-
-                    return;
-                }
-
-                const ids =
-                    biblioteca.map(
-                        (item) =>
-                            item.anime_id
-                    );
-
-                const query = `
-                    query ($ids: [Int]) {
-                        Page(
-                            page: 1,
-                            perPage: 50
-                        ) {
-                            media(
-                                id_in: $ids,
-                                type: ANIME
-                            ) {
-                                id
-
-                                title {
-                                    romaji
-                                    english
-                                    native
-                                }
-
-                                coverImage {
-                                    large
-                                    extraLarge
-                                }
-
-                                startDate {
-                                    year
-                                }
-                            }
-                        }
-                    }
-                `;
-
-                const resposta =
-                    await fetch(
-                        'https://graphql.anilist.co',
-                        {
-                            method: 'POST',
-
-                            headers: {
-                                'Content-Type':
-                                    'application/json',
-
-                                'Accept':
-                                    'application/json'
-                            },
-
-                            body: JSON.stringify({
-                                query: query,
-
-                                variables: {
-                                    ids: ids
-                                }
-                            })
-                        }
-                    );
-
-                const dados =
-                    await resposta.json();
-
-                if (
-                    !resposta.ok ||
-                    !dados.data ||
-                    !dados.data.Page
-                ) {
-
-                    throw new Error(
-                        'Não foi possível buscar as obras.'
-                    );
-                }
-
-                const obras =
-                    dados.data.Page.media ||
-                    [];
-
-                const obrasOrdenadas =
-                    ids
-                        .map(
-                            (animeId) =>
-                                obras.find(
-                                    (obra) =>
-                                        obra.id ===
-                                        animeId
-                                )
-                        )
-                        .filter(Boolean);
-
-                setMinhasObras(
-                    obrasOrdenadas
-                );
+                setMinhasObras(obras);
 
             } catch (error) {
 
@@ -784,9 +687,7 @@ function Perfil() {
 
             } finally {
 
-                setCarregandoObras(
-                    false
-                );
+                setCarregandoObras(false);
 
             }
         }
@@ -2699,48 +2600,32 @@ function Perfil() {
                                             {minhasObras.map(
                                                 (obra) => {
 
-                                                    const nomeObra =
-                                                        obra.title?.english ||
-                                                        obra.title?.romaji ||
-                                                        obra.title?.native ||
-                                                        'Obra sem título';
-
-                                                    const imagem =
-                                                        obra.coverImage?.large ||
-                                                        obra.coverImage?.extraLarge;
+                                                    const imagemSrc = obra.capa_url
+                                                        ? obra.capa_url
+                                                        : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`;
 
                                                     return (
 
                                                         <div
-                                                            key={
-                                                                obra.id
-                                                            }
+                                                            key={obra.id}
                                                             className="obra-card"
                                                             onClick={() =>
                                                                 navigate(
-                                                                    `/anime/${obra.id}`
+                                                                    `/Leitura/${encodeURIComponent(obra.titulo)}`
                                                                 )
                                                             }
+                                                            style={{ cursor: 'pointer' }}
                                                         >
 
                                                             <div className="obra-card-imagem">
 
-                                                                {imagem && (
-
-                                                                    <img
-                                                                        src={
-                                                                            imagem
-                                                                        }
-                                                                        alt={
-                                                                            nomeObra
-                                                                        }
-                                                                        onError={(e) => {
-                                                                            e.currentTarget.style.display =
-                                                                                'none';
-                                                                        }}
-                                                                    />
-
-                                                                )}
+                                                                <img
+                                                                    src={imagemSrc}
+                                                                    alt={obra.titulo}
+                                                                    onError={(e) => {
+                                                                        e.currentTarget.src = `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`;
+                                                                    }}
+                                                                />
 
                                                             </div>
 
@@ -2748,20 +2633,14 @@ function Perfil() {
                                                             <div className="obra-card-info">
 
                                                                 <h3>
-                                                                    {
-                                                                        nomeObra
-                                                                    }
+                                                                    {obra.titulo}
                                                                 </h3>
 
 
-                                                                {obra.startDate?.year && (
+                                                                {obra.sinopse && (
 
                                                                     <span>
-                                                                        {
-                                                                            obra
-                                                                                .startDate
-                                                                                .year
-                                                                        }
+                                                                        {obra.sinopse.substring(0, 60)}{obra.sinopse.length > 60 ? '...' : ''}
                                                                     </span>
 
                                                                 )}
