@@ -70,7 +70,7 @@ function PaginaInicial() {
     const [modoEdicao, setModoEdicao] = useState(false);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [imagemEdicao, setImagemEdicao] = useState(null);
-    
+    const [obrasEmAlta, setObrasEmAlta] = useState([]);
     const [modalDenunciaAberto, setModalDenunciaAberto] = useState(false);
     const [alvoDenuncia, setAlvoDenuncia] = useState(null);
     const [motivoDenuncia, setMotivoDenuncia] = useState("");
@@ -78,7 +78,7 @@ function PaginaInicial() {
     const [seguindoIds, setSeguindoIds] = useState([]);
     const [curtindo, setCurtindo] = useState(false);
     const [carregandoSeguir, setCarregandoSeguir] = useState(false);
-
+    const [filtroEmAlta, setFiltroEmAlta] = useState("alta");
     const POSTS_POR_PAGINA = 6;
 
     const usuarioLogadoId = localStorage.getItem("usuario_id");
@@ -129,7 +129,7 @@ function PaginaInicial() {
                                 Number(item.id_usuario_bloqueado),
                             ) || [];
 
-                        
+
                     }
                 }
 
@@ -213,6 +213,33 @@ function PaginaInicial() {
                     );
 
                     setPostsHero(postsEmbaralhados.slice(0, 3));
+                }
+
+                const { data: dataObras, error: errorObras } = await supabase
+                    .from("obras")
+                    .select(
+                        `
+                        id,
+                        titulo,
+                        capa_url,
+                        created_at,
+                        visualizacoes,
+
+                        favoritos (
+                            count
+                        )
+                    `,
+                    );
+
+                if (errorObras) {
+                    console.error("Erro ao buscar obras:", errorObras);
+                } else {
+                    // Mesma regra da página de obras: um card por título
+                    const obrasUnicas = Array.from(
+                        new Map((dataObras || []).map((o) => [o.titulo, o])).values(),
+                    );
+
+                    setObrasEmAlta(obrasUnicas);
                 }
 
                 // =========================================================
@@ -642,7 +669,7 @@ function PaginaInicial() {
                 throw error;
             }
 
-            
+
 
             setPosts((prevPosts) =>
                 prevPosts.filter(
@@ -1290,6 +1317,60 @@ function PaginaInicial() {
             completo,
         };
     };
+
+    const opcoesEmAlta = [
+        { id: "alta", rotulo: "Em alta" },
+        { id: "novos", rotulo: "Novos" },
+        { id: "vistos", rotulo: "Mais vistos" },
+    ];
+    const contarFavoritos = (obra) => obra?.favoritos?.[0]?.count || 0;
+
+    const porDataObra = (a, b) =>
+        new Date(b.created_at) - new Date(a.created_at);
+
+    // Conta o clique 1x por obra a cada sessão, para não inflar o número
+    const registrarCliqueObra = async (obra) => {
+        const chave = `clique_obra_${obra.id}`;
+
+        try {
+            if (sessionStorage.getItem(chave)) return;
+            sessionStorage.setItem(chave, "1");
+        } catch {
+            // sessionStorage indisponível: segue sem a trava
+        }
+
+        const { error } = await supabase.rpc("incrementar_visualizacao_obra", {
+            obra_id: Number(obra.id),
+        });
+
+        if (error) {
+            console.error("Erro ao registrar clique na obra:", error);
+            return;
+        }
+
+        setObrasEmAlta((prev) =>
+            prev.map((o) =>
+                o.id === obra.id
+                    ? { ...o, visualizacoes: (o.visualizacoes || 0) + 1 }
+                    : o,
+            ),
+        );
+    };
+
+    const listaEmAlta = [...obrasEmAlta]
+        .sort((a, b) => {
+            if (filtroEmAlta === "novos") return porDataObra(a, b);
+
+            if (filtroEmAlta === "vistos") {
+                return (
+                    (b.visualizacoes || 0) - (a.visualizacoes || 0) ||
+                    porDataObra(a, b)
+                );
+            }
+
+            return contarFavoritos(b) - contarFavoritos(a) || porDataObra(a, b);
+        })
+        .slice(0, 5);
 
     return (
         <>
@@ -1959,768 +2040,841 @@ function PaginaInicial() {
                             Em alta agora
                         </h3>
 
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "12px", flexWrap: "wrap" }}>
+                            {opcoesEmAlta.map((opcao) => (
+                                <button
+                                    key={opcao.id}
+                                    type="button"
+                                    onClick={() => setFiltroEmAlta(opcao.id)}
+                                    style={{
+                                        padding: "4px 12px",
+                                        borderRadius: "999px",
+                                        fontSize: "0.72rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        border:
+                                            filtroEmAlta === opcao.id
+                                                ? "1px solid #a855f7"
+                                                : "1px solid rgba(255,255,255,0.12)",
+                                        background:
+                                            filtroEmAlta === opcao.id ? "#a855f7" : "transparent",
+                                        color: filtroEmAlta === opcao.id ? "#fff" : "#8b949e",
+                                    }}
+                                >
+                                    {opcao.rotulo}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="em-alta-list">
-                            <div className="em-alta-item" id="em-alta-1">
-                                <span className="em-alta-num">1</span>
+                            {listaEmAlta.length > 0 ? (
+                                listaEmAlta.map((obra, index) => (
+                                    <Link
+                                        key={obra.id}
+                                        to={`/Leitura/${encodeURIComponent(obra.titulo)}`}
+                                        onClick={() => registrarCliqueObra(obra)}
+                                        className="em-alta-item"
+                                        style={{ textDecoration: "none" }}
+                                    >
+                                        <span className="em-alta-num">{index + 1}</span>
 
-                                <span className="em-alta-nome">
-                                    Solo Leveling 2ª temporada
-                                </span>
+                                        <div
+                                            style={{
+                                                width: "28px",
+                                                height: "40px",
+                                                borderRadius: "4px",
+                                                flexShrink: 0,
+                                                backgroundColor: "#2a2a2a",
+                                                backgroundImage: obra.capa_url
+                                                    ? `url(${obra.capa_url})`
+                                                    : "none",
+                                                backgroundSize: "cover",
+                                                backgroundPosition: "center",
+                                            }}
+                                        ></div>
 
-                                <span className="em-alta-tag">#anime</span>
-                            </div>
+                                        <span
+                                            className="em-alta-nome"
+                                            style={{
+                                                minWidth: 0,
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {obra.titulo}
+                                        </span>
 
-                            <div className="em-alta-item" id="em-alta-2">
-                                <span className="em-alta-num">2</span>
+                                        <span className="em-alta-tag">
+                                            {filtroEmAlta === "alta" && (
+                                                <>
+                                                    <i className="ph-fill ph-heart" style={{ color: "#ef4444" }}></i>{" "}
+                                                    {contarFavoritos(obra)}
+                                                </>
+                                            )}
 
-                                <span className="em-alta-nome">
-                                    Boruto: Two Blue Vortex
-                                </span>
+                                            {filtroEmAlta === "novos" && formatarData(obra.created_at)}
 
-                                <span className="em-alta-tag">#mangá</span>
-                            </div>
+                                            {filtroEmAlta === "vistos" && (
+                                                <>
+                                                    <i className="ph ph-eye"></i> {obra.visualizacoes || 0}
+                                                </>
+                                            )}
+                                        </span>
+                                    </Link>
+                                ))
+                            ) : (
+                                <p style={{ color: "#aaa", fontSize: "0.85rem" }}>
+                                    Nenhuma obra ainda.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </aside>
             </div>
 
+
+
             {/* =========================================================
                 MODAL DE EVENTOS
             ========================================================= */}
 
-            {modalEventosAberto && (
-                <div
-                    className="eventos-modal-overlay"
-                    onClick={() => setModalEventosAberto(false)}
-                >
+            {
+                modalEventosAberto && (
                     <div
-                        className="eventos-modal-container"
-                        onClick={(e) => e.stopPropagation()}
+                        className="eventos-modal-overlay"
+                        onClick={() => setModalEventosAberto(false)}
                     >
-                        <div className="eventos-modal-header">
-                            <h2 className="eventos-modal-title">
-                                <i className="ph ph-calendar-blank"></i>
-                                Todos os Próximos Eventos
-                            </h2>
+                        <div
+                            className="eventos-modal-container"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="eventos-modal-header">
+                                <h2 className="eventos-modal-title">
+                                    <i className="ph ph-calendar-blank"></i>
+                                    Todos os Próximos Eventos
+                                </h2>
 
-                            <button
-                                onClick={() => setModalEventosAberto(false)}
-                                className="eventos-modal-close"
-                            >
-                                &times;
-                            </button>
-                        </div>
-
-                        <div className="eventos-modal-body">
-                            {todosEventos.length > 0 ? (
-                                todosEventos.map((evento) => {
-                                    const { dia, mes, completo } =
-                                        formatarDataEvento(evento.data_evento);
-
-                                    return (
-                                        <div
-                                            className="evento-card-modal"
-                                            key={evento.id}
-                                        >
-                                            <div className="evento-card-data">
-                                                <span className="evento-card-dia">
-                                                    {dia}
-                                                </span>
-
-                                                <span className="evento-card-mes">
-                                                    {mes}
-                                                </span>
-                                            </div>
-
-                                            <div className="evento-card-info">
-                                                <span className="evento-card-nome">
-                                                    {evento.nome}
-                                                </span>
-
-                                                <span className="evento-card-local">
-                                                    {evento.local} • {completo}
-                                                </span>
-                                            </div>
-
-                                            <span className="evento-badge badge-presencial">
-                                                {evento.tipo || "Presencial"}
-                                            </span>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <p
-                                    style={{
-                                        color: "#a1a1aa",
-                                        textAlign: "center",
-                                        padding: "20px",
-                                    }}
+                                <button
+                                    onClick={() => setModalEventosAberto(false)}
+                                    className="eventos-modal-close"
                                 >
-                                    Nenhum evento encontrado.
-                                </p>
-                            )}
+                                    &times;
+                                </button>
+                            </div>
+
+                            <div className="eventos-modal-body">
+                                {todosEventos.length > 0 ? (
+                                    todosEventos.map((evento) => {
+                                        const { dia, mes, completo } =
+                                            formatarDataEvento(evento.data_evento);
+
+                                        return (
+                                            <div
+                                                className="evento-card-modal"
+                                                key={evento.id}
+                                            >
+                                                <div className="evento-card-data">
+                                                    <span className="evento-card-dia">
+                                                        {dia}
+                                                    </span>
+
+                                                    <span className="evento-card-mes">
+                                                        {mes}
+                                                    </span>
+                                                </div>
+
+                                                <div className="evento-card-info">
+                                                    <span className="evento-card-nome">
+                                                        {evento.nome}
+                                                    </span>
+
+                                                    <span className="evento-card-local">
+                                                        {evento.local} • {completo}
+                                                    </span>
+                                                </div>
+
+                                                <span className="evento-badge badge-presencial">
+                                                    {evento.tipo || "Presencial"}
+                                                </span>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p
+                                        style={{
+                                            color: "#a1a1aa",
+                                            textAlign: "center",
+                                            padding: "20px",
+                                        }}
+                                    >
+                                        Nenhum evento encontrado.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* =========================================================
                 MODAL DO POST
             ========================================================= */}
 
-            {postSelecionado && (
-                <div className="instagram-modal-overlay">
-                    <button
-                        onClick={fecharModalPost}
-                        className="instagram-modal-close"
-                    >
-                        &times;
-                    </button>
-
-                    <div
-                        style={{
-                            position: "absolute",
-                            top: "20px",
-                            right: "70px",
-                            zIndex: 1001,
-                        }}
-                    >
+            {
+                postSelecionado && (
+                    <div className="instagram-modal-overlay">
                         <button
-                            onClick={(e) =>
-                                abrirMenuPost(e, postSelecionado.id)
-                            }
-                            style={{
-                                width: "42px",
-                                height: "42px",
-                                borderRadius: "50%",
-                                border: "1px solid rgba(255,255,255,0.15)",
-                                background: "rgba(20,20,25,0.9)",
-                                color: "#fff",
-                                cursor: "pointer",
-                                fontSize: "22px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                            aria-label="Opções da postagem"
+                            onClick={fecharModalPost}
+                            className="instagram-modal-close"
                         >
-                            <i className="ph-bold ph-dots-three"></i>
+                            &times;
                         </button>
 
-                        {menuPostAberto === postSelecionado.id && (
-                            <div
-                                onClick={(e) => e.stopPropagation()}
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "20px",
+                                right: "70px",
+                                zIndex: 1001,
+                            }}
+                        >
+                            <button
+                                onClick={(e) =>
+                                    abrirMenuPost(e, postSelecionado.id)
+                                }
                                 style={{
-                                    position: "absolute",
-                                    top: "48px",
-                                    right: 0,
-                                    width: "210px",
-                                    background: "#18181b",
-                                    border: "1px solid #333",
-                                    borderRadius: "12px",
-                                    padding: "6px",
-                                    boxShadow: "0 15px 40px rgba(0,0,0,0.5)",
-                                    zIndex: 1002,
+                                    width: "42px",
+                                    height: "42px",
+                                    borderRadius: "50%",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    background: "rgba(20,20,25,0.9)",
+                                    color: "#fff",
+                                    cursor: "pointer",
+                                    fontSize: "22px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                 }}
+                                aria-label="Opções da postagem"
                             >
-                                {usuarioEhDono(postSelecionado) ? (
-                                    <>
-                                        <button
-                                            onClick={(e) =>
-                                                iniciarEdicaoPost(
-                                                    e,
-                                                    postSelecionado,
-                                                )
-                                            }
-                                            style={{
-                                                width: "100%",
-                                                border: "none",
-                                                background: "transparent",
-                                                color: "#fff",
-                                                padding: "12px",
-                                                textAlign: "left",
-                                                cursor: "pointer",
-                                                borderRadius: "8px",
-                                            }}
-                                        >
-                                            <i className="ph ph-pencil-simple"></i>{" "}
-                                            Editar post
-                                        </button>
+                                <i className="ph-bold ph-dots-three"></i>
+                            </button>
 
-                                        <button
-                                            onClick={(e) =>
-                                                excluirPost(e, postSelecionado)
-                                            }
-                                            style={{
-                                                width: "100%",
-                                                border: "none",
-                                                background: "transparent",
-                                                color: "#ef4444",
-                                                padding: "12px",
-                                                textAlign: "left",
-                                                cursor: "pointer",
-                                                borderRadius: "8px",
-                                            }}
-                                        >
-                                            <i className="ph ph-trash"></i>{" "}
-                                            Excluir post
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button
-                                            onClick={(e) =>
-                                                bloquearDonoPost(
-                                                    e,
-                                                    postSelecionado,
-                                                )
-                                            }
-                                            style={{
-                                                width: "100%",
-                                                border: "none",
-                                                background: "transparent",
-                                                color: "#fff",
-                                                padding: "12px",
-                                                textAlign: "left",
-                                                cursor: "pointer",
-                                                borderRadius: "8px",
-                                            }}
-                                        >
-                                            <i className="ph ph-prohibit"></i>{" "}
-                                            Bloquear usuário
-                                        </button>
-
-                                        <button
-                                            onClick={(e) =>
-                                                denunciarPost(
-                                                    e,
-                                                    postSelecionado,
-                                                )
-                                            }
-                                            style={{
-                                                width: "100%",
-                                                border: "none",
-                                                background: "transparent",
-                                                color: "#ef4444",
-                                                padding: "12px",
-                                                textAlign: "left",
-                                                cursor: "pointer",
-                                                borderRadius: "8px",
-                                            }}
-                                        >
-                                            <i className="ph ph-flag"></i>{" "}
-                                            Denunciar post
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="instagram-modal-container">
-                        <div className="instagram-modal-image-side">
-                            <div
-                                className="instagram-modal-image"
-                                style={{
-                                    backgroundImage: `url(${postSelecionado.imagem ||
-                                        IMAGEM_POST_PADRAO
-                                        })`,
-                                }}
-                            ></div>
-                        </div>
-
-                        <div className="instagram-modal-info-side">
-                            <div className="instagram-modal-header">
+                            {menuPostAberto === postSelecionado.id && (
                                 <div
-                                    className="instagram-modal-avatar"
+                                    onClick={(e) => e.stopPropagation()}
                                     style={{
-                                        backgroundImage: `url(${postSelecionado.usuarios?.foto || AVATAR_PADRAO
-                                            })`,
-                                    }}
-                                ></div>
-
-                                <div>
-                                    <Link
-                                        to={`/Perfil/${postSelecionado.usuarios?.id}`}
-                                        className="instagram-modal-username"
-                                        style={{ textDecoration: "none" }}
-                                    >
-                                        @{postSelecionado.usuarios?.username || "Usuário"}
-                                    </Link>
-
-                                    <span className="instagram-modal-category">
-                                        {postSelecionado.categoria || "GERAL"}
-                                    </span>
-                                </div>
-
-                                {!usuarioEhDono(postSelecionado) && postSelecionado.id_usuario && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => alternarSeguir(e, postSelecionado)}
-                                        disabled={carregandoSeguir}
-                                        style={{
-                                            marginLeft: "auto",
-                                            padding: "6px 16px",
-                                            borderRadius: "999px",
-                                            fontSize: "0.8rem",
-                                            fontWeight: 600,
-                                            cursor: carregandoSeguir ? "default" : "pointer",
-                                            border: seguindoIds.includes(Number(postSelecionado.id_usuario))
-                                                ? "1px solid #444"
-                                                : "1px solid #a855f7",
-                                            background: seguindoIds.includes(
-                                                Number(postSelecionado.id_usuario),
-                                            )
-                                                ? "transparent"
-                                                : "#a855f7",
-                                            color: "#fff",
-                                        }}
-                                    >
-                                        {seguindoIds.includes(Number(postSelecionado.id_usuario))
-                                            ? "Seguindo"
-                                            : "Seguir"}
-                                    </button>
-                                )}
-                            </div>
-                        
-
-                        <div className="instagram-modal-scroll">
-                            {modoEdicao ? (
-                                <form
-                                    onSubmit={salvarEdicaoPost}
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "15px",
+                                        position: "absolute",
+                                        top: "48px",
+                                        right: 0,
+                                        width: "210px",
+                                        background: "#18181b",
+                                        border: "1px solid #333",
+                                        borderRadius: "12px",
+                                        padding: "6px",
+                                        boxShadow: "0 15px 40px rgba(0,0,0,0.5)",
+                                        zIndex: 1002,
                                     }}
                                 >
-                                    <h2 className="instagram-modal-title">
-                                        Editar postagem
-                                    </h2>
-
-                                    <input
-                                        name="titulo"
-                                        type="text"
-                                        defaultValue={
-                                            postSelecionado.titulo
-                                        }
-                                        placeholder="Título"
-                                        disabled={carregandoEdicao}
-                                        style={{
-                                            width: "100%",
-                                            padding: "12px",
-                                            borderRadius: "8px",
-                                            border: "1px solid #333",
-                                            background: "#18181b",
-                                            color: "#fff",
-                                        }}
-                                    />
-
-                                    <textarea
-                                        name="conteudo"
-                                        defaultValue={
-                                            postSelecionado.conteudo
-                                        }
-                                        placeholder="Conteúdo"
-                                        rows="8"
-                                        disabled={carregandoEdicao}
-                                        style={{
-                                            width: "100%",
-                                            padding: "12px",
-                                            borderRadius: "8px",
-                                            border: "1px solid #333",
-                                            background: "#18181b",
-                                            color: "#fff",
-                                            resize: "vertical",
-                                        }}
-                                    />
-
-                                    <select
-                                        name="categoria"
-                                        defaultValue={
-                                            postSelecionado.categoria ||
-                                            "Fantasia"
-                                        }
-                                        disabled={carregandoEdicao}
-                                        style={{
-                                            width: "100%",
-                                            padding: "12px",
-                                            borderRadius: "8px",
-                                            border: "1px solid #333",
-                                            background: "#18181b",
-                                            color: "#fff",
-                                        }}
-                                    >
-                                        <option value="Fantasia">
-                                            Fantasia
-                                        </option>
-
-                                        <option value="Cultura">
-                                            Cultura
-                                        </option>
-
-                                        <option value="Arte">Arte</option>
-
-                                        <option value="Destaque">
-                                            Destaque
-                                        </option>
-
-                                        <option value="Historia">
-                                            História
-                                        </option>
-
-                                        <option value="Curiosidades">
-                                            Curiosidades
-                                        </option>
-
-                                        <option value="Reflexao">
-                                            Reflexão
-                                        </option>
-
-                                        <option value="Analise">
-                                            Análise
-                                        </option>
-                                    </select>
-
-                                    <label
-                                        style={{
-                                            color: "#aaa",
-                                            fontSize: "0.9rem",
-                                        }}
-                                    >
-                                        Trocar imagem
-                                    </label>
-
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        disabled={carregandoEdicao}
-                                        onChange={(e) =>
-                                            setImagemEdicao(
-                                                e.target.files?.[0] || null,
-                                            )
-                                        }
-                                        style={{
-                                            color: "#fff",
-                                        }}
-                                    />
-
-                                    {imagemEdicao && (
-                                        <span
-                                            style={{
-                                                color: "#a855f7",
-                                                fontSize: "0.85rem",
-                                            }}
-                                        >
-                                            📎 {imagemEdicao.name}
-                                        </span>
-                                    )}
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            gap: "10px",
-                                        }}
-                                    >
-                                        <button
-                                            type="submit"
-                                            disabled={carregandoEdicao}
-                                            style={{
-                                                flex: 1,
-                                                padding: "12px",
-                                                border: "none",
-                                                borderRadius: "8px",
-                                                background: "#a855f7",
-                                                color: "#fff",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            {carregandoEdicao
-                                                ? "Salvando..."
-                                                : "Salvar alterações"}
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={cancelarEdicao}
-                                            disabled={carregandoEdicao}
-                                            style={{
-                                                flex: 1,
-                                                padding: "12px",
-                                                border: "1px solid #444",
-                                                borderRadius: "8px",
-                                                background: "#27272a",
-                                                color: "#fff",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </form>
-                            ) : (
-                                <>
-                                    <div>
-                                        <h2 className="instagram-modal-title">{postSelecionado.titulo}</h2>
-
-                                        <p className="instagram-modal-content-text">
-                                            {postSelecionado.conteudo}
-                                        </p>
-
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "8px",
-                                                marginTop: "12px",
-                                            }}
-                                        >
+                                    {usuarioEhDono(postSelecionado) ? (
+                                        <>
                                             <button
-                                                type="button"
-                                                onClick={(e) => alternarCurtida(e, postSelecionado)}
-                                                disabled={curtindo}
-                                                aria-pressed={postFoiCurtido(postSelecionado)}
-                                                aria-label={
-                                                    postFoiCurtido(postSelecionado)
-                                                        ? "Descurtir post"
-                                                        : "Curtir post"
+                                                onClick={(e) =>
+                                                    iniciarEdicaoPost(
+                                                        e,
+                                                        postSelecionado,
+                                                    )
                                                 }
                                                 style={{
+                                                    width: "100%",
                                                     border: "none",
                                                     background: "transparent",
+                                                    color: "#fff",
+                                                    padding: "12px",
+                                                    textAlign: "left",
                                                     cursor: "pointer",
-                                                    fontSize: "26px",
-                                                    padding: 0,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    color: postFoiCurtido(postSelecionado) ? "#ef4444" : "#ccc",
+                                                    borderRadius: "8px",
                                                 }}
                                             >
-                                                <i
-                                                    className={
-                                                        postFoiCurtido(postSelecionado)
-                                                            ? "ph-fill ph-heart"
-                                                            : "ph ph-heart"
-                                                    }
-                                                ></i>
+                                                <i className="ph ph-pencil-simple"></i>{" "}
+                                                Editar post
                                             </button>
 
-                                            <span style={{ color: "#ccc", fontSize: "0.85rem" }}>
-                                                {contarCurtidas(postSelecionado)}{" "}
-                                                {contarCurtidas(postSelecionado) === 1 ? "curtida" : "curtidas"}
-                                            </span>
-                                        </div>
-
-                                        <span className="instagram-modal-date">
-                                            {formatarData(postSelecionado.criado_em)}
-                                        </span>
-                                    </div>
-
-                                    <hr className="instagram-modal-divider" />
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: "12px",
-                                        }}
-                                    >
-                                        <h3 className="instagram-comments-title">
-                                            Comentários
-                                        </h3>
-
-                                        {carregandoComentarios ? (
-                                            <p
+                                            <button
+                                                onClick={(e) =>
+                                                    excluirPost(e, postSelecionado)
+                                                }
                                                 style={{
-                                                    color: "#888",
-                                                    fontSize: "0.85rem",
+                                                    width: "100%",
+                                                    border: "none",
+                                                    background: "transparent",
+                                                    color: "#ef4444",
+                                                    padding: "12px",
+                                                    textAlign: "left",
+                                                    cursor: "pointer",
+                                                    borderRadius: "8px",
                                                 }}
                                             >
-                                                Carregando comentários...
-                                            </p>
-                                        ) : comentarios.length > 0 ? (
-                                            comentarios.map(
-                                                (comentario) => (
-                                                    <div
-                                                        key={comentario.id}
-                                                        className="instagram-comment-item"
-                                                        style={{
-                                                            position:
-                                                                "relative",
-                                                        }}
-                                                    >
-                                                        <div
-                                                            className="instagram-comment-avatar"
-                                                            style={{
-                                                                backgroundImage: `url(${comentario
-                                                                    .usuarios
-                                                                    ?.foto ||
-                                                                    AVATAR_PADRAO
-                                                                    })`,
-                                                            }}
-                                                        ></div>
-
-                                                        <div className="instagram-comment-bubble">
-                                                            <div
-                                                                className="instagram-comment-header"
-                                                                style={{
-                                                                    display:
-                                                                        "flex",
-                                                                    alignItems:
-                                                                        "center",
-                                                                    justifyContent:
-                                                                        "space-between",
-                                                                    gap: "10px",
-                                                                }}
-                                                            >
-                                                                <Link
-                                                                    to={`/Perfil/${comentario.usuarios?.id}`}
-                                                                    className="instagram-comment-user"
-                                                                    style={{
-                                                                        textDecoration:
-                                                                            "none",
-                                                                    }}
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.stopPropagation()
-                                                                    }
-                                                                >
-                                                                    @
-                                                                    {comentario
-                                                                        .usuarios
-                                                                        ?.username ||
-                                                                        "Usuário"}
-                                                                </Link>
-
-                                                                {/* Data + botão agrupados à direita */}
-                                                                <div
-                                                                    style={{
-                                                                        display:
-                                                                            "flex",
-                                                                        alignItems:
-                                                                            "center",
-                                                                        gap: "4px",
-                                                                    }}
-                                                                >
-                                                                    <span className="instagram-comment-time">
-                                                                        {formatarData(
-                                                                            comentario.criado_em,
-                                                                        )}
-                                                                    </span>
-
-                                                                    {comentarioEhDono(
-                                                                        comentario,
-                                                                    ) ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) =>
-                                                                                excluirComentario(
-                                                                                    e,
-                                                                                    comentario,
-                                                                                )
-                                                                            }
-                                                                            title="Excluir comentário"
-                                                                            style={
-                                                                                estiloBotaoIconeComentario
-                                                                            }
-                                                                            onMouseEnter={
-                                                                                hoverBotaoIconeEntrar
-                                                                            }
-                                                                            onMouseLeave={
-                                                                                hoverBotaoIconeSair
-                                                                            }
-                                                                        >
-                                                                            <i className="ph ph-trash"></i>
-                                                                        </button>
-                                                                    ) : (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) =>
-                                                                                denunciarComentario(
-                                                                                    e,
-                                                                                    comentario,
-                                                                                )
-                                                                            }
-                                                                            title="Denunciar comentário"
-                                                                            style={
-                                                                                estiloBotaoIconeComentario
-                                                                            }
-                                                                            onMouseEnter={
-                                                                                hoverBotaoIconeEntrar
-                                                                            }
-                                                                            onMouseLeave={
-                                                                                hoverBotaoIconeSair
-                                                                            }
-                                                                        >
-                                                                            <i className="ph ph-flag"></i>
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            <p className="instagram-comment-text">
-                                                                {
-                                                                    comentario.conteudo
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ),
-                                            )
-                                        ) : (
-                                            <p
+                                                <i className="ph ph-trash"></i>{" "}
+                                                Excluir post
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={(e) =>
+                                                    bloquearDonoPost(
+                                                        e,
+                                                        postSelecionado,
+                                                    )
+                                                }
                                                 style={{
-                                                    color: "#777",
-                                                    fontSize: "0.85rem",
-                                                    fontStyle: "italic",
+                                                    width: "100%",
+                                                    border: "none",
+                                                    background: "transparent",
+                                                    color: "#fff",
+                                                    padding: "12px",
+                                                    textAlign: "left",
+                                                    cursor: "pointer",
+                                                    borderRadius: "8px",
                                                 }}
                                             >
-                                                Nenhum comentário ainda.
-                                                Seja o primeiro!
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
+                                                <i className="ph ph-prohibit"></i>{" "}
+                                                Bloquear usuário
+                                            </button>
+
+                                            <button
+                                                onClick={(e) =>
+                                                    denunciarPost(
+                                                        e,
+                                                        postSelecionado,
+                                                    )
+                                                }
+                                                style={{
+                                                    width: "100%",
+                                                    border: "none",
+                                                    background: "transparent",
+                                                    color: "#ef4444",
+                                                    padding: "12px",
+                                                    textAlign: "left",
+                                                    cursor: "pointer",
+                                                    borderRadius: "8px",
+                                                }}
+                                            >
+                                                <i className="ph ph-flag"></i>{" "}
+                                                Denunciar post
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
 
-                        {!modoEdicao && (
-                            <div className="instagram-modal-footer">
-                                <form
-                                    onSubmit={enviarComentario}
-                                    className="instagram-comment-form"
-                                >
-                                    <input
-                                        type="text"
-                                        placeholder="Adicione um comentário..."
-                                        value={novoComentario}
-                                        onChange={(e) =>
-                                            setNovoComentario(
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="instagram-comment-input"
-                                    />
-
-                                    <button
-                                        type="submit"
-                                        className="instagram-comment-submit"
-                                    >
-                                        Publicar
-                                    </button>
-                                </form>
+                        <div className="instagram-modal-container">
+                            <div className="instagram-modal-image-side">
+                                <div
+                                    className="instagram-modal-image"
+                                    style={{
+                                        backgroundImage: `url(${postSelecionado.imagem ||
+                                            IMAGEM_POST_PADRAO
+                                            })`,
+                                    }}
+                                ></div>
                             </div>
-                        )}
-                    </div>
-                </div>
-                </div>
 
-            )
+                            <div className="instagram-modal-info-side">
+                                <div className="instagram-modal-header">
+                                    <div
+                                        className="instagram-modal-avatar"
+                                        style={{
+                                            backgroundImage: `url(${postSelecionado.usuarios?.foto || AVATAR_PADRAO
+                                                })`,
+                                        }}
+                                    ></div>
+
+                                    <div>
+                                        <Link
+                                            to={`/Perfil/${postSelecionado.usuarios?.id}`}
+                                            className="instagram-modal-username"
+                                            style={{ textDecoration: "none" }}
+                                        >
+                                            @{postSelecionado.usuarios?.username || "Usuário"}
+                                        </Link>
+
+                                        <span className="instagram-modal-category">
+                                            {postSelecionado.categoria || "GERAL"}
+                                        </span>
+                                    </div>
+
+                                    {!usuarioEhDono(postSelecionado) && postSelecionado.id_usuario && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => alternarSeguir(e, postSelecionado)}
+                                            disabled={carregandoSeguir}
+                                            style={{
+                                                marginLeft: "auto",
+                                                padding: "6px 16px",
+                                                borderRadius: "999px",
+                                                fontSize: "0.8rem",
+                                                fontWeight: 600,
+                                                cursor: carregandoSeguir ? "default" : "pointer",
+                                                border: seguindoIds.includes(Number(postSelecionado.id_usuario))
+                                                    ? "1px solid #444"
+                                                    : "1px solid #a855f7",
+                                                background: seguindoIds.includes(
+                                                    Number(postSelecionado.id_usuario),
+                                                )
+                                                    ? "transparent"
+                                                    : "#a855f7",
+                                                color: "#fff",
+                                            }}
+                                        >
+                                            {seguindoIds.includes(Number(postSelecionado.id_usuario))
+                                                ? "Seguindo"
+                                                : "Seguir"}
+                                        </button>
+                                    )}
+                                </div>
+
+
+                                <div className="instagram-modal-scroll">
+                                    {modoEdicao ? (
+                                        <form
+                                            onSubmit={salvarEdicaoPost}
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "15px",
+                                            }}
+                                        >
+                                            <h2 className="instagram-modal-title">
+                                                Editar postagem
+                                            </h2>
+
+                                            <input
+                                                name="titulo"
+                                                type="text"
+                                                defaultValue={
+                                                    postSelecionado.titulo
+                                                }
+                                                placeholder="Título"
+                                                disabled={carregandoEdicao}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "12px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #333",
+                                                    background: "#18181b",
+                                                    color: "#fff",
+                                                }}
+                                            />
+
+                                            <textarea
+                                                name="conteudo"
+                                                defaultValue={
+                                                    postSelecionado.conteudo
+                                                }
+                                                placeholder="Conteúdo"
+                                                rows="8"
+                                                disabled={carregandoEdicao}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "12px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #333",
+                                                    background: "#18181b",
+                                                    color: "#fff",
+                                                    resize: "vertical",
+                                                }}
+                                            />
+
+                                            <select
+                                                name="categoria"
+                                                defaultValue={
+                                                    postSelecionado.categoria ||
+                                                    "Fantasia"
+                                                }
+                                                disabled={carregandoEdicao}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "12px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #333",
+                                                    background: "#18181b",
+                                                    color: "#fff",
+                                                }}
+                                            >
+                                                <option value="Fantasia">
+                                                    Fantasia
+                                                </option>
+
+                                                <option value="Cultura">
+                                                    Cultura
+                                                </option>
+
+                                                <option value="Arte">Arte</option>
+
+                                                <option value="Destaque">
+                                                    Destaque
+                                                </option>
+
+                                                <option value="Historia">
+                                                    História
+                                                </option>
+
+                                                <option value="Curiosidades">
+                                                    Curiosidades
+                                                </option>
+
+                                                <option value="Reflexao">
+                                                    Reflexão
+                                                </option>
+
+                                                <option value="Analise">
+                                                    Análise
+                                                </option>
+                                            </select>
+
+                                            <label
+                                                style={{
+                                                    color: "#aaa",
+                                                    fontSize: "0.9rem",
+                                                }}
+                                            >
+                                                Trocar imagem
+                                            </label>
+
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                disabled={carregandoEdicao}
+                                                onChange={(e) =>
+                                                    setImagemEdicao(
+                                                        e.target.files?.[0] || null,
+                                                    )
+                                                }
+                                                style={{
+                                                    color: "#fff",
+                                                }}
+                                            />
+
+                                            {imagemEdicao && (
+                                                <span
+                                                    style={{
+                                                        color: "#a855f7",
+                                                        fontSize: "0.85rem",
+                                                    }}
+                                                >
+                                                    📎 {imagemEdicao.name}
+                                                </span>
+                                            )}
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    gap: "10px",
+                                                }}
+                                            >
+                                                <button
+                                                    type="submit"
+                                                    disabled={carregandoEdicao}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: "12px",
+                                                        border: "none",
+                                                        borderRadius: "8px",
+                                                        background: "#a855f7",
+                                                        color: "#fff",
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    {carregandoEdicao
+                                                        ? "Salvando..."
+                                                        : "Salvar alterações"}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelarEdicao}
+                                                    disabled={carregandoEdicao}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: "12px",
+                                                        border: "1px solid #444",
+                                                        borderRadius: "8px",
+                                                        background: "#27272a",
+                                                        color: "#fff",
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <h2 className="instagram-modal-title">{postSelecionado.titulo}</h2>
+
+                                                <p className="instagram-modal-content-text">
+                                                    {postSelecionado.conteudo}
+                                                </p>
+
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "8px",
+                                                        marginTop: "12px",
+                                                    }}
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => alternarCurtida(e, postSelecionado)}
+                                                        disabled={curtindo}
+                                                        aria-pressed={postFoiCurtido(postSelecionado)}
+                                                        aria-label={
+                                                            postFoiCurtido(postSelecionado)
+                                                                ? "Descurtir post"
+                                                                : "Curtir post"
+                                                        }
+                                                        style={{
+                                                            border: "none",
+                                                            background: "transparent",
+                                                            cursor: "pointer",
+                                                            fontSize: "26px",
+                                                            padding: 0,
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            color: postFoiCurtido(postSelecionado) ? "#ef4444" : "#ccc",
+                                                        }}
+                                                    >
+                                                        <i
+                                                            className={
+                                                                postFoiCurtido(postSelecionado)
+                                                                    ? "ph-fill ph-heart"
+                                                                    : "ph ph-heart"
+                                                            }
+                                                        ></i>
+                                                    </button>
+
+                                                    <span style={{ color: "#ccc", fontSize: "0.85rem" }}>
+                                                        {contarCurtidas(postSelecionado)}{" "}
+                                                        {contarCurtidas(postSelecionado) === 1 ? "curtida" : "curtidas"}
+                                                    </span>
+                                                </div>
+
+                                                <span className="instagram-modal-date">
+                                                    {formatarData(postSelecionado.criado_em)}
+                                                </span>
+                                            </div>
+
+                                            <hr className="instagram-modal-divider" />
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "12px",
+                                                }}
+                                            >
+                                                <h3 className="instagram-comments-title">
+                                                    Comentários
+                                                </h3>
+
+                                                {carregandoComentarios ? (
+                                                    <p
+                                                        style={{
+                                                            color: "#888",
+                                                            fontSize: "0.85rem",
+                                                        }}
+                                                    >
+                                                        Carregando comentários...
+                                                    </p>
+                                                ) : comentarios.length > 0 ? (
+                                                    comentarios.map(
+                                                        (comentario) => (
+                                                            <div
+                                                                key={comentario.id}
+                                                                className="instagram-comment-item"
+                                                                style={{
+                                                                    position:
+                                                                        "relative",
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    className="instagram-comment-avatar"
+                                                                    style={{
+                                                                        backgroundImage: `url(${comentario
+                                                                            .usuarios
+                                                                            ?.foto ||
+                                                                            AVATAR_PADRAO
+                                                                            })`,
+                                                                    }}
+                                                                ></div>
+
+                                                                <div className="instagram-comment-bubble">
+                                                                    <div
+                                                                        className="instagram-comment-header"
+                                                                        style={{
+                                                                            display:
+                                                                                "flex",
+                                                                            alignItems:
+                                                                                "center",
+                                                                            justifyContent:
+                                                                                "space-between",
+                                                                            gap: "10px",
+                                                                        }}
+                                                                    >
+                                                                        <Link
+                                                                            to={`/Perfil/${comentario.usuarios?.id}`}
+                                                                            className="instagram-comment-user"
+                                                                            style={{
+                                                                                textDecoration:
+                                                                                    "none",
+                                                                            }}
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) =>
+                                                                                e.stopPropagation()
+                                                                            }
+                                                                        >
+                                                                            @
+                                                                            {comentario
+                                                                                .usuarios
+                                                                                ?.username ||
+                                                                                "Usuário"}
+                                                                        </Link>
+
+                                                                        {/* Data + botão agrupados à direita */}
+                                                                        <div
+                                                                            style={{
+                                                                                display:
+                                                                                    "flex",
+                                                                                alignItems:
+                                                                                    "center",
+                                                                                gap: "4px",
+                                                                            }}
+                                                                        >
+                                                                            <span className="instagram-comment-time">
+                                                                                {formatarData(
+                                                                                    comentario.criado_em,
+                                                                                )}
+                                                                            </span>
+
+                                                                            {comentarioEhDono(
+                                                                                comentario,
+                                                                            ) ? (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(
+                                                                                        e,
+                                                                                    ) =>
+                                                                                        excluirComentario(
+                                                                                            e,
+                                                                                            comentario,
+                                                                                        )
+                                                                                    }
+                                                                                    title="Excluir comentário"
+                                                                                    style={
+                                                                                        estiloBotaoIconeComentario
+                                                                                    }
+                                                                                    onMouseEnter={
+                                                                                        hoverBotaoIconeEntrar
+                                                                                    }
+                                                                                    onMouseLeave={
+                                                                                        hoverBotaoIconeSair
+                                                                                    }
+                                                                                >
+                                                                                    <i className="ph ph-trash"></i>
+                                                                                </button>
+                                                                            ) : (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(
+                                                                                        e,
+                                                                                    ) =>
+                                                                                        denunciarComentario(
+                                                                                            e,
+                                                                                            comentario,
+                                                                                        )
+                                                                                    }
+                                                                                    title="Denunciar comentário"
+                                                                                    style={
+                                                                                        estiloBotaoIconeComentario
+                                                                                    }
+                                                                                    onMouseEnter={
+                                                                                        hoverBotaoIconeEntrar
+                                                                                    }
+                                                                                    onMouseLeave={
+                                                                                        hoverBotaoIconeSair
+                                                                                    }
+                                                                                >
+                                                                                    <i className="ph ph-flag"></i>
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <p className="instagram-comment-text">
+                                                                        {
+                                                                            comentario.conteudo
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )
+                                                ) : (
+                                                    <p
+                                                        style={{
+                                                            color: "#777",
+                                                            fontSize: "0.85rem",
+                                                            fontStyle: "italic",
+                                                        }}
+                                                    >
+                                                        Nenhum comentário ainda.
+                                                        Seja o primeiro!
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {!modoEdicao && (
+                                    <div className="instagram-modal-footer">
+                                        <form
+                                            onSubmit={enviarComentario}
+                                            className="instagram-comment-form"
+                                        >
+                                            <input
+                                                type="text"
+                                                placeholder="Adicione um comentário..."
+                                                value={novoComentario}
+                                                onChange={(e) =>
+                                                    setNovoComentario(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="instagram-comment-input"
+                                            />
+
+                                            <button
+                                                type="submit"
+                                                className="instagram-comment-submit"
+                                            >
+                                                Publicar
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                )
             }
 
             {/* =========================================================
@@ -2876,8 +3030,7 @@ function PaginaInicial() {
                             </form>
                         </div>
                     </div>
-                )
-            }
+            )}
 
             {/* =========================================================
                 MODAL DE DENÚNCIA
