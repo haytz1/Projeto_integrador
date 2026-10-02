@@ -1,10 +1,10 @@
-import Navbar from '../components/Navbar';
 
 import '../css/planos.css';
 
 import { Link } from 'react-router-dom';
 
 import { createClient } from '@supabase/supabase-js';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -40,7 +40,7 @@ function Planos() {
 
     return (
         <>
-            <Navbar />
+            <NavbarPesquisa />
 
             <main className="container">
 
