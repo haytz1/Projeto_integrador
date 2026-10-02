@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 import '../css/perfil.css';
 
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+    Link,
+    useNavigate,
+    useParams
+} from 'react-router-dom';
 
 import { supabase } from '../../supabase';
 
@@ -18,7 +22,12 @@ function Perfil() {
     // DADOS DO USUÁRIO
     // =========================================
 
+    // ID do perfil que está sendo visualizado
     const [userId, setUserId] = useState(null);
+
+    // ID do usuário que está realmente logado
+    const [loggedUserId, setLoggedUserId] = useState(null);
+
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [registro, setRegistro] = useState('');
@@ -40,6 +49,7 @@ function Perfil() {
     const [novaImagem, setNovaImagem] = useState(null);
     const [previewImagem, setPreviewImagem] = useState('');
     const [publicando, setPublicando] = useState(false);
+
     const [totalSeguidores, setTotalSeguidores] = useState(0);
     const [totalSeguindo, setTotalSeguindo] = useState(0);
     const [seguindo, setSeguindo] = useState(false);
@@ -51,6 +61,12 @@ function Perfil() {
 
     const [minhasObras, setMinhasObras] = useState([]);
     const [carregandoObras, setCarregandoObras] = useState(true);
+
+    // Pesquisa e adição de obras à Minha Lista
+    const [buscaMinhaLista, setBuscaMinhaLista] = useState('');
+    const [resultadosPesquisaObras, setResultadosPesquisaObras] = useState([]);
+    const [pesquisandoObras, setPesquisandoObras] = useState(false);
+    const [adicionandoObraId, setAdicionandoObraId] = useState(null);
 
     // =========================================
     // ABAS
@@ -131,8 +147,9 @@ function Perfil() {
     // =========================================
 
     const isMeuPerfil =
-        !routeId ||
-        routeId === String(userId);
+        loggedUserId !== null &&
+        userId !== null &&
+        String(loggedUserId) === String(userId);
 
     // =========================================
     // FILTROS
@@ -166,7 +183,7 @@ function Perfil() {
     );
 
     // =========================================
-    // BUSCAR USUÁRIO
+    // BUSCAR USUÁRIO E PERFIL
     // =========================================
 
     useEffect(() => {
@@ -177,91 +194,396 @@ function Perfil() {
 
             try {
 
-                const { data: { user: usuarioLogado }, error: erroAuth } =
-                    await supabase.auth.getUser();
+                // =========================================
+                // 1. PEGAR USUÁRIO DO SUPABASE AUTH
+                // =========================================
 
-                if (erroAuth || !usuarioLogado) {
-                    console.error('Erro ao verificar usuário autenticado:', erroAuth);
-                    navigate('/Login');
+                const {
+                    data: authData,
+                    error: erroAuth
+                } = await supabase.auth.getUser();
+
+                const usuarioLogado =
+                    authData?.user;
+
+                if (
+                    erroAuth ||
+                    !usuarioLogado
+                ) {
+
+                    console.error(
+                        'Erro ao verificar usuário autenticado:',
+                        erroAuth
+                    );
+
+                    navigate(
+                        '/Login'
+                    );
+
                     return;
                 }
 
-                // A identidade verdadeira vem do Supabase Auth.
-                // Alterar localStorage ou o ID na URL não troca de conta.
-                if (routeId && routeId !== String(usuarioLogado.id)) {
-                    navigate('/Perfil', { replace: true });
-                    return;
-                }
 
-                const { data: dadosUsuario, error } = await supabase
+                // =========================================
+                // 2. BUSCAR PERFIL DO USUÁRIO LOGADO
+                // =========================================
+
+                const {
+                    data: perfilLogado,
+                    error: erroPerfilLogado
+                } = await supabase
                     .from('usuarios')
-                    .select('*')
-                    .eq('auth_id', usuarioLogado.id)
+                    .select('id')
+                    .eq(
+                        'auth_id',
+                        usuarioLogado.id
+                    )
                     .maybeSingle();
 
-                if (error) throw error;
+
+                if (erroPerfilLogado) {
+
+                    throw erroPerfilLogado;
+
+                }
+
+
+                if (!perfilLogado) {
+
+                    throw new Error(
+                        'O usuário autenticado não possui perfil na tabela usuarios.'
+                    );
+
+                }
+
+
+                const idUsuarioLogado =
+                    perfilLogado.id;
+
+
+                // Guarda o ID correto do usuário logado
+                setLoggedUserId(
+                    idUsuarioLogado
+                );
+
+
+                // =========================================
+                // 3. DEFINIR QUAL PERFIL SERÁ EXIBIDO
+                // =========================================
+
+                let idPerfil;
+
+                if (routeId) {
+
+                    // Perfil de outra pessoa
+                    idPerfil = Number(
+                        routeId
+                    );
+
+                } else {
+
+                    // Perfil do próprio usuário
+                    idPerfil = Number(
+                        idUsuarioLogado
+                    );
+
+                }
+
+
+                if (!idPerfil) {
+
+                    navigate(
+                        '/Perfil',
+                        {
+                            replace: true
+                        }
+                    );
+
+                    return;
+                }
+
+
+                // =========================================
+                // 4. BUSCAR PERFIL DA TABELA usuarios
+                // =========================================
+
+                const {
+                    data: dadosUsuario,
+                    error: erroUsuario
+                } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq(
+                        'id',
+                        idPerfil
+                    )
+                    .maybeSingle();
+
+
+                if (erroUsuario) {
+
+                    throw erroUsuario;
+
+                }
+
 
                 if (!dadosUsuario) {
-                    throw new Error(
-                        'Seu usuário foi autenticado, mas o perfil não foi encontrado na tabela usuarios.'
+
+                    alert(
+                        'Usuário não encontrado.'
                     );
+
+                    navigate(
+                        '/Perfil',
+                        {
+                            replace: true
+                        }
+                    );
+
+                    return;
                 }
 
-                const idDoUsuario = dadosUsuario.id;
-                setUserId(idDoUsuario);
 
-                // localStorage é apenas auxiliar. Não é usado para autenticação.
-                localStorage.setItem('usuario_id', String(idDoUsuario));
-                localStorage.setItem('usuario_auth_id', String(usuarioLogado.id));
-                localStorage.setItem('usuario_email', dadosUsuario.email || usuarioLogado.email || '');
-                localStorage.setItem('usuario_username', dadosUsuario.username || '');
+                // =========================================
+                // 5. DEFINIR ID DO PERFIL VISUALIZADO
+                // =========================================
 
-                setNome(dadosUsuario.username || '');
-                setEmail(dadosUsuario.email || usuarioLogado.email || '');
+                setUserId(
+                    dadosUsuario.id
+                );
 
-                if (dadosUsuario.registro) {
-                    setRegistro(new Date(dadosUsuario.registro).toLocaleDateString('pt-BR'));
+
+                // =========================================
+                // 6. LOCALSTORAGE
+                // =========================================
+                // Só atualizamos o usuário salvo quando
+                // estamos vendo o próprio perfil.
+
+                if (
+                    Number(dadosUsuario.id) ===
+                    Number(idUsuarioLogado)
+                ) {
+
+                    localStorage.setItem(
+                        'usuario_id',
+                        String(
+                            dadosUsuario.id
+                        )
+                    );
+
+                    localStorage.setItem(
+                        'usuario_auth_id',
+                        String(
+                            usuarioLogado.id
+                        )
+                    );
+
+                    localStorage.setItem(
+                        'usuario_email',
+                        dadosUsuario.email ||
+                        usuarioLogado.email ||
+                        ''
+                    );
+
+                    localStorage.setItem(
+                        'usuario_username',
+                        dadosUsuario.username ||
+                        ''
+                    );
+
+                }
+
+
+                // =========================================
+                // 7. DADOS DO PERFIL
+                // =========================================
+
+                setNome(
+                    dadosUsuario.username ||
+                    ''
+                );
+
+
+                setEmail(
+                    dadosUsuario.email ||
+                    ''
+                );
+
+
+                if (
+                    dadosUsuario.registro
+                ) {
+
+                    setRegistro(
+                        new Date(
+                            dadosUsuario.registro
+                        ).toLocaleDateString(
+                            'pt-BR'
+                        )
+                    );
+
                 } else {
+
                     setRegistro('');
+
                 }
 
-                setFotoUrl(dadosUsuario.foto || '');
 
-                let planoAtual = String(dadosUsuario.plano || 'Gratuito')
-                    .replace(/['\"]/g, '')
-                    .replace(/::text/gi, '')
-                    .trim();
+                setFotoUrl(
+                    dadosUsuario.foto ||
+                    ''
+                );
 
-                if (planoAtual.toLowerCase() === 'gratuito') planoAtual = 'Gratuito';
-                if (planoAtual.toLowerCase() === 'premium') planoAtual = 'Premium';
 
-                setPlano(planoAtual);
-                setMoedas(dadosUsuario.moedas || 0);
+                // =========================================
+                // 8. PLANO
+                // =========================================
 
-                // Preferências vêm do banco.
-                setAnimesSelecionados(Array.isArray(dadosUsuario.animes_favoritos) ? dadosUsuario.animes_favoritos : []);
-                setGenerosSelecionados(Array.isArray(dadosUsuario.generos_favoritos) ? dadosUsuario.generos_favoritos : []);
-                setTagsSelecionadas(Array.isArray(dadosUsuario.tags_interesse) ? dadosUsuario.tags_interesse : []);
+                let planoAtual =
+                    String(
+                        dadosUsuario.plano ||
+                        'Gratuito'
+                    )
+                        .replace(
+                            /['"]/g,
+                            ''
+                        )
+                        .replace(
+                            /::text/gi,
+                            ''
+                        )
+                        .trim();
 
-                const { data: dadosPosts, error: erroPosts } = await supabase
+
+                if (
+                    planoAtual.toLowerCase() ===
+                    'gratuito'
+                ) {
+
+                    planoAtual =
+                        'Gratuito';
+
+                }
+
+
+                if (
+                    planoAtual.toLowerCase() ===
+                    'premium'
+                ) {
+
+                    planoAtual =
+                        'Premium';
+
+                }
+
+
+                setPlano(
+                    planoAtual
+                );
+
+
+                // =========================================
+                // 9. MOEDAS
+                // =========================================
+
+                setMoedas(
+                    Number(
+                        dadosUsuario.moedas ||
+                        0
+                    )
+                );
+
+
+                // =========================================
+                // 10. PREFERÊNCIAS
+                // =========================================
+
+                setAnimesSelecionados(
+                    Array.isArray(
+                        dadosUsuario.animes_favoritos
+                    )
+                        ? dadosUsuario.animes_favoritos
+                        : []
+                );
+
+
+                setGenerosSelecionados(
+                    Array.isArray(
+                        dadosUsuario.generos_favoritos
+                    )
+                        ? dadosUsuario.generos_favoritos
+                        : []
+                );
+
+
+                setTagsSelecionadas(
+                    Array.isArray(
+                        dadosUsuario.tags_interesse
+                    )
+                        ? dadosUsuario.tags_interesse
+                        : []
+                );
+
+
+                // =========================================
+                // 11. PUBLICAÇÕES DO PERFIL VISITADO
+                // =========================================
+
+                const {
+                    data: dadosPosts,
+                    error: erroPosts
+                } = await supabase
                     .from('postagens')
                     .select('*')
-                    .eq('id_usuario', idDoUsuario)
-                    .order('criado_em', { ascending: false });
+                    .eq(
+                        'id_usuario',
+                        dadosUsuario.id
+                    )
+                    .order(
+                        'criado_em',
+                        {
+                            ascending: false
+                        }
+                    );
 
-                if (erroPosts) throw erroPosts;
-                setMeusPosts(dadosPosts || []);
+
+                if (erroPosts) {
+
+                    throw erroPosts;
+
+                }
+
+
+                setMeusPosts(
+                    dadosPosts ||
+                    []
+                );
+
 
             } catch (error) {
-                console.error('Erro ao buscar dados:', error);
+
+                console.error(
+                    'Erro ao buscar dados:',
+                    error
+                );
+
             } finally {
-                setCarregandoPosts(false);
+
+                setCarregandoPosts(
+                    false
+                );
+
             }
         }
 
+
         buscarDadosDoBanco();
 
-    }, [navigate, routeId]);
+    }, [
+        navigate,
+        routeId
+    ]);
+
 
     // =========================================
     // BUSCAR MINHA LISTA
@@ -275,7 +597,9 @@ function Perfil() {
                 return;
             }
 
-            setCarregandoObras(true);
+            setCarregandoObras(
+                true
+            );
 
             try {
 
@@ -296,9 +620,13 @@ function Perfil() {
                         }
                     );
 
+
                 if (error) {
+
                     throw error;
+
                 }
+
 
                 if (
                     !biblioteca ||
@@ -310,11 +638,13 @@ function Perfil() {
                     return;
                 }
 
+
                 const ids =
                     biblioteca.map(
                         (item) =>
                             item.anime_id
                     );
+
 
                 const query = `
                     query ($ids: [Int]) {
@@ -347,6 +677,7 @@ function Perfil() {
                     }
                 `;
 
+
                 const resposta =
                     await fetch(
                         'https://graphql.anilist.co',
@@ -371,8 +702,10 @@ function Perfil() {
                         }
                     );
 
+
                 const dados =
                     await resposta.json();
+
 
                 if (
                     !resposta.ok ||
@@ -383,11 +716,14 @@ function Perfil() {
                     throw new Error(
                         'Não foi possível buscar as obras.'
                     );
+
                 }
+
 
                 const obras =
                     dados.data.Page.media ||
                     [];
+
 
                 const obrasOrdenadas =
                     ids
@@ -401,9 +737,11 @@ function Perfil() {
                         )
                         .filter(Boolean);
 
+
                 setMinhasObras(
                     obrasOrdenadas
                 );
+
 
             } catch (error) {
 
@@ -423,9 +761,221 @@ function Perfil() {
             }
         }
 
+
         buscarMinhaLista();
 
-    }, [userId]);
+    }, [
+        userId
+    ]);
+
+
+    // =========================================
+    // PESQUISAR OBRAS PARA ADICIONAR À MINHA LISTA
+    // =========================================
+
+    useEffect(() => {
+
+        if (!isMeuPerfil) {
+            setResultadosPesquisaObras([]);
+            setPesquisandoObras(false);
+            return;
+        }
+
+        const termo = buscaMinhaLista.trim();
+
+        if (termo.length < 2) {
+            setResultadosPesquisaObras([]);
+            setPesquisandoObras(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+
+            setPesquisandoObras(true);
+
+            try {
+
+                const query = `
+                    query ($search: String) {
+                        Page(
+                            page: 1,
+                            perPage: 8
+                        ) {
+                            media(
+                                search: $search,
+                                type: ANIME
+                            ) {
+                                id
+
+                                title {
+                                    romaji
+                                    english
+                                    native
+                                }
+
+                                coverImage {
+                                    large
+                                    extraLarge
+                                }
+
+                                startDate {
+                                    year
+                                }
+                            }
+                        }
+                    }
+                `;
+
+                const resposta = await fetch(
+                    'https://graphql.anilist.co',
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+
+                        body: JSON.stringify({
+                            query: query,
+                            variables: {
+                                search: termo
+                            }
+                        })
+                    }
+                );
+
+                const dados = await resposta.json();
+
+                if (
+                    !resposta.ok ||
+                    !dados.data ||
+                    !dados.data.Page
+                ) {
+                    throw new Error(
+                        'Não foi possível pesquisar as obras.'
+                    );
+                }
+
+                setResultadosPesquisaObras(
+                    dados.data.Page.media || []
+                );
+
+            } catch (error) {
+
+                console.error(
+                    'Erro ao pesquisar obras:',
+                    error
+                );
+
+                setResultadosPesquisaObras([]);
+
+            } finally {
+
+                setPesquisandoObras(false);
+
+            }
+
+        }, 450);
+
+        return () => clearTimeout(timer);
+
+    }, [
+        buscaMinhaLista,
+        isMeuPerfil
+    ]);
+
+
+    // =========================================
+    // ADICIONAR OBRA À MINHA LISTA
+    // =========================================
+
+    const adicionarObraLista = async (obra) => {
+
+        if (
+            !isMeuPerfil ||
+            !userId ||
+            !obra?.id ||
+            adicionandoObraId !== null
+        ) {
+            return;
+        }
+
+        const jaExiste = minhasObras.some(
+            (item) => Number(item.id) === Number(obra.id)
+        );
+
+        if (jaExiste) {
+            alert('Essa obra já está na sua lista.');
+            return;
+        }
+
+        setAdicionandoObraId(obra.id);
+
+        try {
+
+            const {
+                error
+            } = await supabase
+                .from('biblioteca')
+                .insert([
+                    {
+                        usuario_id: userId,
+                        anime_id: obra.id
+                    }
+                ]);
+
+            if (error) {
+
+                // Evita cadastrar novamente caso exista uma
+                // restrição UNIQUE no banco.
+                if (error.code === '23505') {
+                    alert('Essa obra já está na sua lista.');
+                    return;
+                }
+
+                throw error;
+
+            }
+
+            setMinhasObras(
+                (obrasAtuais) => [
+                    obra,
+                    ...obrasAtuais
+                ]
+            );
+
+            setResultadosPesquisaObras(
+                (resultadosAtuais) =>
+                    resultadosAtuais.filter(
+                        (item) =>
+                            Number(item.id) !== Number(obra.id)
+                    )
+            );
+
+            alert(
+                'Obra adicionada à sua lista com sucesso!'
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao adicionar obra à lista:',
+                error
+            );
+
+            alert(
+                `Não foi possível adicionar a obra: ${error.message}`
+            );
+
+        } finally {
+
+            setAdicionandoObraId(null);
+
+        }
+
+    };
+
 
     // =========================================
     // BUSCAR SEGUIDORES / SEGUINDO
@@ -435,102 +985,288 @@ function Perfil() {
 
         async function buscarContagens() {
 
-            if (!userId) return;
+            if (
+                !userId ||
+                loggedUserId === null
+            ) {
+
+                return;
+
+            }
+
 
             try {
 
-                const [resSeguidores, resSeguindo] = await Promise.all([
-                    supabase
-                        .from('seguidores')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('id_seguido', userId),
+                const [
+                    resSeguidores,
+                    resSeguindo
+                ] = await Promise.all([
 
                     supabase
                         .from('seguidores')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('id_seguidor', userId),
+                        .select(
+                            '*',
+                            {
+                                count: 'exact',
+                                head: true
+                            }
+                        )
+                        .eq(
+                            'id_seguido',
+                            userId
+                        ),
+
+                    supabase
+                        .from('seguidores')
+                        .select(
+                            '*',
+                            {
+                                count: 'exact',
+                                head: true
+                            }
+                        )
+                        .eq(
+                            'id_seguidor',
+                            userId
+                        )
+
                 ]);
 
-                if (resSeguidores.error) throw resSeguidores.error;
-                if (resSeguindo.error) throw resSeguindo.error;
 
-                setTotalSeguidores(resSeguidores.count || 0);
-                setTotalSeguindo(resSeguindo.count || 0);
+                if (
+                    resSeguidores.error
+                ) {
 
-                // Se for o perfil de outra pessoa, verifica se eu já sigo
-                const meuId = Number(localStorage.getItem('usuario_id'));
+                    throw resSeguidores.error;
 
-                if (meuId && meuId !== Number(userId)) {
-
-                    const { data, error } = await supabase
-                        .from('seguidores')
-                        .select('id_seguidor')
-                        .eq('id_seguidor', meuId)
-                        .eq('id_seguido', userId)
-                        .maybeSingle();
-
-                    if (error) throw error;
-
-                    setSeguindo(!!data);
                 }
 
+
+                if (
+                    resSeguindo.error
+                ) {
+
+                    throw resSeguindo.error;
+
+                }
+
+
+                setTotalSeguidores(
+                    resSeguidores.count || 0
+                );
+
+
+                setTotalSeguindo(
+                    resSeguindo.count || 0
+                );
+
+
+                // =========================================
+                // VERIFICAR SE EU SIGO ESSA PESSOA
+                // =========================================
+
+                if (
+                    Number(loggedUserId) !==
+                    Number(userId)
+                ) {
+
+                    const {
+                        data,
+                        error
+                    } = await supabase
+                        .from('seguidores')
+                        .select(
+                            'id_seguidor'
+                        )
+                        .eq(
+                            'id_seguidor',
+                            Number(loggedUserId)
+                        )
+                        .eq(
+                            'id_seguido',
+                            Number(userId)
+                        )
+                        .maybeSingle();
+
+
+                    if (error) {
+
+                        throw error;
+
+                    }
+
+
+                    setSeguindo(
+                        !!data
+                    );
+
+                } else {
+
+                    setSeguindo(
+                        false
+                    );
+
+                }
+
+
             } catch (error) {
-                console.error('Erro ao buscar seguidores:', error);
+
+                console.error(
+                    'Erro ao buscar seguidores:',
+                    error
+                );
+
             }
         }
 
+
         buscarContagens();
 
-    }, [userId]);
+    }, [
+        userId,
+        loggedUserId
+    ]);
+
 
     // =========================================
     // SEGUIR / DEIXAR DE SEGUIR
     // =========================================
 
     const alternarSeguir = async () => {
-        const meuId = Number(localStorage.getItem('usuario_id'));
+
+        const meuId =
+            Number(
+                loggedUserId
+            );
+
 
         if (!meuId) {
-            alert('Você precisa estar logado para seguir alguém!');
+
+            alert(
+                'Você precisa estar logado para seguir alguém!'
+            );
+
             return;
         }
 
-        if (!userId || meuId === Number(userId) || carregandoSeguir) return;
 
-        setCarregandoSeguir(true);
+        if (
+            !userId ||
+            meuId === Number(userId) ||
+            carregandoSeguir
+        ) {
+
+            return;
+
+        }
+
+
+        setCarregandoSeguir(
+            true
+        );
+
 
         try {
+
             if (seguindo) {
-                const { error } = await supabase
+
+                const {
+                    error
+                } = await supabase
                     .from('seguidores')
                     .delete()
-                    .eq('id_seguidor', meuId)
-                    .eq('id_seguido', userId);
+                    .eq(
+                        'id_seguidor',
+                        meuId
+                    )
+                    .eq(
+                        'id_seguido',
+                        Number(userId)
+                    );
 
-                if (error) throw error;
 
-                setSeguindo(false);
-                setTotalSeguidores((n) => Math.max(n - 1, 0));
+                if (error) {
+
+                    throw error;
+
+                }
+
+
+                setSeguindo(
+                    false
+                );
+
+
+                setTotalSeguidores(
+                    (n) =>
+                        Math.max(
+                            n - 1,
+                            0
+                        )
+                );
+
+
             } else {
-                const { error } = await supabase
+
+                const {
+                    error
+                } = await supabase
                     .from('seguidores')
                     .insert({
-                        id_seguidor: meuId,
-                        id_seguido: Number(userId),
+                        id_seguidor:
+                            meuId,
+
+                        id_seguido:
+                            Number(userId)
                     });
 
-                // 23505 = já seguia, só sincroniza a tela
-                if (error && error.code !== '23505') throw error;
 
-                setSeguindo(true);
+                // 23505 = já seguia
+                if (
+                    error &&
+                    error.code !==
+                    '23505'
+                ) {
 
-                if (!error) setTotalSeguidores((n) => n + 1);
+                    throw error;
+
+                }
+
+
+                setSeguindo(
+                    true
+                );
+
+
+                if (!error) {
+
+                    setTotalSeguidores(
+                        (n) =>
+                            n + 1
+                    );
+
+                }
+
             }
+
+
         } catch (error) {
-            console.error('Erro ao seguir:', error);
-            alert('Não foi possível atualizar o seguimento.');
+
+            console.error(
+                'Erro ao seguir:',
+                error
+            );
+
+            alert(
+                'Não foi possível atualizar o seguimento.'
+            );
+
         } finally {
-            setCarregandoSeguir(false);
+
+            setCarregandoSeguir(
+                false
+            );
+
         }
     };
 
@@ -541,21 +1277,49 @@ function Perfil() {
 
     const handleLogout = async () => {
 
-        const { error } = await supabase.auth.signOut();
+        const {
+            error
+        } = await supabase.auth.signOut();
+
 
         if (error) {
-            console.error('Erro ao sair:', error);
-            alert('Erro ao sair da conta.');
+
+            console.error(
+                'Erro ao sair:',
+                error
+            );
+
+            alert(
+                'Erro ao sair da conta.'
+            );
+
             return;
         }
 
-        localStorage.removeItem('usuario_id');
-        localStorage.removeItem('usuario_auth_id');
-        localStorage.removeItem('usuario_email');
-        localStorage.removeItem('usuario_username');
 
-        navigate('/Login');
+        localStorage.removeItem(
+            'usuario_id'
+        );
+
+        localStorage.removeItem(
+            'usuario_auth_id'
+        );
+
+        localStorage.removeItem(
+            'usuario_email'
+        );
+
+        localStorage.removeItem(
+            'usuario_username'
+        );
+
+
+        navigate(
+            '/Login'
+        );
+
     };
+
 
     // =========================================
     // EDITAR FOTO DIRETO NO PERFIL
@@ -566,12 +1330,16 @@ function Perfil() {
         const arquivo =
             e.target.files[0];
 
+
         if (
             !arquivo ||
             !userId
         ) {
+
             return;
+
         }
+
 
         if (
             !arquivo.type.startsWith(
@@ -583,10 +1351,13 @@ function Perfil() {
                 'Escolha apenas uma imagem.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
+
 
         if (
             arquivo.size >
@@ -597,12 +1368,18 @@ function Perfil() {
                 'A imagem deve ter no máximo 5 MB.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
 
-        setCarregandoUpload(true);
+
+        setCarregandoUpload(
+            true
+        );
+
 
         try {
 
@@ -611,8 +1388,10 @@ function Perfil() {
                     .split('.')
                     .pop();
 
+
             const nomeDoArquivo =
                 `${userId}_${Date.now()}.${extensao}`;
+
 
             const {
                 data: uploadData,
@@ -626,6 +1405,7 @@ function Perfil() {
                     arquivo
                 );
 
+
             if (uploadError) {
 
                 throw new Error(
@@ -633,6 +1413,7 @@ function Perfil() {
                 );
 
             }
+
 
             const {
                 data: urlData
@@ -644,20 +1425,24 @@ function Perfil() {
                     uploadData.path
                 );
 
+
             const linkDaFoto =
                 urlData.publicUrl;
+
 
             const {
                 error: dbError
             } = await supabase
                 .from('usuarios')
                 .update({
-                    foto: linkDaFoto
+                    foto:
+                        linkDaFoto
                 })
                 .eq(
                     'id',
                     userId
                 );
+
 
             if (dbError) {
 
@@ -667,13 +1452,16 @@ function Perfil() {
 
             }
 
+
             setFotoUrl(
                 linkDaFoto
             );
 
+
             alert(
                 'Foto de perfil atualizada com sucesso!'
             );
+
 
         } catch (error) {
 
@@ -682,18 +1470,25 @@ function Perfil() {
                 error
             );
 
+
             alert(
                 error.message
             );
 
+
         } finally {
 
-            setCarregandoUpload(false);
+            setCarregandoUpload(
+                false
+            );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
         }
+
     };
+
 
     // =========================================
     // ABRIR EDITAR PERFIL
@@ -701,22 +1496,31 @@ function Perfil() {
 
     const abrirEditarPerfil = () => {
 
+        if (!isMeuPerfil) {
+            return;
+        }
+
         setNomeEditado(
             nome
         );
+
 
         setNovaFotoPerfil(
             null
         );
 
+
         setPreviewFotoPerfil(
             ''
         );
 
+
         setModalEditarPerfil(
             true
         );
+
     };
+
 
     // =========================================
     // FECHAR EDITAR PERFIL
@@ -724,26 +1528,36 @@ function Perfil() {
 
     const fecharEditarPerfil = () => {
 
-        if (salvandoPerfil) {
+        if (
+            salvandoPerfil
+        ) {
+
             return;
+
         }
+
 
         setModalEditarPerfil(
             false
         );
 
+
         setNomeEditado(
             ''
         );
+
 
         setNovaFotoPerfil(
             null
         );
 
+
         setPreviewFotoPerfil(
             ''
         );
+
     };
+
 
     // =========================================
     // NOVA FOTO NO MODAL
@@ -751,12 +1565,20 @@ function Perfil() {
 
     const handleNovaFotoPerfil = (e) => {
 
+        if (!isMeuPerfil) {
+            return;
+        }
+
         const arquivo =
             e.target.files[0];
 
+
         if (!arquivo) {
+
             return;
+
         }
+
 
         if (
             !arquivo.type.startsWith(
@@ -768,10 +1590,13 @@ function Perfil() {
                 'Escolha apenas uma imagem.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
+
 
         if (
             arquivo.size >
@@ -782,30 +1607,42 @@ function Perfil() {
                 'A imagem deve ter no máximo 5 MB.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
+
 
         setNovaFotoPerfil(
             arquivo
         );
+
 
         const preview =
             URL.createObjectURL(
                 arquivo
             );
 
+
         setPreviewFotoPerfil(
             preview
         );
+
     };
+
 
     // =========================================
     // SALVAR PERFIL
     // =========================================
 
     const salvarPerfil = async () => {
+
+        if (!isMeuPerfil) {
+            return;
+        }
+
 
         if (!userId) {
 
@@ -814,7 +1651,9 @@ function Perfil() {
             );
 
             return;
+
         }
+
 
         if (!nomeEditado.trim()) {
 
@@ -823,24 +1662,34 @@ function Perfil() {
             );
 
             return;
+
         }
 
-        setSalvandoPerfil(true);
+
+        setSalvandoPerfil(
+            true
+        );
+
 
         try {
 
             let linkDaFoto =
                 fotoUrl;
 
-            if (novaFotoPerfil) {
+
+            if (
+                novaFotoPerfil
+            ) {
 
                 const extensao =
                     novaFotoPerfil.name
                         .split('.')
                         .pop();
 
+
                 const nomeDoArquivo =
                     `${userId}_${Date.now()}.${extensao}`;
+
 
                 const {
                     data: uploadData,
@@ -854,6 +1703,7 @@ function Perfil() {
                         novaFotoPerfil
                     );
 
+
                 if (uploadError) {
 
                     throw new Error(
@@ -861,6 +1711,7 @@ function Perfil() {
                     );
 
                 }
+
 
                 const {
                     data: urlData
@@ -872,9 +1723,12 @@ function Perfil() {
                         uploadData.path
                     );
 
+
                 linkDaFoto =
                     urlData.publicUrl;
+
             }
+
 
             const {
                 error: erroUpdate
@@ -892,6 +1746,7 @@ function Perfil() {
                     userId
                 );
 
+
             if (erroUpdate) {
 
                 console.error(
@@ -905,34 +1760,51 @@ function Perfil() {
 
             }
 
+
             const novoNome =
                 nomeEditado.trim();
+
 
             setNome(
                 novoNome
             );
 
+
             setFotoUrl(
                 linkDaFoto
             );
+
+
+            localStorage.setItem(
+                'usuario_username',
+                novoNome
+            );
+
 
             setModalEditarPerfil(
                 false
             );
 
-            setNomeEditado('');
+
+            setNomeEditado(
+                ''
+            );
+
 
             setNovaFotoPerfil(
                 null
             );
 
+
             setPreviewFotoPerfil(
                 ''
             );
 
+
             alert(
                 'Perfil atualizado com sucesso!'
             );
+
 
         } catch (error) {
 
@@ -941,17 +1813,23 @@ function Perfil() {
                 error
             );
 
+
             alert(
                 error.message ||
                 'Não foi possível atualizar o perfil.'
             );
 
+
         } finally {
 
-            setSalvandoPerfil(false);
+            setSalvandoPerfil(
+                false
+            );
 
         }
+
     };
+
 
     // =========================================
     // IMAGEM DA PUBLICAÇÃO
@@ -959,12 +1837,20 @@ function Perfil() {
 
     const handleImagemPublicacao = (e) => {
 
+        if (!isMeuPerfil) {
+            return;
+        }
+
         const arquivo =
             e.target.files[0];
 
+
         if (!arquivo) {
+
             return;
+
         }
+
 
         if (
             !arquivo.type.startsWith(
@@ -976,10 +1862,13 @@ function Perfil() {
                 'Escolha apenas arquivos de imagem.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
+
 
         if (
             arquivo.size >
@@ -990,30 +1879,41 @@ function Perfil() {
                 'A imagem deve ter no máximo 5 MB.'
             );
 
-            e.target.value = '';
+            e.target.value =
+                '';
 
             return;
+
         }
+
 
         setNovaImagem(
             arquivo
         );
+
 
         const imagemPreview =
             URL.createObjectURL(
                 arquivo
             );
 
+
         setPreviewImagem(
             imagemPreview
         );
+
     };
+
 
     // =========================================
     // PUBLICAR
     // =========================================
 
     const handlePublicar = async () => {
+
+        if (!isMeuPerfil) {
+            return;
+        }
 
         if (!userId) {
 
@@ -1022,7 +1922,9 @@ function Perfil() {
             );
 
             return;
+
         }
+
 
         if (
             !novoTitulo.trim() ||
@@ -1034,23 +1936,34 @@ function Perfil() {
             );
 
             return;
+
         }
 
-        setPublicando(true);
+
+        setPublicando(
+            true
+        );
+
 
         try {
 
-            let linkImagem = null;
+            let linkImagem =
+                null;
 
-            if (novaImagem) {
+
+            if (
+                novaImagem
+            ) {
 
                 const extensao =
                     novaImagem.name
                         .split('.')
                         .pop();
 
+
                 const nomeDoArquivo =
                     `${userId}_${Date.now()}.${extensao}`;
+
 
                 const {
                     data: uploadData,
@@ -1064,6 +1977,7 @@ function Perfil() {
                         novaImagem
                     );
 
+
                 if (uploadError) {
 
                     throw new Error(
@@ -1071,6 +1985,7 @@ function Perfil() {
                     );
 
                 }
+
 
                 const {
                     data: urlData
@@ -1082,9 +1997,12 @@ function Perfil() {
                         uploadData.path
                     );
 
+
                 linkImagem =
                     urlData.publicUrl;
+
             }
+
 
             const {
                 data,
@@ -1109,9 +2027,13 @@ function Perfil() {
                 .select()
                 .single();
 
+
             if (error) {
+
                 throw error;
+
             }
+
 
             setMeusPosts(
                 (postsAtuais) => [
@@ -1120,19 +2042,31 @@ function Perfil() {
                 ]
             );
 
-            setNovoTitulo('');
 
-            setNovoConteudo('');
+            setNovoTitulo(
+                ''
+            );
+
+
+            setNovoConteudo(
+                ''
+            );
+
 
             setNovaImagem(
                 null
             );
 
-            setPreviewImagem('');
+
+            setPreviewImagem(
+                ''
+            );
+
 
             alert(
                 'Publicação criada com sucesso!'
             );
+
 
         } catch (error) {
 
@@ -1141,61 +2075,145 @@ function Perfil() {
                 error
             );
 
+
             alert(
                 `Erro ao criar publicação: ${error.message}`
             );
 
+
         } finally {
 
-            setPublicando(false);
+            setPublicando(
+                false
+            );
 
         }
+
     };
+
 
     // =========================================
     // PREFERÊNCIAS
     // =========================================
 
-    const alternarOpcao = async (opcao, categoria) => {
+    const alternarOpcao = async (
+        opcao,
+        categoria
+    ) => {
 
-        if (!isMeuPerfil || !userId) return;
+        if (
+            !isMeuPerfil ||
+            !userId
+        ) {
+
+            return;
+
+        }
+
 
         let listaAtual = [];
         let colunaBanco = '';
         let atualizarEstado;
 
-        if (categoria === 'animes') {
-            listaAtual = animesSelecionados;
-            colunaBanco = 'animes_favoritos';
-            atualizarEstado = setAnimesSelecionados;
-        } else if (categoria === 'generos') {
-            listaAtual = generosSelecionados;
-            colunaBanco = 'generos_favoritos';
-            atualizarEstado = setGenerosSelecionados;
-        } else if (categoria === 'tags') {
-            listaAtual = tagsSelecionadas;
-            colunaBanco = 'tags_interesse';
-            atualizarEstado = setTagsSelecionadas;
+
+        if (
+            categoria ===
+            'animes'
+        ) {
+
+            listaAtual =
+                animesSelecionados;
+
+            colunaBanco =
+                'animes_favoritos';
+
+            atualizarEstado =
+                setAnimesSelecionados;
+
+        } else if (
+            categoria ===
+            'generos'
+        ) {
+
+            listaAtual =
+                generosSelecionados;
+
+            colunaBanco =
+                'generos_favoritos';
+
+            atualizarEstado =
+                setGenerosSelecionados;
+
+        } else if (
+            categoria ===
+            'tags'
+        ) {
+
+            listaAtual =
+                tagsSelecionadas;
+
+            colunaBanco =
+                'tags_interesse';
+
+            atualizarEstado =
+                setTagsSelecionadas;
+
         } else {
+
             return;
+
         }
 
-        const novaLista = listaAtual.includes(opcao)
-            ? listaAtual.filter((item) => item !== opcao)
-            : [...listaAtual, opcao];
 
-        atualizarEstado(novaLista);
+        const novaLista =
+            listaAtual.includes(
+                opcao
+            )
+                ? listaAtual.filter(
+                    (item) =>
+                        item !==
+                        opcao
+                )
+                : [
+                    ...listaAtual,
+                    opcao
+                ];
 
-        const { error } = await supabase
+
+        atualizarEstado(
+            novaLista
+        );
+
+
+        const {
+            error
+        } = await supabase
             .from('usuarios')
-            .update({ [colunaBanco]: novaLista })
-            .eq('id', userId);
+            .update({
+                [colunaBanco]:
+                    novaLista
+            })
+            .eq(
+                'id',
+                userId
+            );
+
 
         if (error) {
-            console.error('Erro ao salvar preferência:', error);
-            alert('Não foi possível salvar essa preferência no banco.');
+
+            console.error(
+                'Erro ao salvar preferência:',
+                error
+            );
+
+            alert(
+                'Não foi possível salvar essa preferência no banco.'
+            );
+
         }
+
     };
+
 
     // =========================================
     // ABRIR CATEGORIA
@@ -1214,18 +2232,26 @@ function Perfil() {
                 null
             );
 
-            setBuscaPreferencia('');
+            setBuscaPreferencia(
+                ''
+            );
 
             return;
+
         }
+
 
         setCategoriaAberta(
             categoria
         );
 
-        setBuscaPreferencia('');
+
+        setBuscaPreferencia(
+            ''
+        );
 
     };
+
 
     // =========================================
     // FECHAR CATEGORIA
@@ -1237,9 +2263,12 @@ function Perfil() {
             null
         );
 
-        setBuscaPreferencia('');
+        setBuscaPreferencia(
+            ''
+        );
 
     };
+
 
     // =========================================
     // RETURN
@@ -1249,9 +2278,15 @@ function Perfil() {
         <>
             <NavbarPesquisa />
 
+
             <main className="page-wrapper">
 
                 <div className="profile-layout">
+
+
+                    {/* =========================================
+                        SIDEBAR DO PRÓPRIO PERFIL
+                    ========================================== */}
 
                     {isMeuPerfil && (
 
@@ -1261,10 +2296,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'perfil'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'perfil'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'perfil'
@@ -1281,10 +2317,11 @@ function Perfil() {
 
                                 <button
                                     type="button"
-                                    className={`sidebar-link ${activeTab === 'configuracoes'
-                                        ? 'active'
-                                        : ''
-                                        }`}
+                                    className={`sidebar-link ${
+                                        activeTab === 'configuracoes'
+                                            ? 'active'
+                                            : ''
+                                    }`}
                                     onClick={() =>
                                         setActiveTab(
                                             'configuracoes'
@@ -1325,15 +2362,29 @@ function Perfil() {
 
                     <div className="profile-container">
 
-                        {activeTab === 'perfil' && (
+
+                        {/* =========================================
+                            PERFIL
+                        ========================================== */}
+
+                        {activeTab ===
+                            'perfil' && (
 
                             <>
 
+
+                                {/* =====================================
+                                    CABEÇALHO DO PERFIL
+                                ====================================== */}
+
                                 <div className="profile-header-row">
+
 
                                     <section className="user-info-section">
 
+
                                         <div className="avatar-col">
+
 
                                             <div
                                                 className="avatar-circle"
@@ -1415,6 +2466,7 @@ function Perfil() {
 
                                         <div className="info-col">
 
+
                                             <h2 className="section-title">
                                                 Perfil de usuário
                                             </h2>
@@ -1431,45 +2483,95 @@ function Perfil() {
                                                     </span>
 
                                                     <span className="info-value">
+
                                                         {
                                                             nome ||
                                                             'Carregando...'
                                                         }
+
                                                     </span>
 
                                                 </div>
 
                                             </div>
 
+
+                                            {/* =================================
+                                                SEGUIDORES
+                                            ================================== */}
+
                                             <div className="follow-stats">
 
                                                 <div className="follow-stat">
-                                                    <strong>{totalSeguidores}</strong>
-                                                    <span>{totalSeguidores === 1 ? 'Seguidor' : 'Seguidores'}</span>
+
+                                                    <strong>
+                                                        {
+                                                            totalSeguidores
+                                                        }
+                                                    </strong>
+
+                                                    <span>
+                                                        {
+                                                            totalSeguidores ===
+                                                            1
+                                                                ? 'Seguidor'
+                                                                : 'Seguidores'
+                                                        }
+                                                    </span>
+
                                                 </div>
+
 
                                                 <div className="follow-stat">
-                                                    <strong>{totalSeguindo}</strong>
-                                                    <span>seguindo</span>
+
+                                                    <strong>
+                                                        {
+                                                            totalSeguindo
+                                                        }
+                                                    </strong>
+
+                                                    <span>
+                                                        Seguindo
+                                                    </span>
+
                                                 </div>
 
+
                                                 {!isMeuPerfil && (
+
                                                     <button
                                                         type="button"
-                                                        className={`btn-seguir ${seguindo ? 'seguindo' : ''}`}
-                                                        onClick={alternarSeguir}
-                                                        disabled={carregandoSeguir}
+                                                        className={`btn-seguir ${
+                                                            seguindo
+                                                                ? 'seguindo'
+                                                                : ''
+                                                        }`}
+                                                        onClick={
+                                                            alternarSeguir
+                                                        }
+                                                        disabled={
+                                                            carregandoSeguir
+                                                        }
                                                     >
-                                                        {carregandoSeguir
-                                                            ? '...'
-                                                            : seguindo
-                                                                ? 'Seguindo'
-                                                                : 'Seguidores'}
+
+                                                        {
+                                                            carregandoSeguir
+                                                                ? '...'
+                                                                : seguindo
+                                                                    ? 'Seguindo'
+                                                                    : 'Seguir'
+                                                        }
+
                                                     </button>
+
                                                 )}
 
                                             </div>
 
+
+                                            {/* =================================
+                                                E-MAIL
+                                            ================================== */}
 
                                             <div className="info-item">
 
@@ -1482,16 +2584,22 @@ function Perfil() {
                                                     </span>
 
                                                     <span className="info-value">
+
                                                         {
                                                             email ||
                                                             'Carregando...'
                                                         }
+
                                                     </span>
 
                                                 </div>
 
                                             </div>
 
+
+                                            {/* =================================
+                                                DATA
+                                            ================================== */}
 
                                             <div className="info-item">
 
@@ -1504,22 +2612,30 @@ function Perfil() {
                                                     </span>
 
                                                     <span className="info-value">
+
                                                         {
                                                             registro ||
                                                             'Carregando...'
                                                         }
+
                                                     </span>
 
                                                 </div>
 
                                             </div>
 
+
                                         </div>
 
                                     </section>
 
 
+                                    {/* =====================================
+                                        PLANO
+                                    ====================================== */}
+
                                     <section className="plan-section">
+
 
                                         <h2 className="plan-title">
 
@@ -1541,7 +2657,11 @@ function Perfil() {
 
                                         </div>
 
-                                        {String(plano).toLowerCase() === 'premium' && (
+
+                                        {String(
+                                            plano
+                                        ).toLowerCase() ===
+                                            'premium' && (
 
                                             <div className="badge-apoiador">
 
@@ -1555,21 +2675,39 @@ function Perfil() {
 
 
                                         <p className="plan-desc">
-                                            Aproveite os recursos mais populares do nosso site.
+
+                                            {
+                                                String(
+                                                    plano
+                                                ).toLowerCase() ===
+                                                    'premium'
+                                                    ? 'Você é um apoiador do Anime Spot e possui acesso aos benefícios Premium.'
+                                                    : 'Você está utilizando o plano gratuito do Anime Spot.'
+                                            }
+
                                         </p>
 
 
-                                        <Link
-                                            to="/Planos"
-                                            className="plan-link"
-                                        >
-                                            Ver planos
-                                        </Link>
+                                        {isMeuPerfil && (
+
+                                            <Link
+                                                to="/Planos"
+                                                className="plan-link"
+                                            >
+                                                Ver planos
+                                            </Link>
+
+                                        )}
 
                                     </section>
 
 
+                                    {/* =====================================
+                                        MOEDAS
+                                    ====================================== */}
+
                                     <section className="plan-section">
+
 
                                         <h2 className="plan-title">
 
@@ -1584,31 +2722,46 @@ function Perfil() {
 
                                             <i className="ph-fill ph-coin"></i>
 
-                                            {moedas} moedas
+                                            {
+                                                moedas
+                                            } moedas
 
                                         </div>
 
 
                                         <p className="plan-desc">
-                                            Não há limite de moedas: compre e acumule à vontade!
+
+                                            Use suas moedas para desbloquear capítulos.
+
                                         </p>
 
 
-                                        <Link
-                                            to="/Moedas"
-                                            className="plan-link"
-                                        >
-                                            Comprar moedas
-                                        </Link>
+                                        {isMeuPerfil && (
+
+                                            <Link
+                                                to="/Moedas"
+                                                className="moedas-button"
+                                            >
+                                                <i className="ph-fill ph-coins"></i>
+                                                Comprar moedas
+                                            </Link>
+
+                                        )}
 
                                     </section>
+
 
                                 </div>
 
 
+                                {/* =========================================
+                                    PREFERÊNCIAS
+                                ========================================== */}
+
                                 {isMeuPerfil && (
 
                                     <section className="preferences-section">
+
 
                                         <h2 className="section-title">
 
@@ -1620,11 +2773,18 @@ function Perfil() {
 
 
                                         <p className="section-subtitle">
+
                                             Personalize sua experiência no site.
+
                                         </p>
 
 
                                         <div className="prefs-grid">
+
+
+                                            {/* =================================
+                                                ANIMES
+                                            ================================== */}
 
                                             <div className="pref-col">
 
@@ -1700,6 +2860,10 @@ function Perfil() {
                                             </div>
 
 
+                                            {/* =================================
+                                                GÊNEROS
+                                            ================================== */}
+
                                             <div className="pref-col">
 
                                                 <i
@@ -1774,6 +2938,10 @@ function Perfil() {
                                             </div>
 
 
+                                            {/* =================================
+                                                TAGS
+                                            ================================== */}
+
                                             <div className="pref-col">
 
                                                 <i
@@ -1847,12 +3015,18 @@ function Perfil() {
 
                                             </div>
 
+
                                         </div>
 
+
+                                        {/* =====================================
+                                            PAINEL DE PREFERÊNCIAS
+                                        ====================================== */}
 
                                         {categoriaAberta && (
 
                                             <div className="painel-preferencias">
+
 
                                                 <div className="painel-preferencias-header">
 
@@ -1914,187 +3088,188 @@ function Perfil() {
 
                                                 <div className="opcoes-preferencias">
 
+
                                                     {categoriaAberta ===
                                                         'animes' && (
 
-                                                            animesFiltrados.length >
-                                                                0 ? (
+                                                        animesFiltrados.length >
+                                                            0 ? (
 
-                                                                animesFiltrados.map(
-                                                                    (anime) => (
+                                                            animesFiltrados.map(
+                                                                (anime) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            anime
+                                                                        }
+                                                                        className={
+                                                                            animesSelecionados.includes(
+                                                                                anime
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                anime,
+                                                                                'animes'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 anime
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 animesSelecionados.includes(
                                                                                     anime
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    anime,
-                                                                                    'animes'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    anime
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    animesSelecionados.includes(
-                                                                                        anime
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum anime encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum anime encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
 
                                                     {categoriaAberta ===
                                                         'generos' && (
 
-                                                            generosFiltrados.length >
-                                                                0 ? (
+                                                        generosFiltrados.length >
+                                                            0 ? (
 
-                                                                generosFiltrados.map(
-                                                                    (genero) => (
+                                                            generosFiltrados.map(
+                                                                (genero) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            genero
+                                                                        }
+                                                                        className={
+                                                                            generosSelecionados.includes(
+                                                                                genero
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                genero,
+                                                                                'generos'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 genero
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 generosSelecionados.includes(
                                                                                     genero
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    genero,
-                                                                                    'generos'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    genero
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    generosSelecionados.includes(
-                                                                                        genero
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhum gênero encontrado.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhum gênero encontrado.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
 
                                                     {categoriaAberta ===
                                                         'tags' && (
 
-                                                            tagsFiltradas.length >
-                                                                0 ? (
+                                                        tagsFiltradas.length >
+                                                            0 ? (
 
-                                                                tagsFiltradas.map(
-                                                                    (tag) => (
+                                                            tagsFiltradas.map(
+                                                                (tag) => (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            key={
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            tag
+                                                                        }
+                                                                        className={
+                                                                            tagsSelecionadas.includes(
+                                                                                tag
+                                                                            )
+                                                                                ? 'opcao-preferencia selecionada'
+                                                                                : 'opcao-preferencia'
+                                                                        }
+                                                                        onClick={() =>
+                                                                            alternarOpcao(
+                                                                                tag,
+                                                                                'tags'
+                                                                            )
+                                                                        }
+                                                                    >
+
+                                                                        <span>
+                                                                            {
                                                                                 tag
                                                                             }
-                                                                            className={
+                                                                        </span>
+
+
+                                                                        <span>
+                                                                            {
                                                                                 tagsSelecionadas.includes(
                                                                                     tag
                                                                                 )
-                                                                                    ? 'opcao-preferencia selecionada'
-                                                                                    : 'opcao-preferencia'
+                                                                                    ? '✓'
+                                                                                    : '+'
                                                                             }
-                                                                            onClick={() =>
-                                                                                alternarOpcao(
-                                                                                    tag,
-                                                                                    'tags'
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                        </span>
 
-                                                                            <span>
-                                                                                {
-                                                                                    tag
-                                                                                }
-                                                                            </span>
+                                                                    </button>
 
-
-                                                                            <span>
-                                                                                {
-                                                                                    tagsSelecionadas.includes(
-                                                                                        tag
-                                                                                    )
-                                                                                        ? '✓'
-                                                                                        : '+'
-                                                                                }
-                                                                            </span>
-
-                                                                        </button>
-
-                                                                    )
                                                                 )
-
-                                                            ) : (
-
-                                                                <p className="nenhuma-opcao">
-                                                                    Nenhuma tag encontrada.
-                                                                </p>
-
                                                             )
-                                                        )}
+
+                                                        ) : (
+
+                                                            <p className="nenhuma-opcao">
+                                                                Nenhuma tag encontrada.
+                                                            </p>
+
+                                                        )
+                                                    )}
 
                                                 </div>
 
@@ -2107,24 +3282,222 @@ function Perfil() {
                                 )}
 
 
+                                {/* =========================================
+                                    MINHA LISTA
+                                ========================================== */}
+
                                 <section className="minha-lista-section">
 
-                                    <h2 className="section-title">
 
-                                        <i className="ph-fill ph-books"></i>
+                                    <div className="minha-lista-header">
 
-                                        {
-                                            isMeuPerfil
-                                                ? 'Minha lista'
-                                                : `Lista de ${nome}`
-                                        }
+                                        <div>
 
-                                    </h2>
+                                            <h2 className="section-title">
+
+                                                <i className="ph-fill ph-books"></i>
+
+                                                {
+                                                    isMeuPerfil
+                                                        ? 'Minha lista'
+                                                        : `Lista de ${nome}`
+                                                }
+
+                                            </h2>
 
 
-                                    <p className="section-subtitle">
-                                        Obras adicionadas à lista deste usuário.
-                                    </p>
+                                            <p className="section-subtitle">
+
+                                                Obras adicionadas à lista deste usuário.
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* =====================================
+                                        PESQUISA DA MINHA LISTA
+                                        Só aparece para o dono do perfil.
+                                    ====================================== */}
+
+                                    {isMeuPerfil && (
+
+                                        <div className="minha-lista-pesquisa">
+
+                                            <div className="minha-lista-pesquisa-campo">
+
+                                                <i className="ph ph-magnifying-glass"></i>
+
+                                                <input
+                                                    type="text"
+                                                    value={buscaMinhaLista}
+                                                    onChange={(e) =>
+                                                        setBuscaMinhaLista(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    placeholder="Pesquisar uma obra para adicionar..."
+                                                    aria-label="Pesquisar obra para adicionar à minha lista"
+                                                />
+
+                                                {buscaMinhaLista && (
+
+                                                    <button
+                                                        type="button"
+                                                        className="limpar-busca-lista"
+                                                        onClick={() => {
+                                                            setBuscaMinhaLista('');
+                                                            setResultadosPesquisaObras([]);
+                                                        }}
+                                                        aria-label="Limpar pesquisa"
+                                                    >
+                                                        ×
+                                                    </button>
+
+                                                )}
+
+                                            </div>
+
+
+                                            {buscaMinhaLista.trim().length >= 2 && (
+
+                                                <div className="resultados-pesquisa-obras">
+
+                                                    {pesquisandoObras ? (
+
+                                                        <p className="mensagem-pesquisa-obras">
+                                                            Pesquisando obras...
+                                                        </p>
+
+                                                    ) : resultadosPesquisaObras.length > 0 ? (
+
+                                                        resultadosPesquisaObras.map(
+                                                            (obra) => {
+
+                                                                const nomePesquisa =
+                                                                    obra.title?.english ||
+                                                                    obra.title?.romaji ||
+                                                                    obra.title?.native ||
+                                                                    'Obra sem título';
+
+                                                                const imagemPesquisa =
+                                                                    obra.coverImage?.large ||
+                                                                    obra.coverImage?.extraLarge;
+
+                                                                const jaEstaNaLista =
+                                                                    minhasObras.some(
+                                                                        (item) =>
+                                                                            Number(item.id) ===
+                                                                            Number(obra.id)
+                                                                    );
+
+                                                                return (
+
+                                                                    <div
+                                                                        className="resultado-obra"
+                                                                        key={obra.id}
+                                                                    >
+
+                                                                        <div className="resultado-obra-info">
+
+                                                                            <div className="resultado-obra-capa">
+
+                                                                                {imagemPesquisa ? (
+
+                                                                                    <img
+                                                                                        src={imagemPesquisa}
+                                                                                        alt={nomePesquisa}
+                                                                                    />
+
+                                                                                ) : (
+
+                                                                                    <i className="ph ph-image"></i>
+
+                                                                                )}
+
+                                                                            </div>
+
+
+                                                                            <div className="resultado-obra-texto">
+
+                                                                                <strong>
+                                                                                    {nomePesquisa}
+                                                                                </strong>
+
+                                                                                {obra.startDate?.year && (
+
+                                                                                    <span>
+                                                                                        {obra.startDate.year}
+                                                                                    </span>
+
+                                                                                )}
+
+                                                                            </div>
+
+                                                                        </div>
+
+
+                                                                        {jaEstaNaLista ? (
+
+                                                                            <span className="obra-ja-adicionada">
+
+                                                                                <i className="ph-fill ph-check-circle"></i>
+
+                                                                                Adicionada
+
+                                                                            </span>
+
+                                                                        ) : (
+
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn-adicionar-obra"
+                                                                                onClick={() =>
+                                                                                    adicionarObraLista(
+                                                                                        obra
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    adicionandoObraId !== null
+                                                                                }
+                                                                            >
+
+                                                                                <i className="ph ph-plus"></i>
+
+                                                                                {
+                                                                                    adicionandoObraId === obra.id
+                                                                                        ? 'Adicionando...'
+                                                                                        : 'Adicionar'
+                                                                                }
+
+                                                                            </button>
+
+                                                                        )}
+
+                                                                    </div>
+
+                                                                );
+
+                                                            }
+                                                        )
+
+                                                    ) : (
+
+                                                        <p className="mensagem-pesquisa-obras">
+                                                            Nenhuma obra encontrada.
+                                                        </p>
+
+                                                    )}
+
+                                                </div>
+
+                                            )}
+
+                                        </div>
+
+                                    )}
 
 
                                     {carregandoObras ? (
@@ -2146,9 +3519,11 @@ function Perfil() {
                                                         obra.title?.native ||
                                                         'Obra sem título';
 
+
                                                     const imagem =
                                                         obra.coverImage?.large ||
                                                         obra.coverImage?.extraLarge;
+
 
                                                     return (
 
@@ -2166,7 +3541,7 @@ function Perfil() {
 
                                                             <div className="obra-card-imagem">
 
-                                                                {imagem && (
+                                                                {imagem ? (
 
                                                                     <img
                                                                         src={
@@ -2180,6 +3555,14 @@ function Perfil() {
                                                                                 'none';
                                                                         }}
                                                                     />
+
+                                                                ) : (
+
+                                                                    <div className="obra-card-sem-imagem">
+
+                                                                        <i className="ph ph-image"></i>
+
+                                                                    </div>
 
                                                                 )}
 
@@ -2227,9 +3610,11 @@ function Perfil() {
 
                                             <h3>
 
-                                                {isMeuPerfil
-                                                    ? 'Sua lista está vazia'
-                                                    : `${nome} ainda não adicionou obras`}
+                                                {
+                                                    isMeuPerfil
+                                                        ? 'Sua lista está vazia'
+                                                        : `${nome} ainda não adicionou obras`
+                                                }
 
                                             </h3>
 
@@ -2237,7 +3622,7 @@ function Perfil() {
                                             {isMeuPerfil && (
 
                                                 <p>
-                                                    Pesquise uma obra e adicione à sua lista.
+                                                    Pesquise uma obra acima e adicione à sua lista.
                                                 </p>
 
                                             )}
@@ -2249,7 +3634,12 @@ function Perfil() {
                                 </section>
 
 
+                                {/* =========================================
+                                    PUBLICAÇÕES
+                                ========================================== */}
+
                                 <div className="meus-posts-secao">
+
 
                                     <h2 className="section-title">
 
@@ -2265,9 +3655,15 @@ function Perfil() {
 
 
                                     <p className="section-subtitle">
+
                                         Compartilhe suas opiniões e fale sobre seus animes favoritos.
+
                                     </p>
 
+
+                                    {/* =====================================
+                                        CRIAR POST
+                                    ====================================== */}
 
                                     {isMeuPerfil && (
 
@@ -2398,6 +3794,7 @@ function Perfil() {
 
                                     <div className="publicacoes-usuario">
 
+
                                         <h3 className="subtitulo-publicacoes">
 
                                             {
@@ -2429,6 +3826,7 @@ function Perfil() {
                                                             className="meu-post-card"
                                                         >
 
+
                                                             {post.imagem && (
 
                                                                 <div className="meu-post-imagem">
@@ -2452,16 +3850,20 @@ function Perfil() {
                                                             <div className="meu-post-conteudo-area">
 
                                                                 <h4 className="meu-post-titulo-card">
+
                                                                     {
                                                                         post.titulo
                                                                     }
+
                                                                 </h4>
 
 
                                                                 <p className="meu-post-conteudo">
+
                                                                     {
                                                                         post.conteudo
                                                                     }
+
                                                                 </p>
 
 
@@ -2529,10 +3931,20 @@ function Perfil() {
                         )}
 
 
-                        {activeTab ===
-                            'configuracoes' && (
+                        {/* =========================================
+                            CONFIGURAÇÕES
+                        ========================================== */}
+
+                        {isMeuPerfil &&
+                            activeTab ===
+                                'configuracoes' && (
 
                                 <div className="settings-container">
+
+
+                                    {/* =================================
+                                        DADOS PESSOAIS
+                                    ================================== */}
 
                                     <div className="settings-section card-bg">
 
@@ -2546,6 +3958,7 @@ function Perfil() {
 
 
                                         <div className="settings-group">
+
 
                                             <div className="settings-item">
 
@@ -2569,7 +3982,9 @@ function Perfil() {
                                                         abrirEditarPerfil
                                                     }
                                                 >
+
                                                     Editar
+
                                                 </button>
 
                                             </div>
@@ -2629,6 +4044,10 @@ function Perfil() {
                                     </div>
 
 
+                                    {/* =================================
+                                        SEGURANÇA
+                                    ================================== */}
+
                                     <div className="settings-section card-bg">
 
                                         <h2 className="section-title">
@@ -2641,6 +4060,7 @@ function Perfil() {
 
 
                                         <div className="settings-group">
+
 
                                             <div className="settings-item">
 
@@ -2721,11 +4141,15 @@ function Perfil() {
                                     </div>
 
 
+                                    {/* =================================
+                                        PREFERÊNCIAS
+                                    ================================== */}
+
                                     <div className="settings-section card-bg">
 
                                         <h2 className="section-title">
 
-                                            <i className="ph-fill ph-gear"></i>
+                                            <i className="ph ph-gear"></i>
 
                                             Preferências
 
@@ -2733,6 +4157,7 @@ function Perfil() {
 
 
                                         <div className="settings-group">
+
 
                                             <div className="settings-item">
 
@@ -2812,6 +4237,7 @@ function Perfil() {
 
                                     </div>
 
+
                                 </div>
 
                             )}
@@ -2823,7 +4249,11 @@ function Perfil() {
             </main>
 
 
-            {modalEditarPerfil && (
+            {/* =========================================
+                MODAL EDITAR PERFIL
+            ========================================== */}
+
+            {modalEditarPerfil && isMeuPerfil && (
 
                 <div
                     className="modal-overlay"
@@ -2843,6 +4273,7 @@ function Perfil() {
 
                     <div className="modal-editar-perfil">
 
+
                         <div className="modal-header">
 
                             <h2>
@@ -2860,13 +4291,16 @@ function Perfil() {
                                     salvandoPerfil
                                 }
                             >
+
                                 ×
+
                             </button>
 
                         </div>
 
 
                         <div className="modal-conteudo">
+
 
                             <div className="editar-foto-area">
 
@@ -2959,6 +4393,7 @@ function Perfil() {
 
                             <div className="modal-acoes">
 
+
                                 <button
                                     type="button"
                                     className="btn-cancelar"
@@ -2969,7 +4404,9 @@ function Perfil() {
                                         salvandoPerfil
                                     }
                                 >
+
                                     Cancelar
+
                                 </button>
 
 
@@ -2993,6 +4430,7 @@ function Perfil() {
                                     }
 
                                 </button>
+
 
                             </div>
 

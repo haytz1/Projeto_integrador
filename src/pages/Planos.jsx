@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-=======
-import React from 'react';
->>>>>>> Stashed changes
 
 import '../css/planos.css';
 
@@ -63,13 +59,7 @@ function Planos() {
 
     return (
         <>
-<<<<<<< Updated upstream
             <NavbarPesquisa />
-=======
-
-            <NavbarPesquisa />
-
->>>>>>> Stashed changes
 
             <main className="container">
 
@@ -143,24 +133,6 @@ function Planos() {
                                     Deixar comentários
                                 </li>
 
-<<<<<<< Updated upstream
-                                <li>
-                                    <i className="ph ph-check-circle"></i>
-                                    Seguir autores favoritos
-                                </li>
-
-                                <li className="disabled">
-                                    <i className="ph ph-x-circle"></i>
-                                    Sem anúncios
-                                </li>
-
-                                <li className="disabled">
-                                    <i className="ph ph-x-circle"></i>
-                                    Capítulos adiantados
-                                </li>
-
-=======
->>>>>>> Stashed changes
                             </ul>
 
 
@@ -235,11 +207,7 @@ function Planos() {
 
                                 <li>
                                     <i className="ph ph-check-circle"></i>
-<<<<<<< Updated upstream
-                                    Sem anúncios em mangás
-=======
                                     Comentários em destaque
->>>>>>> Stashed changes
                                 </li>
 
                                 <li>

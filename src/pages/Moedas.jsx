@@ -1,18 +1,8 @@
-<<<<<<< Updated upstream
 import '../css/moedas.css'
 import { Link } from 'react-router-dom';
-=======
-import React from 'react';
-
-import '../css/moedas.css';
-
-import { Link } from 'react-router-dom';
-
-import NavbarPesquisa from '../components/Navbar_pesquisa';
-
->>>>>>> Stashed changes
 import { createClient } from '@supabase/supabase-js';
 import Rodape from '../components/Rodape';
+import NavbarPesquisa from '../components/Navbar_pesquisa';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -116,10 +106,6 @@ function Moedas() {
         <>
 
             <NavbarPesquisa />
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 
             <main className="container">
 

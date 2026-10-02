@@ -172,7 +172,8 @@ function PaginaInicial() {
                         usuarios!postagens_id_usuario_fkey (
                             id,
                             username,
-                            foto
+                            foto,
+                            plano
                         ),
 
                         comentarios (
@@ -330,7 +331,8 @@ function PaginaInicial() {
                     usuarios (
                         id,
                         username,
-                        foto
+                        foto,
+                        plano
                     )
                 `,
                 )
@@ -572,7 +574,8 @@ function PaginaInicial() {
                     usuarios!postagens_id_usuario_fkey (
                         id,
                         username,
-                        foto
+                        foto,
+                        plano
                     ),
 
                     comentarios (
@@ -1038,7 +1041,8 @@ function PaginaInicial() {
                     usuarios (
                         id,
                         username,
-                        foto
+                        foto,
+                        plano
                     )
                 `,
                 );
@@ -1199,7 +1203,8 @@ function PaginaInicial() {
                     usuarios!postagens_id_usuario_fkey (
                         id,
                         username,
-                        foto
+                        foto,
+                        plano
                     ),
 
                     comentarios (
@@ -1802,21 +1807,43 @@ function PaginaInicial() {
                                                                 ></div>
 
                                                                 <div className="author-info">
-                                                                    <Link
-                                                                        to={`/Perfil/${post.usuarios?.id}`}
-                                                                        className="author-name"
-                                                                        onClick={(
-                                                                            e,
-                                                                        ) =>
-                                                                            e.stopPropagation()
-                                                                        }
+                                                                    <div
+                                                                        style={{
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: "6px",
+                                                                            flexWrap: "wrap",
+                                                                        }}
                                                                     >
-                                                                        @
-                                                                        {post
-                                                                            .usuarios
-                                                                            ?.username ||
-                                                                            "Usuário"}
-                                                                    </Link>
+                                                                        <Link
+                                                                            to={`/Perfil/${post.id_usuario}`}
+                                                                            className="author-name"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            @{post.usuarios?.username || "Usuário"}
+                                                                        </Link>
+
+                                                                        {String(post.usuarios?.plano || "").toLowerCase() === "premium" && (
+                                                                            <span
+                                                                                style={{
+                                                                                    display: "inline-flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "4px",
+                                                                                    padding: "3px 8px",
+                                                                                    borderRadius: "999px",
+                                                                                    background: "rgba(168, 85, 247, 0.16)",
+                                                                                    border: "1px solid rgba(168, 85, 247, 0.45)",
+                                                                                    color: "#d8b4fe",
+                                                                                    fontSize: "0.7rem",
+                                                                                    fontWeight: 700,
+                                                                                    lineHeight: 1,
+                                                                                }}
+                                                                            >
+                                                                                <i className="ph-fill ph-star"></i>
+                                                                                Apoiador
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
 
                                                                     <span className="author-time">
                                                                         {formatarData(
@@ -2394,13 +2421,43 @@ function PaginaInicial() {
                                     ></div>
 
                                     <div>
-                                        <Link
-                                            to={`/Perfil/${postSelecionado.usuarios?.id}`}
-                                            className="instagram-modal-username"
-                                            style={{ textDecoration: "none" }}
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "7px",
+                                                flexWrap: "wrap",
+                                            }}
                                         >
-                                            @{postSelecionado.usuarios?.username || "Usuário"}
-                                        </Link>
+                                            <Link
+                                                to={`/Perfil/${postSelecionado.id_usuario}`}
+                                                className="instagram-modal-username"
+                                                style={{ textDecoration: "none" }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                @{postSelecionado.usuarios?.username || "Usuário"}
+                                            </Link>
+
+                                            {String(postSelecionado.usuarios?.plano || "").toLowerCase() === "premium" && (
+                                                <span
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        gap: "4px",
+                                                        padding: "4px 9px",
+                                                        borderRadius: "999px",
+                                                        background: "rgba(168, 85, 247, 0.18)",
+                                                        border: "1px solid rgba(168, 85, 247, 0.5)",
+                                                        color: "#d8b4fe",
+                                                        fontSize: "0.72rem",
+                                                        fontWeight: 700,
+                                                    }}
+                                                >
+                                                    <i className="ph-fill ph-star"></i>
+                                                    Apoiador
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <span className="instagram-modal-category">
                                             {postSelecionado.categoria || "GERAL"}
@@ -2699,8 +2756,18 @@ function PaginaInicial() {
                                                                 key={comentario.id}
                                                                 className="instagram-comment-item"
                                                                 style={{
-                                                                    position:
-                                                                        "relative",
+                                                                    position: "relative",
+                                                                    border: String(comentario.usuarios?.plano || "").toLowerCase() === "premium"
+                                                                        ? "1px solid rgba(168, 85, 247, 0.65)"
+                                                                        : undefined,
+                                                                    background: String(comentario.usuarios?.plano || "").toLowerCase() === "premium"
+                                                                        ? "rgba(168, 85, 247, 0.08)"
+                                                                        : undefined,
+                                                                    boxShadow: String(comentario.usuarios?.plano || "").toLowerCase() === "premium"
+                                                                        ? "0 0 18px rgba(168, 85, 247, 0.10)"
+                                                                        : undefined,
+                                                                    borderRadius: "12px",
+                                                                    padding: "8px",
                                                                 }}
                                                             >
                                                                 <div
@@ -2727,25 +2794,45 @@ function PaginaInicial() {
                                                                             gap: "10px",
                                                                         }}
                                                                     >
-                                                                        <Link
-                                                                            to={`/Perfil/${comentario.usuarios?.id}`}
-                                                                            className="instagram-comment-user"
+                                                                        <div
                                                                             style={{
-                                                                                textDecoration:
-                                                                                    "none",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: "6px",
+                                                                                flexWrap: "wrap",
+                                                                                minWidth: 0,
                                                                             }}
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) =>
-                                                                                e.stopPropagation()
-                                                                            }
                                                                         >
-                                                                            @
-                                                                            {comentario
-                                                                                .usuarios
-                                                                                ?.username ||
-                                                                                "Usuário"}
-                                                                        </Link>
+                                                                            <Link
+                                                                                to={`/Perfil/${comentario.usuarios?.id}`}
+                                                                                className="instagram-comment-user"
+                                                                                style={{ textDecoration: "none" }}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            >
+                                                                                @{comentario.usuarios?.username || "Usuário"}
+                                                                            </Link>
+
+                                                                            {String(comentario.usuarios?.plano || "").toLowerCase() === "premium" && (
+                                                                                <span
+                                                                                    style={{
+                                                                                        display: "inline-flex",
+                                                                                        alignItems: "center",
+                                                                                        gap: "4px",
+                                                                                        padding: "3px 8px",
+                                                                                        borderRadius: "999px",
+                                                                                        background: "rgba(168, 85, 247, 0.16)",
+                                                                                        border: "1px solid rgba(168, 85, 247, 0.45)",
+                                                                                        color: "#d8b4fe",
+                                                                                        fontSize: "0.68rem",
+                                                                                        fontWeight: 700,
+                                                                                        whiteSpace: "nowrap",
+                                                                                    }}
+                                                                                >
+                                                                                    <i className="ph-fill ph-star"></i>
+                                                                                    Apoiador
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
 
                                                                         {/* Data + botão agrupados à direita */}
                                                                         <div
