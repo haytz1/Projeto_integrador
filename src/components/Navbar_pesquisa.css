@@ -472,12 +472,12 @@
 
 
 /* =====================================================
-   MENU DO CELULAR (botão ☰ + gaveta lateral)
-   No computador o botão fica escondido.
+   MENU ☰ (botão + gaveta lateral)
+   Aparece no computador e no celular.
    ===================================================== */
 
 .nav-menu-celular {
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 40px;
@@ -601,11 +601,15 @@
     color: #ff7070;
 }
 
-@media (max-width: 768px) {
-    .navbar .nav-menu-celular {
-        display: flex;
-    }
+.navbar .nav-left {
+    gap: 0.75rem;
+}
 
+.nav-menu-celular:hover {
+    background: rgba(168, 85, 247, 0.15);
+}
+
+@media (max-width: 768px) {
     .navbar .nav-left {
         gap: 0.5rem;
     }

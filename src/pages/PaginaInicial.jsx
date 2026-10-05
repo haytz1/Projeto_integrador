@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import NavbarPesquisa from "../components/Navbar_pesquisa";
 import Rodape from "../components/Rodape";
 import "../css/paginainicial.css";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from '/supabase.js';
 import "../css/modal-eventos.css";
 import MiniMapaSP from "../components/MiniMapaSP";
@@ -48,6 +48,18 @@ function PaginaInicial() {
     const [eventos, setEventos] = useState([]);
     const [todosEventos, setTodosEventos] = useState([]);
     const [modalEventosAberto, setModalEventosAberto] = useState(false);
+
+    // "Eventos" do menu ☰ manda para cá com { abrirEventos: true }
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location.state?.abrirEventos) {
+            setModalEventosAberto(true);
+            // Limpa o pedido para não reabrir ao recarregar a página
+            navigate(location.pathname, { replace: true, state: null });
+        }
+    }, [location, navigate]);
     const [modalCriarPostAberto, setModalCriarPostAberto] = useState(false);
 
     const [novoPostForm, setNovoPostForm] = useState({
@@ -1385,101 +1397,6 @@ function PaginaInicial() {
             <NavbarPesquisa />
 
             <div className="page-layout">
-                {/* =====================================================
-                    SIDEBAR ESQUERDA
-                ===================================================== */}
-
-                <aside className="sidebar-left" aria-label="Menu lateral">
-                    <Link
-                        to="/Notificacoes"
-                        className="sidebar-notif"
-                        id="link-notificacoes"
-                    >
-                        <i className="ph-fill ph-bell notif-bell"></i>
-
-                        <span>
-                            Notificações
-                            <br />
-                            <span className="notif-sub">de histórias</span> 🔥
-                        </span>
-                    </Link>
-
-                    <nav className="sidebar-nav">
-                        <a
-                            href="#"
-                            className="sidebar-link active"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                        >
-                            <i className="ph-fill ph-house"></i>
-                            <span>Para você</span>
-                        </a>
-
-                        <Link to="/Seguindo" className="sidebar-link">
-                            <i className="ph ph-user-circle-plus"></i>
-                            <span>Seguindo</span>
-                        </Link>
-
-                        <a
-                            href="#"
-                            className="sidebar-link"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                document
-                                    .getElementById("posts-titulo")
-                                    ?.scrollIntoView({ behavior: "smooth" });
-                            }}
-                        >
-                            <i className="ph ph-compass"></i>
-                            <span>Explorar</span>
-                        </a>
-
-                        <a
-                            href="#"
-                            className="sidebar-link"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setModalEventosAberto(true);
-                            }}
-                        >
-                            <i className="ph ph-calendar"></i>
-                            <span>Eventos</span>
-                        </a>
-
-                        <Link to="/Favoritos" className="sidebar-link">
-                            <i className="ph ph-heart"></i>
-                            <span>Favoritos</span>
-                        </Link>
-
-                        <Link to="/ObrasMangas" className="sidebar-link">
-                            <i className="ph ph-book-open"></i>
-                            <span>Obras</span>
-                        </Link>
-                    </nav>
-
-                    <div className="sidebar-character" aria-hidden="true">
-                        <div className="char-glow"></div>
-                    </div>
-
-                    <div className="sidebar-apoiador">
-                        <p className="apoiador-title">
-                            Seja um <strong>apoiador!</strong>
-                        </p>
-
-                        <p className="apoiador-desc">
-                            Apoie criadores independentes e receba benefícios
-                            exclusivos!
-                        </p>
-
-                        <Link to="/Planos" className="btn-assinar">
-                            <i className="ph-fill ph-crown"></i>
-                            Assinar
-                        </Link>
-                    </div>
-                </aside>
-
                 {/* =====================================================
                     CONTEÚDO PRINCIPAL
                 ===================================================== */}

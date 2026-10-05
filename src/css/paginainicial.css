@@ -242,14 +242,14 @@ img {
 }
 
 /* ==========================================================================
-   LAYOUT (sidebar esquerda + conteúdo + sidebar direita)
+   LAYOUT (conteúdo + sidebar direita)
    ========================================================================== */
 .page-layout {
     display: grid;
 
-    /* esquerda | conteúdo | direita */
+    /* conteúdo | direita */
     grid-template-columns:
-        var(--sidebar-w) minmax(0, 1fr) var(--sidebar-r-w);
+        minmax(0, 1fr) var(--sidebar-r-w);
 
     width: 100%;
     min-height: calc(100vh - var(--navbar-h));
@@ -260,67 +260,10 @@ img {
 }
 
 /* ==========================================================================
-   SIDEBAR ESQUERDA
+   LINKS DE MENU (.sidebar-nav / .sidebar-link)
+   A barra esquerda da página inicial foi removida (navegação agora fica
+   no menu ☰ da navbar), mas estas classes continuam usadas no Perfil.
    ========================================================================== */
-.sidebar-left {
-    width: var(--sidebar-w);
-
-    background: var(--bg-sidebar);
-    border-right: 1px solid var(--border);
-
-    position: sticky;
-    top: var(--navbar-h);
-
-    height: calc(100vh - var(--navbar-h));
-
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    scrollbar-width: none;
-
-    display: flex;
-    flex-direction: column;
-
-    padding-bottom: 1rem;
-}
-
-.sidebar-left::-webkit-scrollbar {
-    display: none;
-}
-
-/* Notificações */
-.sidebar-notif {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 1rem 1rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    line-height: 1.3;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: background var(--transition), color var(--transition);
-    text-decoration: none;
-}
-
-.sidebar-notif:hover {
-    background: rgba(139, 92, 246, 0.1);
-    color: var(--text-main);
-}
-
-.notif-bell {
-    font-size: 1.3rem;
-    color: var(--purple);
-    flex-shrink: 0;
-}
-
-.notif-sub {
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-/* Nav links */
 .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -361,75 +304,6 @@ img {
 }
 
 /* Personagem decorativo */
-.sidebar-character {
-    flex: 1;
-    position: relative;
-    min-height: 100px;
-    margin: 0.5rem 0;
-    overflow: hidden;
-    background: linear-gradient(180deg, transparent, rgba(139, 92, 246, 0.06));
-}
-
-.char-glow {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 60px;
-    background: radial-gradient(ellipse, var(--purple-glow), transparent 70%);
-}
-
-/* Seção Apoiador */
-.sidebar-apoiador {
-    margin: 0 0.75rem 0.5rem;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(91, 33, 182, 0.2));
-    border: 1px solid rgba(139, 92, 246, 0.25);
-    border-radius: var(--radius-lg);
-    padding: 1rem;
-    text-align: center;
-}
-
-.apoiador-title {
-    font-size: 0.85rem;
-    color: var(--text-main);
-    margin-bottom: 0.4rem;
-}
-
-.apoiador-title strong {
-    color: var(--purple-hover);
-}
-
-.apoiador-desc {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: 0.9rem;
-    line-height: 1.4;
-}
-
-.btn-assinar {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: var(--purple);
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.8rem;
-    padding: 0.5rem 1.2rem;
-    border-radius: var(--radius-full);
-    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-}
-
-.btn-assinar:hover {
-    background: var(--purple-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-glow);
-}
-
-.btn-assinar i {
-    font-size: 0.9rem;
-}
-
 /* ==========================================================================
    CONTEÚDO PRINCIPAL
    ========================================================================== */
@@ -1283,13 +1157,13 @@ img {
 
     .page-layout {
         grid-template-columns:
-            var(--sidebar-w) minmax(0, 1fr) var(--sidebar-r-w);
+            minmax(0, 1fr) var(--sidebar-r-w);
     }
 }
 
 @media (max-width: 960px) {
     .page-layout {
-        grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .sidebar-right {
@@ -1302,10 +1176,6 @@ img {
         display: block;
         width: 100%;
         margin-top: var(--navbar-h);
-    }
-
-    .sidebar-left {
-        display: none;
     }
 
     .posts-grid {

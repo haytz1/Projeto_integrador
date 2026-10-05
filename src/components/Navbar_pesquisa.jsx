@@ -12,6 +12,8 @@ import BarraPesquisa from "./BarraPesquisa";
 const LINKS_MENU_CELULAR = [
     { rota: "/", texto: "Início", icone: "ph-house" },
     { rota: "/ObrasMangas", texto: "Obras", icone: "ph-books" },
+    // Abre a janela de eventos da página inicial
+    { rota: "/", texto: "Eventos", icone: "ph-calendar", estado: { abrirEventos: true } },
     { rota: "/Seguindo", texto: "Seguindo", icone: "ph-users" },
     { rota: "/Favoritos", texto: "Favoritos", icone: "ph-heart" },
     { rota: "/Historico", texto: "Histórico", icone: "ph-clock-counter-clockwise" },
@@ -151,7 +153,7 @@ function NavbarPesquisa() {
                 ===================================================== */}
 
                 <div className="nav-left">
-                    {/* Botão do menu (só aparece no celular) */}
+                    {/* Botão do menu ☰ (computador e celular) */}
                     <button
                         type="button"
                         className="nav-menu-celular"
@@ -391,8 +393,9 @@ function NavbarPesquisa() {
                         <nav className="menu-celular-links">
                             {LINKS_MENU_CELULAR.map((item) => (
                                 <Link
-                                    key={item.rota}
+                                    key={item.texto}
                                     to={item.rota}
+                                    state={item.estado}
                                     className="menu-celular-link"
                                     onClick={fecharMenuCelular}
                                 >

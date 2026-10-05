@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../supabase';
 import Rodape from '../components/Rodape';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
+import Checkout from '../components/Checkout';
 
 // Preço de cada pacote de moedas (em reais)
 const PRECOS = {
@@ -23,6 +24,9 @@ function Moedas() {
 
     // Aviso que aparece na tela (no lugar do alert): { tipo: 'sucesso' | 'erro', titulo, texto }
     const [aviso, setAviso] = useState(null);
+
+    // Pacote escolhido: abre a tela de pagamento (null = fechada)
+    const [pacoteNoCheckout, setPacoteNoCheckout] = useState(null);
 
     // Mostra o saldo atual assim que a página abre
     useEffect(() => {
@@ -44,13 +48,12 @@ function Moedas() {
         buscarSaldo();
     }, []);
 
-    const comprarMoedas = async (quantidade) => {
-
-        const usuarioId = localStorage.getItem('usuario_id');
+    // Clique em "Comprar": confere o login e abre a tela de pagamento
+    const abrirCheckout = (quantidade) => {
 
         setAviso(null);
 
-        if (!usuarioId) {
+        if (!localStorage.getItem('usuario_id')) {
             setAviso({
                 tipo: 'erro',
                 titulo: 'Você não está logado',
@@ -58,6 +61,14 @@ function Moedas() {
             });
             return;
         }
+
+        setPacoteNoCheckout(quantidade);
+    };
+
+    // Chamada pela tela de pagamento depois do "pagamento"
+    const comprarMoedas = async (quantidade, metodo) => {
+
+        const usuarioId = localStorage.getItem('usuario_id');
 
         setComprando(quantidade);
 
@@ -82,6 +93,7 @@ function Moedas() {
             });
 
             setComprando(null);
+            setPacoteNoCheckout(null);
 
             return;
         }
@@ -114,6 +126,7 @@ function Moedas() {
             });
 
             setComprando(null);
+            setPacoteNoCheckout(null);
 
             return;
         }
@@ -121,10 +134,11 @@ function Moedas() {
         // Mostra na tela quanto foi cobrado e o novo saldo
         setSaldo(novoSaldo);
         setComprando(null);
+        setPacoteNoCheckout(null);
         setAviso({
             tipo: 'sucesso',
             titulo: 'Compra concluída!',
-            texto: `R$ ${formatarReais(PRECOS[quantidade])} cobrados (pagamento simulado) · +${quantidade} moedas · Saldo atual: ${novoSaldo} moedas`
+            texto: `R$ ${formatarReais(PRECOS[quantidade])} pagos com ${metodo} (pagamento simulado) · +${quantidade} moedas · Saldo atual: ${novoSaldo} moedas`
         });
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -236,7 +250,7 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(50)}
+                                onClick={() => abrirCheckout(50)}
                                 disabled={comprando !== null}
                             >
                                 {comprando === 50 ? 'Comprando...' : 'Comprar 50 moedas'}
@@ -300,7 +314,7 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(100)}
+                                onClick={() => abrirCheckout(100)}
                                 disabled={comprando !== null}
                             >
                                 {comprando === 100 ? 'Comprando...' : 'Comprar 100 moedas'}
@@ -359,7 +373,7 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(150)}
+                                onClick={() => abrirCheckout(150)}
                                 disabled={comprando !== null}
                             >
                                 {comprando === 150 ? 'Comprando...' : 'Comprar 150 moedas'}
@@ -398,6 +412,20 @@ function Moedas() {
                 </div>
 
             </main>
+
+            {/* TELA DE PAGAMENTO (abre ao clicar em Comprar) */}
+            <Checkout
+                key={pacoteNoCheckout || 'fechado'}
+                item={pacoteNoCheckout && {
+                    titulo: `${pacoteNoCheckout} Moedas`,
+                    descricao: 'Moedas adicionadas na hora à sua conta para desbloquear capítulos VIP.',
+                    valor: PRECOS[pacoteNoCheckout],
+                    recorrente: false
+                }}
+                onFechar={() => setPacoteNoCheckout(null)}
+                onPagar={(metodo) => comprarMoedas(pacoteNoCheckout, metodo)}
+            />
+
 <Rodape/>
         </>
     );

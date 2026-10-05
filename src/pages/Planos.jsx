@@ -9,6 +9,7 @@ import { supabase } from '../../supabase';
 
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 import Rodape from '../components/Rodape';
+import Checkout from '../components/Checkout';
 
 // Nome e preço mensal de cada plano
 const PLANOS = {
@@ -23,6 +24,9 @@ function Planos() {
 
     // Aviso que aparece na tela (no lugar do alert): { tipo: 'sucesso' | 'erro', titulo, texto }
     const [aviso, setAviso] = useState(null);
+
+    // Plano pago escolhido: abre a tela de pagamento (null = fechada)
+    const [planoNoCheckout, setPlanoNoCheckout] = useState(null);
 
     // Mostra o plano atual assim que a página abre
     useEffect(() => {
@@ -50,13 +54,13 @@ function Planos() {
         buscarPlano();
     }, []);
 
-    const escolherPlano = async (plano) => {
-
-        const usuarioId = localStorage.getItem('usuario_id');
+    // Clique no botão do plano: confere o login.
+    // Plano pago abre a tela de pagamento; o gratuito troca direto.
+    const clicarNoPlano = (plano) => {
 
         setAviso(null);
 
-        if (!usuarioId) {
+        if (!localStorage.getItem('usuario_id')) {
 
             setAviso({
                 tipo: 'erro',
@@ -66,6 +70,18 @@ function Planos() {
 
             return;
         }
+
+        if (PLANOS[plano].preco > 0) {
+            setPlanoNoCheckout(plano);
+        } else {
+            escolherPlano(plano);
+        }
+    };
+
+    // Grava o plano no banco (metodo = como pagou, só nos planos pagos)
+    const escolherPlano = async (plano, metodo) => {
+
+        const usuarioId = localStorage.getItem('usuario_id');
 
         setSalvando(plano);
 
@@ -77,6 +93,7 @@ function Planos() {
             .eq('id', usuarioId);
 
         setSalvando(null);
+        setPlanoNoCheckout(null);
 
         if (error) {
 
@@ -101,7 +118,7 @@ function Planos() {
             setAviso({
                 tipo: 'sucesso',
                 titulo: `Plano ${PLANOS[plano].nome} ativado!`,
-                texto: `R$ ${PLANOS[plano].preco},00 cobrados por mês (pagamento simulado). Aproveite seus benefícios!`
+                texto: `R$ ${PLANOS[plano].preco},00 por mês pagos com ${metodo} (pagamento simulado). Aproveite seus benefícios!`
             });
         } else {
             setAviso({
@@ -222,7 +239,7 @@ function Planos() {
                             <button
                                 className="btn-plan"
                                 onClick={() =>
-                                    escolherPlano('gratuito')
+                                    clicarNoPlano('gratuito')
                                 }
                                 disabled={salvando !== null || planoAtual === 'gratuito'}
                             >
@@ -307,7 +324,7 @@ function Planos() {
                             <button
                                 className="btn-plan"
                                 onClick={() =>
-                                    escolherPlano('premium')
+                                    clicarNoPlano('premium')
                                 }
                                 disabled={salvando !== null || planoAtual === 'premium'}
                             >
@@ -349,6 +366,19 @@ function Planos() {
                 </div>
 
             </main>
+
+            {/* TELA DE PAGAMENTO (abre ao clicar em Assinar Premium) */}
+            <Checkout
+                key={planoNoCheckout || 'fechado'}
+                item={planoNoCheckout && {
+                    titulo: `Plano ${PLANOS[planoNoCheckout].nome}`,
+                    descricao: 'Badge de apoiador, comentários em destaque e capítulos adiantados.',
+                    valor: PLANOS[planoNoCheckout].preco,
+                    recorrente: true
+                }}
+                onFechar={() => setPlanoNoCheckout(null)}
+                onPagar={(metodo) => escolherPlano(planoNoCheckout, metodo)}
+            />
 
 
 <Rodape/>           
