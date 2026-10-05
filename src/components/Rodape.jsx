@@ -26,20 +26,16 @@ function Rodape() {
                     <div className="footer-links">
                         <h4>Suporte</h4>
                         <ul>
-                            <li><a href="#">FAQ</a></li>
-                            <li><a href="#">Termos de Uso</a></li>
-                            <li><a href="#">Privacidade</a></li>
-                            <li><a href="#">Contato</a></li>
+                            <li><Link to="/Sobre#faq">FAQ</Link></li>
+                            <li><Link to="/Sobre#contato">Contato</Link></li>
                         </ul>
                     </div>
-                    <div className="footer-social">
-                        <h4>Redes Sociais</h4>
-                        <div className="social-icons">
-                            <a href="#" aria-label="Instagram"><i className="ph ph-instagram-logo"></i></a>
-                            <a href="#" aria-label="Twitter"><i className="ph ph-twitter-logo"></i></a>
-                            <a href="#" aria-label="Discord"><i className="ph ph-discord-logo"></i></a>
-                            <a href="#" aria-label="YouTube"><i className="ph ph-youtube-logo"></i></a>
-                        </div>
+                    <div className="footer-links">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><Link to="/Sobre#termos">Termos de Uso</Link></li>
+                            <li><Link to="/Sobre#privacidade">Privacidade</Link></li>
+                        </ul>
                     </div>
                 </div>
                 <div className="footer-bottom">

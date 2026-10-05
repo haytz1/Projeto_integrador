@@ -281,6 +281,15 @@
     cursor: pointer;
 }
 
+.obras-lidas .obra-lida-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
 .obras-lidas ul li:hover {
     background-color: rgba(139, 92, 246, 0.14);
     border-color: rgba(139, 92, 246, 0.35);
@@ -900,5 +909,46 @@
 @media (max-width: 480px) {
     .grade-obras {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =====================
+   CELULAR: botões do topo só com ícone,
+   para a busca caber sem empurrar nada para fora
+   ===================== */
+@media (max-width: 600px) {
+    .cabecalho-obras {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .cabecalho-obras .acoes-direita {
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+        justify-content: flex-end;
+    }
+
+    .cabecalho-obras .texto-botao {
+        display: none;
+    }
+
+    .pagina-obras-mangas .barra-pesquisa {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pagina-obras-mangas .btn-voltar,
+    .pagina-obras-mangas .btn-add-obra,
+    .pagina-obras-mangas .filtro-icone {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* lista de gêneros não pode passar da borda da tela */
+    .pagina-obras-mangas .filtro-generos {
+        right: 0;
+        max-width: calc(100vw - 20px);
     }
 }

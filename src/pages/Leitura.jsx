@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 import '../css/leitura.css';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '/supabase';
+
+// Tempo de espera para ler um capítulo VIP de graça (em segundos)
+const TIMER_DURACAO = 60;
 
 function Leitura() {
     const params = useParams();
@@ -14,6 +17,22 @@ function Leitura() {
     const [listaCapitulos, setListaCapitulos] = useState([]);
     const [conteudoCapitulo, setConteudoCapitulo] = useState('');
     const [isFavorito, setIsFavorito] = useState(false);
+    const [autorNome, setAutorNome] = useState('');
+    const [sinopseAberta, setSinopseAberta] = useState(false);
+
+    // Estados do capítulo VIP / moedas
+    const [capituloAtualDados, setCapituloAtualDados] = useState(null);
+    const [capituloDesbloqueado, setCapituloDesbloqueado] = useState(true);
+    const [carregandoConteudo, setCarregandoConteudo] = useState(false);
+    const [desbloqueando, setDesbloqueando] = useState(false);
+    const [saldoMoedas, setSaldoMoedas] = useState(null);
+    // Aviso que aparece na tela (no lugar do alert): { tipo: 'sucesso' | 'erro', texto }
+    const [avisoMoedas, setAvisoMoedas] = useState(null);
+
+    // Timer para desbloquear de graça
+    const [timerSegundos, setTimerSegundos] = useState(null);
+    const [desbloqueandoPorTimer, setDesbloqueandoPorTimer] = useState(false);
+    const timerRef = useRef(null);
 
     // Estados para controlar o Modal de Novo Capítulo
     const [modalAberto, setModalAberto] = useState(false);
@@ -21,6 +40,12 @@ function Leitura() {
     const [novoTituloCap, setNovoTituloCap] = useState('');
     const [novoConteudo, setNovoConteudo] = useState('');
     const [novoEVip, setNovoEVip] = useState(false); // Estado para controlar se o capítulo é VIP
+    const [novoValorMoeda, setNovoValorMoeda] = useState(10); // Preço do capítulo VIP
+
+    const usuarioId = localStorage.getItem('usuario_id');
+
+    // Só o autor da obra pode adicionar capítulos
+    const souAutor = dadosObra && usuarioId && String(dadosObra.autor_id) === String(usuarioId);
 
     function atualizarHistoricoLocal(obraId, obraTituloParam, numeroCapitulo) {
         const tituloParaSalvar = obraTituloParam || obraTitulo;
@@ -84,6 +109,17 @@ function Leitura() {
             setDadosObra(obraData);
             setObraTitulo(obraData.titulo);
 
+            // Busca o nome do autor para mostrar no topo
+            if (obraData.autor_id) {
+                const { data: autor } = await supabase
+                    .from('usuarios')
+                    .select('username')
+                    .eq('id', obraData.autor_id)
+                    .maybeSingle();
+
+                setAutorNome(autor?.username || '');
+            }
+
             // 1. Primeiro busca os capítulos da obra
             const listaCaps = await buscarCapitulos(obraData.id);
 
@@ -120,10 +156,80 @@ function Leitura() {
         }
     }
 
+    // Busca o saldo de moedas do usuário logado
+    async function buscarSaldo() {
+        if (!usuarioId) return;
+
+        const { data } = await supabase
+            .from('usuarios')
+            .select('moedas')
+            .eq('id', usuarioId)
+            .maybeSingle();
+
+        if (data) {
+            setSaldoMoedas(data.moedas || 0);
+        }
+    }
+
+    useEffect(() => {
+        buscarSaldo();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Verifica na tabela "leitura" se o usuário já desbloqueou o capítulo VIP
+    async function verificarDesbloqueio(capituloId) {
+        if (!usuarioId) return false;
+
+        const { data, error } = await supabase
+            .from('leitura')
+            .select('desbloqueado')
+            .eq('id_usuario', usuarioId)
+            .eq('id_capitulo', capituloId)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Erro ao verificar desbloqueio:", error.message);
+            return false;
+        }
+
+        return data?.desbloqueado === true;
+    }
+
+    // Salva no banco (tabela "leitura") que o usuário leu este capítulo.
+    // Assim o histórico aparece em qualquer computador.
+    // ignoreDuplicates: se a linha já existe (ex.: capítulo desbloqueado), não mexe nela.
+    async function salvarHistoricoBanco(cap) {
+        if (!usuarioId || !dadosObra) return;
+
+        const { error } = await supabase
+            .from('leitura')
+            .upsert(
+                {
+                    id_usuario: usuarioId,
+                    id_capitulo: cap.id,
+                    email_usuario: localStorage.getItem('usuario_email') || null,
+                    obra_titulo: dadosObra.titulo,
+                    ultimo_capitulo: cap.numero_capitulo,
+                    status: 'lendo'
+                },
+                { onConflict: 'id_usuario,id_capitulo', ignoreDuplicates: true }
+            );
+
+        if (error) {
+            console.error('Erro ao salvar histórico:', error.message);
+        }
+    }
+
     // 2. Carrega o conteúdo do capítulo atual
     useEffect(() => {
         async function carregarConteudo() {
             if (!dadosObra || !dadosObra.id) return;
+
+            setCarregandoConteudo(true);
+            setConteudoCapitulo('');
+            setCapituloAtualDados(null);
+            setCapituloDesbloqueado(false);
+            setAvisoMoedas(null);
 
             const { data, error } = await supabase
                 .from('capitulos')
@@ -133,15 +239,144 @@ function Leitura() {
                 .limit(1);
 
             if (error || !data || data.length === 0) {
+                setCapituloDesbloqueado(true);
                 setConteudoCapitulo(`Conteúdo do Capítulo ${capituloAtual} ainda não cadastrado.`);
-            } else {
-                const cap = data[0];
-                setConteudoCapitulo(cap.conteudo || `Capítulo ${capituloAtual} sem conteúdo.`);
+                setCarregandoConteudo(false);
+                return;
             }
+
+            const cap = data[0];
+            setCapituloAtualDados(cap);
+
+            // Capítulo normal ou VIP já desbloqueado: mostra o texto
+            const liberado = !cap.e_vip || await verificarDesbloqueio(cap.id);
+
+            setCapituloDesbloqueado(liberado);
+
+            if (liberado) {
+                setConteudoCapitulo(cap.conteudo || `Capítulo ${capituloAtual} sem conteúdo.`);
+                salvarHistoricoBanco(cap);
+            }
+
+            setCarregandoConteudo(false);
         }
 
         carregarConteudo();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [capituloAtual, dadosObra]);
+
+    // Desbloqueia o capítulo de graça quando o timer termina
+    const desbloquearPorTimer = useCallback(async (cap) => {
+        if (!cap || !cap.e_vip) return;
+
+        setDesbloqueandoPorTimer(true);
+
+        const idUsuario = localStorage.getItem('usuario_id');
+
+        // Se estiver logado, salva no banco que o capítulo foi liberado
+        if (idUsuario) {
+            const { error } = await supabase
+                .from('leitura')
+                .upsert(
+                    { id_usuario: idUsuario, id_capitulo: cap.id, desbloqueado: true },
+                    { onConflict: 'id_usuario,id_capitulo' }
+                );
+
+            if (error) {
+                console.error('Erro ao desbloquear capítulo pelo timer:', error.message);
+            }
+        }
+
+        setCapituloDesbloqueado(true);
+        setConteudoCapitulo(cap.conteudo || `Capítulo ${cap.numero_capitulo} sem conteúdo.`);
+        setAvisoMoedas({
+            tipo: 'sucesso',
+            texto: `Capítulo ${cap.numero_capitulo} liberado de graça pelo tempo de espera. Nenhuma moeda foi descontada.`
+        });
+        setDesbloqueandoPorTimer(false);
+        setTimerSegundos(null);
+    }, []);
+
+    // Inicia o timer quando abre um capítulo VIP ainda bloqueado
+    useEffect(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+
+        if (!capituloAtualDados || !capituloAtualDados.e_vip || capituloDesbloqueado || carregandoConteudo) {
+            setTimerSegundos(null);
+            return;
+        }
+
+        setTimerSegundos(TIMER_DURACAO);
+
+        const capSnapshot = capituloAtualDados;
+
+        timerRef.current = setInterval(() => {
+            setTimerSegundos(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                    desbloquearPorTimer(capSnapshot);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [capituloAtualDados, capituloDesbloqueado, carregandoConteudo, desbloquearPorTimer]);
+
+    // Formata os segundos em mm:ss
+    function formatarTimer(segundos) {
+        if (segundos === null) return '';
+        const m = Math.floor(segundos / 60);
+        const s = segundos % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Desbloqueia o capítulo VIP gastando moedas (função desbloquear_capitulo do Supabase)
+    async function handleDesbloquearCapitulo() {
+        if (!capituloAtualDados || !capituloAtualDados.e_vip || capituloDesbloqueado) return;
+        if (!usuarioId) return;
+
+        const valor = capituloAtualDados.valor_moeda || 10;
+
+        setDesbloqueando(true);
+        setAvisoMoedas(null);
+
+        const { data, error } = await supabase.rpc('desbloquear_capitulo', {
+            p_capitulo_id: capituloAtualDados.id
+        });
+
+        setDesbloqueando(false);
+
+        if (error || !data) {
+            console.error('Erro ao desbloquear capítulo:', error);
+            setAvisoMoedas({ tipo: 'erro', texto: 'Não foi possível desbloquear o capítulo. Tente novamente.' });
+            return;
+        }
+
+        if (!data.sucesso) {
+            setAvisoMoedas({ tipo: 'erro', texto: data.mensagem || 'Não foi possível desbloquear o capítulo.' });
+            return;
+        }
+
+        // Deu certo: mostra o texto e o desconto na tela
+        setCapituloDesbloqueado(true);
+        setConteudoCapitulo(capituloAtualDados.conteudo || `Capítulo ${capituloAtualDados.numero_capitulo} sem conteúdo.`);
+        setSaldoMoedas(data.moedas);
+        setAvisoMoedas({
+            tipo: 'sucesso',
+            texto: `−${valor} moedas descontadas pelo Capítulo ${capituloAtualDados.numero_capitulo}. Saldo atual: ${data.moedas} moedas.`
+        });
+    }
 
     useEffect(() => {
         async function verificarFavorito() {
@@ -187,10 +422,6 @@ function Leitura() {
         }
     }
 
-    function handleCapituloChange(e) {
-        setCapituloAtual(Number(e.target.value));
-    }
-
     // Função inteligente para abrir o modal calculando o próximo número de capítulo
     function abrirModalNovoCapitulo() {
         if (listaCapitulos.length > 0) {
@@ -203,6 +434,7 @@ function Leitura() {
         setNovoTituloCap('');
         setNovoConteudo('');
         setNovoEVip(false);
+        setNovoValorMoeda(10);
         setModalAberto(true);
     }
 
@@ -226,7 +458,7 @@ function Leitura() {
                     titulo_capitulo: novoTituloCap || `Capítulo ${numParsed}`,
                     conteudo: novoConteudo || 'Conteúdo padrão do capítulo.',
                     e_vip: novoEVip,
-                    valor_moeda: null
+                    valor_moeda: novoEVip ? Number(novoValorMoeda) || 10 : null
                 }
             ]);
 
@@ -291,6 +523,15 @@ function Leitura() {
         }
     }
 
+    // Preço do capítulo VIP atual (10 moedas se não tiver valor cadastrado)
+    const valorCapitulo = capituloAtualDados?.valor_moeda || 10;
+
+    // Progresso: posição do capítulo atual na lista de capítulos
+    const posicaoCapitulo = listaCapitulos.findIndex(c => c.numero_capitulo === capituloAtual) + 1;
+    const porcentagemProgresso = listaCapitulos.length > 0
+        ? Math.round((posicaoCapitulo / listaCapitulos.length) * 100)
+        : 0;
+
     return (
         <>
             <NavbarPesquisa />
@@ -330,7 +571,10 @@ function Leitura() {
                         {listaCapitulos.length > 0 ? (
                             listaCapitulos.map(cap => (
                                 <option key={cap.id} value={cap.numero_capitulo}>
-                                    Capítulo {cap.numero_capitulo} {cap.titulo_capitulo ? `- ${cap.titulo_capitulo}` : ''} {cap.e_vip ? '⭐ (VIP)' : ''}
+                                    {/* Não repete o título quando ele é só "Capítulo N" */}
+                                    Capítulo {cap.numero_capitulo}
+                                    {cap.titulo_capitulo && cap.titulo_capitulo !== `Capítulo ${cap.numero_capitulo}` ? ` - ${cap.titulo_capitulo}` : ''}
+                                    {cap.e_vip ? ` 🔒 VIP (${cap.valor_moeda || 10} moedas)` : ''}
                                 </option>
                             ))
                         ) : (
@@ -339,10 +583,59 @@ function Leitura() {
                     </optgroup>
                 </select>
 
-                <button className="btn btn-novo-capitulo" onClick={abrirModalNovoCapitulo}>
-                    + Novo Capítulo
-                </button>
+                {souAutor && (
+                    <button className="btn btn-novo-capitulo" onClick={abrirModalNovoCapitulo}>
+                        + Novo Capítulo
+                    </button>
+                )}
             </div>
+
+            {/* Informações da obra: capa, autor, gênero e sinopse */}
+            {dadosObra && (
+                <section className="obra-info">
+                    <img
+                        className="obra-info-capa"
+                        src={dadosObra.capa_url || `https://placehold.co/120x170/15092E/C384FF?text=${encodeURIComponent(dadosObra.titulo)}`}
+                        alt={`Capa de ${dadosObra.titulo}`}
+                    />
+
+                    <div className="obra-info-texto">
+                        <div className="obra-info-etiquetas">
+                            {autorNome && (
+                                <Link to={`/Perfil/${dadosObra.autor_id}`} className="obra-etiqueta">
+                                    <i className="ph ph-user"></i> @{autorNome}
+                                </Link>
+                            )}
+                            {dadosObra.genero_principal && (
+                                <span className="obra-etiqueta">
+                                    <i className="ph ph-tag"></i> {dadosObra.genero_principal}
+                                </span>
+                            )}
+                            {dadosObra.status && (
+                                <span className="obra-etiqueta">
+                                    <i className="ph ph-flag"></i> {dadosObra.status}
+                                </span>
+                            )}
+                            <span className="obra-etiqueta">
+                                <i className="ph ph-books"></i> {listaCapitulos.length} capítulos
+                            </span>
+                        </div>
+
+                        {dadosObra.sinopse && (
+                            <>
+                                <p className={sinopseAberta ? 'obra-sinopse aberta' : 'obra-sinopse'}>
+                                    {dadosObra.sinopse}
+                                </p>
+                                {dadosObra.sinopse.length > 180 && (
+                                    <button className="obra-ver-mais" onClick={() => setSinopseAberta(!sinopseAberta)}>
+                                        {sinopseAberta ? 'Ver menos' : 'Ver mais'}
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </section>
+            )}
 
             {/* Modal de cadastro de capítulo com opção VIP */}
             {modalAberto && (
@@ -385,6 +678,19 @@ function Leitura() {
                                 </label>
                             </div>
 
+                            {novoEVip && (
+                                <>
+                                    <label>Preço em moedas:</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={novoValorMoeda}
+                                        onChange={e => setNovoValorMoeda(e.target.value)}
+                                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#2a2a40', color: '#fff' }}
+                                    />
+                                </>
+                            )}
+
                             <label>Conteúdo / Texto:</label>
                             <textarea
                                 value={novoConteudo}
@@ -409,14 +715,88 @@ function Leitura() {
 
             <div className="info-progresso">
                 <span>Progresso da Obra</span>
-                <span>Capítulo {capituloAtual}</span>
+                <span>
+                    Capítulo {capituloAtual}
+                    {listaCapitulos.length > 0 ? ` de ${listaCapitulos.length}` : ''}
+                </span>
             </div>
             <div className="progresso-container" title="Progresso da leitura">
-                <div className="progresso-barra" style={{ width: '100%' }}></div>
+                <div className="progresso-barra" style={{ width: `${porcentagemProgresso}%` }}></div>
             </div>
 
+            {/* Aviso de moedas (aparece na tela no lugar do alert) */}
+            {avisoMoedas && (
+                <div className={`aviso-moedas aviso-${avisoMoedas.tipo}`}>
+                    <i className={`ph ${avisoMoedas.tipo === 'sucesso' ? 'ph-coins' : 'ph-warning-circle'}`}></i>
+                    <span>{avisoMoedas.texto}</span>
+                    <button onClick={() => setAvisoMoedas(null)} aria-label="Fechar aviso">×</button>
+                </div>
+            )}
+
             <div className="leitura-container">
-                <p>{conteudoCapitulo}</p>
+                {carregandoConteudo ? (
+                    <p>Carregando capítulo...</p>
+                ) : capituloDesbloqueado ? (
+                    <p>{conteudoCapitulo}</p>
+                ) : (
+                    /* Capítulo VIP bloqueado */
+                    <div className="vip-bloqueado">
+                        <i className="ph-fill ph-lock-key vip-cadeado"></i>
+                        <h2>Capítulo VIP</h2>
+                        <p>
+                            Para ler o Capítulo {capituloAtualDados?.numero_capitulo} agora, serão
+                            descontadas <strong>{valorCapitulo} moedas</strong> do seu saldo.
+                        </p>
+
+                        {usuarioId ? (
+                            <>
+                                <div className="vip-saldo">
+                                    <span>Seu saldo: <strong>{saldoMoedas ?? '...'} moedas</strong></span>
+                                    {saldoMoedas !== null && (
+                                        <span>
+                                            Depois do desbloqueio: <strong>{saldoMoedas - valorCapitulo} moedas</strong>
+                                        </span>
+                                    )}
+                                </div>
+
+                                {saldoMoedas !== null && saldoMoedas < valorCapitulo ? (
+                                    <>
+                                        <p className="vip-insuficiente">
+                                            Você não tem moedas suficientes.
+                                        </p>
+                                        <Link to="/Moedas" className="btn vip-botao">
+                                            Comprar moedas
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <button
+                                        className="btn vip-botao"
+                                        onClick={handleDesbloquearCapitulo}
+                                        disabled={desbloqueando || desbloqueandoPorTimer}
+                                    >
+                                        {desbloqueando
+                                            ? 'Descontando moedas...'
+                                            : `Desbloquear por ${valorCapitulo} moedas`}
+                                    </button>
+                                )}
+                            </>
+                        ) : (
+                            <Link to="/Login" className="btn vip-botao">
+                                Entrar para desbloquear
+                            </Link>
+                        )}
+
+                        {timerSegundos !== null && (
+                            <p className="vip-timer">
+                                <i className="ph ph-timer"></i>
+                                Ou espere <strong>{formatarTimer(timerSegundos)}</strong> para ler de graça
+                            </p>
+                        )}
+                        {desbloqueandoPorTimer && (
+                            <p className="vip-timer">Liberando capítulo...</p>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="controles">

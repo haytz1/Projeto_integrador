@@ -62,6 +62,10 @@ function Perfil() {
     const [minhasObras, setMinhasObras] = useState([]);
     const [carregandoObras, setCarregandoObras] = useState(true);
 
+    // Obras favoritadas na tela de Leitura (tabela "favoritos")
+    const [obrasFavoritadas, setObrasFavoritadas] = useState([]);
+    const [carregandoFavoritadas, setCarregandoFavoritadas] = useState(true);
+
     // Pesquisa e adição de obras à Minha Lista
     const [buscaMinhaLista, setBuscaMinhaLista] = useState('');
     const [resultadosPesquisaObras, setResultadosPesquisaObras] = useState([]);
@@ -206,15 +210,12 @@ function Perfil() {
                 const usuarioLogado =
                     authData?.user;
 
+                // Visitante (sem login) pode ver o perfil de outra
+                // pessoa (/Perfil/:id). Só o próprio perfil exige login.
                 if (
-                    erroAuth ||
-                    !usuarioLogado
+                    (erroAuth || !usuarioLogado) &&
+                    !routeId
                 ) {
-
-                    console.error(
-                        'Erro ao verificar usuário autenticado:',
-                        erroAuth
-                    );
 
                     navigate(
                         '/Login'
@@ -228,43 +229,49 @@ function Perfil() {
                 // 2. BUSCAR PERFIL DO USUÁRIO LOGADO
                 // =========================================
 
-                const {
-                    data: perfilLogado,
-                    error: erroPerfilLogado
-                } = await supabase
-                    .from('usuarios')
-                    .select('id')
-                    .eq(
-                        'auth_id',
-                        usuarioLogado.id
-                    )
-                    .maybeSingle();
+                let idUsuarioLogado = null;
+
+                if (usuarioLogado) {
+
+                    const {
+                        data: perfilLogado,
+                        error: erroPerfilLogado
+                    } = await supabase
+                        .from('usuarios')
+                        .select('id')
+                        .eq(
+                            'auth_id',
+                            usuarioLogado.id
+                        )
+                        .maybeSingle();
 
 
-                if (erroPerfilLogado) {
+                    if (erroPerfilLogado) {
 
-                    throw erroPerfilLogado;
+                        throw erroPerfilLogado;
 
-                }
+                    }
 
 
-                if (!perfilLogado) {
+                    if (!perfilLogado) {
 
-                    throw new Error(
-                        'O usuário autenticado não possui perfil na tabela usuarios.'
+                        throw new Error(
+                            'O usuário autenticado não possui perfil na tabela usuarios.'
+                        );
+
+                    }
+
+
+                    idUsuarioLogado =
+                        perfilLogado.id;
+
+
+                    // Guarda o ID correto do usuário logado
+                    setLoggedUserId(
+                        idUsuarioLogado
                     );
 
                 }
-
-
-                const idUsuarioLogado =
-                    perfilLogado.id;
-
-
-                // Guarda o ID correto do usuário logado
-                setLoggedUserId(
-                    idUsuarioLogado
-                );
 
 
                 // =========================================
@@ -583,6 +590,46 @@ function Perfil() {
         navigate,
         routeId
     ]);
+
+
+    // =========================================
+    // BUSCAR OBRAS FAVORITADAS
+    // =========================================
+
+    useEffect(() => {
+
+        async function buscarFavoritadas() {
+
+            if (!userId) {
+                return;
+            }
+
+            setCarregandoFavoritadas(true);
+
+            const { data, error } = await supabase
+                .from('favoritos')
+                .select('obra_id, obras(id, titulo, capa_url)')
+                .eq('usuario_id', userId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Erro ao buscar obras favoritadas:', error.message);
+                setObrasFavoritadas([]);
+            } else {
+                // Tira favoritos de obras que foram apagadas
+                setObrasFavoritadas(
+                    (data || [])
+                        .map((f) => f.obras)
+                        .filter((o) => o !== null)
+                );
+            }
+
+            setCarregandoFavoritadas(false);
+        }
+
+        buscarFavoritadas();
+
+    }, [userId]);
 
 
     // =========================================
@@ -986,8 +1033,7 @@ function Perfil() {
         async function buscarContagens() {
 
             if (
-                !userId ||
-                loggedUserId === null
+                !userId
             ) {
 
                 return;
@@ -1065,7 +1111,9 @@ function Perfil() {
                 // VERIFICAR SE EU SIGO ESSA PESSOA
                 // =========================================
 
+                // Visitante (sem login) não segue ninguém
                 if (
+                    loggedUserId !== null &&
                     Number(loggedUserId) !==
                     Number(userId)
                 ) {
@@ -2570,8 +2618,11 @@ function Perfil() {
 
 
                                             {/* =================================
-                                                E-MAIL
+                                                E-MAIL (só no próprio perfil,
+                                                para não expor o e-mail dos outros)
                                             ================================== */}
+
+                                            {isMeuPerfil && (
 
                                             <div className="info-item">
 
@@ -2595,6 +2646,8 @@ function Perfil() {
                                                 </div>
 
                                             </div>
+
+                                            )}
 
 
                                             {/* =================================
@@ -2681,8 +2734,12 @@ function Perfil() {
                                                     plano
                                                 ).toLowerCase() ===
                                                     'premium'
-                                                    ? 'Você é um apoiador do Anime Spot e possui acesso aos benefícios Premium.'
-                                                    : 'Você está utilizando o plano gratuito do Anime Spot.'
+                                                    ? (isMeuPerfil
+                                                        ? 'Você é um apoiador do Anime Spot e possui acesso aos benefícios Premium.'
+                                                        : 'Este usuário é um apoiador do Anime Spot.')
+                                                    : (isMeuPerfil
+                                                        ? 'Você está utilizando o plano gratuito do Anime Spot.'
+                                                        : 'Este usuário utiliza o plano gratuito do Anime Spot.')
                                             }
 
                                         </p>
@@ -2703,8 +2760,10 @@ function Perfil() {
 
 
                                     {/* =====================================
-                                        MOEDAS
+                                        MOEDAS (só no próprio perfil)
                                     ====================================== */}
+
+                                    {isMeuPerfil && (
 
                                     <section className="plan-section">
 
@@ -2749,6 +2808,8 @@ function Perfil() {
                                         )}
 
                                     </section>
+
+                                    )}
 
 
                                 </div>
@@ -3625,6 +3686,119 @@ function Perfil() {
                                                     Pesquise uma obra acima e adicione à sua lista.
                                                 </p>
 
+                                            )}
+
+                                        </div>
+
+                                    )}
+
+                                </section>
+
+
+                                {/* =========================================
+                                    OBRAS FAVORITADAS (tabela favoritos)
+                                ========================================== */}
+
+                                <section className="minha-lista-section">
+
+                                    <div className="minha-lista-header">
+
+                                        <div>
+
+                                            <h2 className="section-title">
+
+                                                <i className="ph-fill ph-heart"></i>
+
+                                                {
+                                                    isMeuPerfil
+                                                        ? 'Obras favoritadas'
+                                                        : `Favoritas de ${nome}`
+                                                }
+
+                                            </h2>
+
+                                            <p className="section-subtitle">
+
+                                                Obras marcadas com ❤️ na tela de leitura.
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    {carregandoFavoritadas ? (
+
+                                        <p className="mensagem-post">
+                                            Carregando obras...
+                                        </p>
+
+                                    ) : obrasFavoritadas.length > 0 ? (
+
+                                        <div className="minha-lista-grid">
+
+                                            {obrasFavoritadas.map((obra) => (
+
+                                                <div
+                                                    key={obra.id}
+                                                    className="obra-card"
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/Leitura/${encodeURIComponent(obra.titulo)}`
+                                                        )
+                                                    }
+                                                >
+
+                                                    <div className="obra-card-imagem">
+
+                                                        {obra.capa_url ? (
+
+                                                            <img
+                                                                src={obra.capa_url}
+                                                                alt={obra.titulo}
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                }}
+                                                            />
+
+                                                        ) : (
+
+                                                            <div className="obra-card-sem-imagem">
+                                                                <i className="ph ph-image"></i>
+                                                            </div>
+
+                                                        )}
+
+                                                    </div>
+
+                                                    <div className="obra-card-info">
+                                                        <h3>{obra.titulo}</h3>
+                                                    </div>
+
+                                                </div>
+
+                                            ))}
+
+                                        </div>
+
+                                    ) : (
+
+                                        <div className="sem-obras">
+
+                                            <i className="ph ph-heart"></i>
+
+                                            <h3>
+                                                {
+                                                    isMeuPerfil
+                                                        ? 'Você ainda não favoritou nenhuma obra'
+                                                        : `${nome} ainda não favoritou obras`
+                                                }
+                                            </h3>
+
+                                            {isMeuPerfil && (
+                                                <p>
+                                                    Abra uma obra e clique em "Favoritar".
+                                                </p>
                                             )}
 
                                         </div>

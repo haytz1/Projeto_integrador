@@ -1,0 +1,87 @@
+/* =========================================
+   TELA DE FAVORITOS
+   Todo o CSS fica dentro de #tela-favoritos
+   para não vazar para outras telas
+========================================= */
+
+#tela-favoritos {
+    padding: 2rem 2rem 4rem;
+    padding-top: calc(64px + 2rem);
+    min-height: 80vh;
+    background-color: #0d1117;
+}
+
+#tela-favoritos .favoritos-cabecalho {
+    margin-bottom: 2rem;
+}
+
+#tela-favoritos .favoritos-cabecalho h1 {
+    color: #fff;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+#tela-favoritos .favoritos-cabecalho p {
+    color: #aaa;
+    font-size: 1rem;
+}
+
+#tela-favoritos .favoritos-carregando {
+    color: #fff;
+}
+
+#tela-favoritos .favorito-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+#tela-favoritos .grade-obras {
+    margin: 0;
+}
+
+/* Estado vazio */
+#tela-favoritos .estado-vazio {
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px dashed rgba(168, 85, 247, 0.3);
+    padding: 4rem 2rem;
+    border-radius: 16px;
+    text-align: center;
+}
+
+#tela-favoritos .estado-vazio i {
+    font-size: 4.5rem;
+    color: #a855f7;
+    display: block;
+    margin-bottom: 1.2rem;
+}
+
+#tela-favoritos .estado-vazio-titulo {
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#tela-favoritos .estado-vazio-texto {
+    color: #888;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+#tela-favoritos .estado-vazio-botao {
+    display: inline-block;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+    #tela-favoritos {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
