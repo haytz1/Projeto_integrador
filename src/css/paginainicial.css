@@ -2168,3 +2168,46 @@ img {
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+/* =========================================
+   CELULAR: CARDS DE POST NÃO PASSAM DA TELA
+   Título comprido (com reticências) fazia o card ficar
+   mais largo que a tela. minmax(0, 1fr) + min-width: 0
+   deixam o card encolher e o título cortar com "...".
+   ========================================= */
+
+.post-card {
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .posts-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .posts-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Paginação dos posts quebra linha no celular */
+@media (max-width: 480px) {
+    .paginacao-posts {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .paginas-numeros {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-paginacao,
+    .numero-pagina {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+    }
+}

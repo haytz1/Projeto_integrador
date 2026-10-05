@@ -411,3 +411,202 @@
     align-items: center;
     gap: 10px;
 }
+
+/* Contador de notificações não lidas no menu do perfil */
+.nav-notif-contador {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #a855f7;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* =====================================================
+   CELULAR / TELAS PEQUENAS
+   - esconde o texto "AnimeSpot" (fica só a logo)
+   - a busca ocupa o espaço do meio sem sobrepor nada
+   - mostra só o botão "Entrar"
+   ===================================================== */
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .navbar .nav-logo-text {
+        display: none;
+    }
+
+    .navbar .nav-center {
+        position: static;
+        transform: none;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .navbar .nav-center .pesquisa-container {
+        max-width: none;
+    }
+
+    .navbar .nav-center .barra-pesquisa {
+        width: 100%;
+    }
+
+    .navbar .btn-criar-conta {
+        display: none;
+    }
+
+    .navbar .btn-entrar {
+        padding: 0.45rem 0.9rem;
+    }
+}
+
+
+/* =====================================================
+   MENU DO CELULAR (botão ☰ + gaveta lateral)
+   No computador o botão fica escondido.
+   ===================================================== */
+
+.nav-menu-celular {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    background: transparent;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Fundo escuro: fica sempre na página, mas invisível e sem receber toques */
+.menu-celular-fundo {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.menu-celular-fundo.aberto {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.menu-celular {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    background: #15092e;
+    border-right: 1px solid rgba(168, 85, 247, 0.4);
+    box-shadow: 4px 0 30px rgba(168, 85, 247, 0.25);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    box-sizing: border-box;
+    overflow-y: auto;
+    /* a rolagem dentro do menu não passa para a página */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* fechado: escondido à esquerda */
+    transform: translateX(-100%);
+    transition: transform 0.25s ease-out;
+}
+
+.menu-celular-fundo.aberto .menu-celular {
+    transform: translateX(0);
+}
+
+.menu-celular-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.menu-celular-titulo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #c384ff;
+}
+
+.menu-celular-fechar {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.menu-celular-links,
+.menu-celular-rodape {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.menu-celular-rodape {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.menu-celular-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: #eee;
+    font-size: 1rem;
+    text-decoration: none;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+}
+
+.menu-celular-link i {
+    font-size: 1.3rem;
+    color: #c384ff;
+}
+
+.menu-celular-link:hover,
+.menu-celular-link:active {
+    background: rgba(168, 85, 247, 0.15);
+}
+
+.menu-celular-sair,
+.menu-celular-sair i {
+    color: #ff7070;
+}
+
+@media (max-width: 768px) {
+    .navbar .nav-menu-celular {
+        display: flex;
+    }
+
+    .navbar .nav-left {
+        gap: 0.5rem;
+    }
+}

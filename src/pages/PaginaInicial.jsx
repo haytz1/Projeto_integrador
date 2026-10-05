@@ -216,6 +216,9 @@ function PaginaInicial() {
                     setPostsHero(postsEmbaralhados.slice(0, 3));
                 }
 
+                // Mostra os posts já, sem esperar obras e eventos carregarem
+                setCarregando(false);
+
                 const { data: dataObras, error: errorObras } = await supabase
                     .from("obras")
                     .select(
@@ -437,7 +440,7 @@ function PaginaInicial() {
             return;
         }
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "Tem certeza que deseja excluir esta postagem? Esta ação não pode ser desfeita.",
         );
 
@@ -645,7 +648,7 @@ function PaginaInicial() {
 
         const username = post.usuarios?.username || "este usuário";
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             `Deseja bloquear @${username}?\n\nAs postagens desse usuário não aparecerão mais para você.`,
         );
 
@@ -818,7 +821,7 @@ function PaginaInicial() {
             return;
         }
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "Tem certeza que deseja excluir este comentário?",
         );
 
@@ -1388,7 +1391,7 @@ function PaginaInicial() {
 
                 <aside className="sidebar-left" aria-label="Menu lateral">
                     <Link
-                        to="/ObrasMangas"
+                        to="/Notificacoes"
                         className="sidebar-notif"
                         id="link-notificacoes"
                     >

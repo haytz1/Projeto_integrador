@@ -15,10 +15,29 @@ function CardObra({ obra }) {
     // Se obra.capa_url existir e não deu erro, usa ela. Senão, usa o placehold.co
     const imagemSrc = !erroImagem && obra.capa_url ? obra.capa_url : `https://placehold.co/180x250/15092E/C384FF?text=${encodeURIComponent(obra.titulo)}`;
 
+    // Conta uma visualização da obra (só uma vez por sessão do navegador)
+    const registrarCliqueObra = async () => {
+        const chave = `clique_obra_${obra.id}`;
+
+        try {
+            if (sessionStorage.getItem(chave)) return;
+            sessionStorage.setItem(chave, "1");
+        } catch {
+            // sem trava
+        }
+
+        const { error } = await supabase.rpc("incrementar_visualizacao_obra", {
+            obra_id: Number(obra.id),
+        });
+
+        if (error) console.error("Erro ao registrar clique na obra:", error);
+    };
+
     return (
         <Link
             to={`/Leitura/${encodeURIComponent(obra.titulo)}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
+            onClick={registrarCliqueObra}
         >
             <article className="card">
                 <div className="card-imagem-container">
@@ -137,7 +156,71 @@ function ObrasMangas() {
             }
         }
 
-        // 3. Carrega o histórico de leituras diretamente do localStorage
+        // 3. Carrega o histórico de leituras
+        //    Logado: busca na tabela "leitura" (mesma lógica do Historico.jsx)
+        //    Visitante (ou erro no banco): usa o localStorage
+        async function procurar_historico() {
+            const usuarioId = localStorage.getItem('usuario_id');
+
+            if (!usuarioId) {
+                procurar_historico_local();
+                return;
+            }
+
+            const { data: leituras, error } = await supabase
+                .from('leitura')
+                .select('obra_titulo, ultimo_capitulo, created_at')
+                .eq('id_usuario', usuarioId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Erro ao carregar histórico do banco:", error.message);
+                procurar_historico_local();
+                return;
+            }
+
+            // Junta as linhas por obra, guardando o maior capítulo lido
+            const porObra = {};
+            (leituras || []).forEach((l) => {
+                if (!l.obra_titulo) return;
+                const atual = porObra[l.obra_titulo];
+                if (!atual) {
+                    porObra[l.obra_titulo] = { ...l };
+                } else if (l.ultimo_capitulo > atual.ultimo_capitulo) {
+                    atual.ultimo_capitulo = l.ultimo_capitulo;
+                }
+            });
+
+            const titulos = Object.keys(porObra);
+
+            if (titulos.length === 0) {
+                setHistoricoLidas([]);
+                return;
+            }
+
+            // Busca os capítulos de cada obra para saber se já foi concluída
+            const { data: obrasLidas } = await supabase
+                .from('obras')
+                .select('titulo, capitulos(numero_capitulo)')
+                .in('titulo', titulos);
+
+            const lista = titulos.map((titulo) => {
+                const item = porObra[titulo];
+                const obra = (obrasLidas || []).find((o) => o.titulo === titulo);
+                const numeros = obra?.capitulos?.map((c) => c.numero_capitulo) || [];
+                const ultimoDaObra = numeros.length > 0 ? Math.max(...numeros) : null;
+                const concluido = ultimoDaObra !== null && item.ultimo_capitulo >= ultimoDaObra;
+
+                return {
+                    obra_titulo: titulo,
+                    ultimo_capitulo: item.ultimo_capitulo,
+                    status: concluido ? 'Concluído' : 'Lendo'
+                };
+            });
+
+            setHistoricoLidas(lista);
+        }
+
         function procurar_historico_local() {
             try {
                 const usuarioId = localStorage.getItem('usuario_id');
@@ -214,20 +297,20 @@ function ObrasMangas() {
             async function loadData() {
                 setLoading(true);
                 await procurar_todas_obras();
-                procurar_historico_local();
+                await procurar_historico();
                 setLoading(false);
             }
 
             loadData();
 
-            window.addEventListener('focus', procurar_historico_local);
-            window.addEventListener('storage', procurar_historico_local);
-            window.addEventListener('historicoAtualizado', procurar_historico_local);
+            window.addEventListener('focus', procurar_historico);
+            window.addEventListener('storage', procurar_historico);
+            window.addEventListener('historicoAtualizado', procurar_historico);
 
             return () => {
-                window.removeEventListener('focus', procurar_historico_local);
-                window.removeEventListener('storage', procurar_historico_local);
-                window.removeEventListener('historicoAtualizado', procurar_historico_local);
+                window.removeEventListener('focus', procurar_historico);
+                window.removeEventListener('storage', procurar_historico);
+                window.removeEventListener('historicoAtualizado', procurar_historico);
             };
         }, []);
 
@@ -242,7 +325,7 @@ function ObrasMangas() {
                     {/* Cabeçalho Fixo Superior Limpo */}
                     <header className="cabecalho-obras">
                         <div className="acoes-esquerda">
-                            <Link to="/" className="btn-voltar">⭠ Voltar ao Menu</Link>
+                            <Link to="/" className="btn-voltar" title="Voltar ao Menu">⭠ <span className="texto-botao">Voltar ao Menu</span></Link>
                             {/* Botão Voltar movido para a secao-hero abaixo */}
                         </div>
 
@@ -268,11 +351,11 @@ function ObrasMangas() {
                                     setModalAberto(true);
                                 }}
                             >
-                                ➕ Nova Obra
+                                ➕ <span className="texto-botao">Nova Obra</span>
                             </button>
 
                             <details className="filtro-container">
-                                <summary className="filtro-icone" title="Filtrar por gênero">&#9776; Gêneros</summary>
+                                <summary className="filtro-icone" title="Filtrar por gênero">&#9776; <span className="texto-botao">Gêneros</span></summary>
                                 <div className="filtro-generos">
                                     {['acao', 'aventura', 'comedia', 'drama', 'esporte', 'fantasia', 'ficcao', 'misterio', 'romance', 'sobrenatural', 'terror'].map((gen, idx) => {
                                         const labels = {
@@ -338,8 +421,10 @@ function ObrasMangas() {
                                     ) : (
                                         historicoLidas.slice(0, 6).map((item, index) => (
                                             <li key={`hist-${index}`}>
-                                                <span className="obra-titulo" style={{ fontWeight: 'bold' }}>{item.obra_titulo}</span>
-                                                <span className="obra-caps" style={{ fontSize: '0.75rem', opacity: 0.8 }}>Cap. {item.ultimo_capitulo} - {item.status}</span>
+                                                <Link to={`/Leitura/${encodeURIComponent(item.obra_titulo || '')}`} className="obra-lida-link">
+                                                    <span className="obra-titulo" style={{ fontWeight: 'bold' }}>{item.obra_titulo}</span>
+                                                    <span className="obra-caps" style={{ fontSize: '0.75rem', opacity: 0.8 }}>Cap. {item.ultimo_capitulo} - {item.status}</span>
+                                                </Link>
                                             </li>
                                         ))
                                     )}

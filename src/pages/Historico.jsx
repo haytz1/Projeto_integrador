@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '/supabase';
 import '../css/historico.css';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
 
@@ -8,6 +9,70 @@ function Historico() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Usuário logado: busca o histórico salvo no banco (tabela "leitura")
+        async function carregarHistoricoBanco(usuarioId) {
+            setLoading(true);
+
+            const { data: leituras, error } = await supabase
+                .from('leitura')
+                .select('obra_titulo, ultimo_capitulo, created_at')
+                .eq('id_usuario', usuarioId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Erro ao carregar histórico do banco:', error.message);
+                carregarHistoricoLocal();
+                return;
+            }
+
+            // Junta as linhas por obra, guardando o maior capítulo lido
+            const porObra = {};
+            (leituras || []).forEach((l) => {
+                if (!l.obra_titulo) return;
+                const atual = porObra[l.obra_titulo];
+                if (!atual) {
+                    porObra[l.obra_titulo] = { ...l };
+                } else if (l.ultimo_capitulo > atual.ultimo_capitulo) {
+                    atual.ultimo_capitulo = l.ultimo_capitulo;
+                }
+            });
+
+            const titulos = Object.keys(porObra);
+
+            if (titulos.length === 0) {
+                setHistorico([]);
+                setLoading(false);
+                return;
+            }
+
+            // Busca capa e total de capítulos de cada obra
+            const { data: obras } = await supabase
+                .from('obras')
+                .select('titulo, capa_url, capitulos(numero_capitulo)')
+                .in('titulo', titulos);
+
+            const lista = titulos.map((titulo) => {
+                const item = porObra[titulo];
+                const obra = (obras || []).find((o) => o.titulo === titulo);
+                const numeros = obra?.capitulos?.map((c) => c.numero_capitulo) || [];
+                const ultimoDaObra = numeros.length > 0 ? Math.max(...numeros) : null;
+
+                // Leu o último capítulo da obra = Concluído
+                const concluido = ultimoDaObra !== null && item.ultimo_capitulo >= ultimoDaObra;
+
+                return {
+                    obra_titulo: titulo,
+                    ultimo_capitulo: item.ultimo_capitulo,
+                    capa_url: obra?.capa_url || null,
+                    status: concluido ? 'Concluído' : 'Lendo'
+                };
+            });
+
+            setHistorico(lista);
+            setLoading(false);
+        }
+
+        // Visitante (ou erro no banco): usa o histórico salvo no navegador
         function carregarHistoricoLocal() {
             setLoading(true);
             try {
@@ -55,7 +120,13 @@ function Historico() {
             }
         }
 
-        carregarHistoricoLocal();
+        const usuarioId = localStorage.getItem('usuario_id');
+
+        if (usuarioId) {
+            carregarHistoricoBanco(usuarioId);
+        } else {
+            carregarHistoricoLocal();
+        }
     }, []);
 
     // Função auxiliar para definir a classe CSS com base no status
@@ -88,7 +159,12 @@ function Historico() {
                             const numeroCapa = (index % 20) + 1;
 
                             return (
-                                <article className="item-historico" key={item.id || index}>
+                                <Link
+                                    to={`/Leitura/${encodeURIComponent(item.obra_titulo || '')}`}
+                                    key={item.obra_titulo || index}
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                <article className="item-historico">
                                     <div className="item-esquerda">
                                         <div
                                             className={`capa capa-${numeroCapa}`}
@@ -108,6 +184,7 @@ function Historico() {
                                         {item.status}
                                     </div>
                                 </article>
+                                </Link>
                             );
                         })
                     )}
