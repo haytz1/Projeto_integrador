@@ -59,7 +59,24 @@ function ObrasMangas() {
     const [novoTitulo, setNovoTitulo] = useState('');
     const [novaSinopse, setNovaSinopse] = useState('');
     const [novaCapaUrl, setNovaCapaUrl] = useState('');
+    const [novoGeneroPrincipal, setNovoGeneroPrincipal] = useState('');
+    const [novoSubgenero, setNovoSubgenero] = useState('');
     const [salvando, setSalvando] = useState(false);
+
+    // Opções de gênero para o modal
+    const GENEROS_OPCOES = [
+        { value: 'Ação', label: '⚔️ Ação' },
+        { value: 'Aventura', label: '🗺️ Aventura' },
+        { value: 'Comédia', label: '😂 Comédia' },
+        { value: 'Drama', label: '🎭 Drama' },
+        { value: 'Esporte', label: '⚽ Esporte' },
+        { value: 'Fantasia', label: '🧙 Fantasia' },
+        { value: 'Ficção Científica', label: '🚀 Ficção Científica' },
+        { value: 'Mistério', label: '🔍 Mistério' },
+        { value: 'Romance', label: '💕 Romance' },
+        { value: 'Sobrenatural', label: '👻 Sobrenatural' },
+        { value: 'Terror', label: '🩸 Terror' },
+    ];
 
     // Estado para os gêneros selecionados
     const [generosSelecionados, setGenerosSelecionados] = useState([]);
@@ -67,29 +84,6 @@ function ObrasMangas() {
     // Paginação
     const OBRAS_POR_PAGINA = 9;
     const [paginaAtual, setPaginaAtual] = useState(1);
-
-
-    function CardObra({ obra }) {
-        const [erroImagem, setErroImagem] = useState(false);
-
-        const registrarCliqueObra = async () => {
-            const chave = `clique_obra_${obra.id}`;
-
-            try {
-                if (sessionStorage.getItem(chave)) return;
-                sessionStorage.setItem(chave, "1");
-            } catch {
-                // sem trava
-            }
-
-            const { error } = await supabase.rpc("incrementar_visualizacao_obra", {
-                obra_id: Number(obra.id),
-            });
-
-            if (error) console.error("Erro ao registrar clique na obra:", error);
-        };
-
-    }
 
 
 
@@ -193,7 +187,9 @@ function ObrasMangas() {
                         sinopse: novaSinopse.trim() || null,
                         capa_url: novaCapaUrl.trim() || null,
                         autor_id: usuarioId,
-                        status: 'Em andamento'
+                        status: 'Em andamento',
+                        genero_principal: novoGeneroPrincipal || null,
+                        subgenero: novoSubgenero.trim() || null,
                     }
                 ]);
 
@@ -207,6 +203,8 @@ function ObrasMangas() {
                 setNovoTitulo('');
                 setNovaSinopse('');
                 setNovaCapaUrl('');
+                setNovoGeneroPrincipal('');
+                setNovoSubgenero('');
                 setModalAberto(false);
                 procurar_todas_obras();
             }
@@ -490,6 +488,34 @@ function ObrasMangas() {
                                         />
                                     </div>
 
+                                    <div className="form-generos-modal">
+                                        <div className="form-group">
+                                            <label>🎭 Gênero Principal</label>
+                                            <select
+                                                value={novoGeneroPrincipal}
+                                                onChange={(e) => setNovoGeneroPrincipal(e.target.value)}
+                                                className="select-genero"
+                                            >
+                                                <option value="">Selecione um gênero...</option>
+                                                {GENEROS_OPCOES.map(g => (
+                                                    <option key={g.value} value={g.value}>{g.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>✨ Subgênero <span className="label-opcional">(opcional)</span></label>
+                                            <input
+                                                type="text"
+                                                placeholder="Ex: Cyberpunk, Isekai, Slice of Life..."
+                                                value={novoSubgenero}
+                                                onChange={(e) => setNovoSubgenero(e.target.value)}
+                                                className="input-subgenero"
+                                                maxLength={50}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="form-group">
                                         <label>Sinopse</label>
                                         <textarea
@@ -516,6 +542,6 @@ function ObrasMangas() {
                 <Rodape />
             </>
         );
-    }
+}
 
-    export default ObrasMangas
+export default ObrasMangas;
