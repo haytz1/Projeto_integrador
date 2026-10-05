@@ -441,3 +441,27 @@ a.obra-etiqueta:hover {
         height: 128px;
     }
 }
+
+/* Obra sem capítulos */
+.leitura-container.sem-capitulos {
+    min-height: 0;
+    text-align: center;
+    padding: 50px 30px;
+}
+
+.leitura-container.sem-capitulos i {
+    font-size: 3.5rem;
+    color: #C384FF;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.leitura-container.sem-capitulos h2 {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+}
+
+.leitura-container.sem-capitulos p {
+    color: #bbb;
+    font-size: 1rem;
+}

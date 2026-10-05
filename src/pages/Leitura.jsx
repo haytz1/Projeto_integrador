@@ -15,6 +15,8 @@ function Leitura() {
     const [capituloAtual, setCapituloAtual] = useState(1);
     const [dadosObra, setDadosObra] = useState(null);
     const [listaCapitulos, setListaCapitulos] = useState([]);
+    // Fica true depois que a busca de capítulos termina (para não mostrar "sem capítulos" enquanto carrega)
+    const [capitulosCarregados, setCapitulosCarregados] = useState(false);
     const [conteudoCapitulo, setConteudoCapitulo] = useState('');
     const [isFavorito, setIsFavorito] = useState(false);
     const [autorNome, setAutorNome] = useState('');
@@ -144,7 +146,9 @@ function Leitura() {
 
         if (capsError) {
             console.error("Erro ao buscar capítulos:", capsError.message);
+            setCapitulosCarregados(true);
         } else {
+            setCapitulosCarregados(true);
             setListaCapitulos(capsData || []);
             if (capsData && capsData.length > 0) {
                 if (selecionarCapitulo) {
@@ -526,6 +530,9 @@ function Leitura() {
     // Preço do capítulo VIP atual (10 moedas se não tiver valor cadastrado)
     const valorCapitulo = capituloAtualDados?.valor_moeda || 10;
 
+    // Obra cadastrada, mas ainda sem nenhum capítulo
+    const semCapitulos = capitulosCarregados && listaCapitulos.length === 0;
+
     // Progresso: posição do capítulo atual na lista de capítulos
     const posicaoCapitulo = listaCapitulos.findIndex(c => c.numero_capitulo === capituloAtual) + 1;
     const porcentagemProgresso = listaCapitulos.length > 0
@@ -562,6 +569,7 @@ function Leitura() {
                         </button>
                     )}
                 </div>
+                {!semCapitulos && (
                 <select
                     className="capitulos"
                     value={capituloAtual}
@@ -582,6 +590,7 @@ function Leitura() {
                         )}
                     </optgroup>
                 </select>
+                )}
 
                 {souAutor && (
                     <button className="btn btn-novo-capitulo" onClick={abrirModalNovoCapitulo}>
@@ -617,7 +626,7 @@ function Leitura() {
                                 </span>
                             )}
                             <span className="obra-etiqueta">
-                                <i className="ph ph-books"></i> {listaCapitulos.length} capítulos
+                                <i className="ph ph-books"></i> {listaCapitulos.length} {listaCapitulos.length === 1 ? 'capítulo' : 'capítulos'}
                             </span>
                         </div>
 
@@ -713,6 +722,19 @@ function Leitura() {
                 </div>
             )}
 
+            {semCapitulos ? (
+                /* Obra sem capítulos: mostra aviso no lugar do leitor */
+                <div className="leitura-container sem-capitulos">
+                    <i className="ph ph-book-open"></i>
+                    <h2>Esta obra ainda não tem capítulos</h2>
+                    <p>
+                        {souAutor
+                            ? 'Clique em "+ Novo Capítulo" lá em cima para publicar o primeiro.'
+                            : 'Favorite a obra para ser avisado quando o primeiro capítulo sair.'}
+                    </p>
+                </div>
+            ) : (
+            <>
             <div className="info-progresso">
                 <span>Progresso da Obra</span>
                 <span>
@@ -807,6 +829,8 @@ function Leitura() {
                     Próximo Capítulo
                 </button>
             </div>
+            </>
+            )}
         </>
     );
 }
