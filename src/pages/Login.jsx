@@ -134,9 +134,9 @@ function Login() {
 
     // =====================================================
     // BUSCAR O PERFIL NA TABELA usuarios E ENTRAR
-    // (usado pelo login com senha e pelo login com Google/Apple)
+    // (usado pelo login com senha e pelo login com Google)
     // criarSeFaltar = true só no login social: no primeiro acesso
-    // pelo Google/Apple ainda não existe perfil, então criamos um.
+    // pelo Google ainda não existe perfil, então criamos um.
     // =====================================================
 
     async function carregarPerfilEEntrar(user, criarSeFaltar) {
@@ -189,11 +189,11 @@ function Login() {
                 }
             }
 
-            // Dados que o Google/Apple mandam (nome e foto)
+            // Dados que o Google manda (nome e foto)
             const dadosSociais = user.user_metadata || {};
             const fotoSocial = dadosSociais.avatar_url || dadosSociais.picture || null;
 
-            // Primeiro acesso pelo Google/Apple: cria o perfil
+            // Primeiro acesso pelo Google: cria o perfil
             if (!usuario && criarSeFaltar) {
 
                 const username = await gerarUsernameLivre(user);
@@ -287,7 +287,7 @@ function Login() {
     }
 
 
-    // Cria um username a partir do nome do Google/Apple ou do e-mail.
+    // Cria um username a partir do nome do Google ou do e-mail.
     // Se já existir alguém com esse nome, coloca números no final.
     async function gerarUsernameLivre(user) {
 
@@ -325,15 +325,15 @@ function Login() {
 
 
     // =====================================================
-    // LOGIN COM GOOGLE / APPLE
+    // LOGIN COM GOOGLE
     // =====================================================
-    // 1. O botão manda a pessoa para a tela do Google/Apple
+    // 1. O botão manda a pessoa para a tela do Google
     // 2. Depois de entrar, ela volta para /Login
     // 3. O useEffect abaixo percebe a sessão e chama carregarPerfilEEntrar
 
     const entrarComProvedor = async (provedor) => {
 
-        const nomeProvedor = provedor === 'google' ? 'Google' : 'Apple';
+        const nomeProvedor = 'Google';
 
         // Confere no Supabase se esse login já foi ativado.
         // Sem isso, a pessoa cairia numa página de erro do Supabase.
@@ -378,12 +378,12 @@ function Login() {
     };
 
 
-    // Quando volta do Google/Apple
+    // Quando volta do Google
     useEffect(() => {
 
         async function voltarDoLoginSocial() {
 
-            // O Google/Apple podem devolver um erro na própria URL
+            // O Google pode devolver um erro na própria URL
             const parametros = new URLSearchParams(
                 window.location.search + '&' + window.location.hash.replace('#', '')
             );
@@ -397,7 +397,7 @@ function Login() {
 
             if (erroUrl) {
                 console.error('ERRO VINDO DO LOGIN SOCIAL:', erroUrl);
-                alert('Erro ao entrar com ' + (provedor === 'google' ? 'Google' : 'Apple') + ': ' + erroUrl);
+                alert('Erro ao entrar com Google: ' + erroUrl);
                 return;
             }
 
@@ -704,7 +704,7 @@ function Login() {
                         </div>
 
 
-                        {/* LOGIN COM GOOGLE / APPLE */}
+                        {/* LOGIN COM GOOGLE */}
 
                         <button
                             type="button"
@@ -716,15 +716,6 @@ function Login() {
                             Continuar com o Google
                         </button>
 
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-social"
-                            onClick={() => entrarComProvedor('apple')}
-                            disabled={carregando}
-                        >
-                            <i className="ph ph-apple-logo"></i>
-                            Continuar com a Apple
-                        </button>
 
 
                         {/* CADASTRO */}

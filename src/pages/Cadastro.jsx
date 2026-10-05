@@ -115,12 +115,12 @@ function Cadastro() {
         }
     }
 
-    // Criar conta com Google/Apple.
+    // Criar conta com Google.
     // Depois de entrar, a pessoa volta para /Login, que cria o perfil
     // na tabela usuarios (se for o primeiro acesso) e leva para o Perfil.
     const entrarComProvedor = async (provedor) => {
 
-        const nomeProvedor = provedor === 'google' ? 'Google' : 'Apple';
+        const nomeProvedor = 'Google';
 
         // Confere no Supabase se esse login já foi ativado.
         // Sem isso, a pessoa cairia numa página de erro do Supabase.
@@ -383,15 +383,6 @@ function Cadastro() {
                             Continuar com o Google
                         </button>
 
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => entrarComProvedor('apple')}
-                            disabled={carregando}
-                        >
-                            <i className="ph ph-apple-logo"></i>
-                            Continuar com a Apple
-                        </button>
 
                         <div className="login-link-container">
 
