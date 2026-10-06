@@ -46,8 +46,8 @@ function Leitura() {
 
     const usuarioId = localStorage.getItem('usuario_id');
 
-    // Só o autor da obra pode adicionar capítulos
-    const souAutor = dadosObra && usuarioId && String(dadosObra.autor_id) === String(usuarioId);
+    // Qualquer usuário logado pode adicionar capítulos
+    const podeAdicionarCapitulo = !!usuarioId;
 
     function atualizarHistoricoLocal(obraId, obraTituloParam, numeroCapitulo) {
         const tituloParaSalvar = obraTituloParam || obraTitulo;
@@ -592,7 +592,7 @@ function Leitura() {
                 </select>
                 )}
 
-                {souAutor && (
+                {podeAdicionarCapitulo && (
                     <button className="btn btn-novo-capitulo" onClick={abrirModalNovoCapitulo}>
                         + Novo Capítulo
                     </button>
