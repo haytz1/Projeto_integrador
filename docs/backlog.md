@@ -45,3 +45,9 @@
 - Rota: `/Favoritos`
 - Página placeholder que exibe mensagem "Você ainda não adicionou nenhum favorito" com ícone e CTA.
 - Usa o mesmo padrão de layout de `Seguindo.jsx`.
+
+## Leitura.jsx (Novo Capítulo sempre pago)
+- O modal "+ Novo Capítulo" não tem mais o checkbox VIP: todo capítulo criado é **Conteúdo Pago** (`e_vip: true`).
+- Valor FIXO de 25 moedas (constante `VALOR_CAPITULO` no topo do arquivo), sem campo editável; salvo na coluna `valor_moeda` da tabela `capitulos`. O modal mostra "⭐ Conteúdo Pago – 25 moedas".
+- O select de capítulos mostra `⭐ (X moedas)` para capítulos pagos.
+- Ainda NÃO existe bloqueio de leitura/desconto de moedas ao abrir capítulo pago.

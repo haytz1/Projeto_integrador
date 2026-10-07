@@ -4,6 +4,9 @@ import '../css/leitura.css';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '/supabase';
 
+// Todo capítulo novo é pago e custa sempre esse valor fixo
+const VALOR_CAPITULO = 25;
+
 function Leitura() {
     const params = useParams();
     const identificador = params.id || params.tituloObra;
@@ -20,7 +23,6 @@ function Leitura() {
     const [novoNumero, setNovoNumero] = useState('');
     const [novoTituloCap, setNovoTituloCap] = useState('');
     const [novoConteudo, setNovoConteudo] = useState('');
-    const [novoEVip, setNovoEVip] = useState(false); // Estado para controlar se o capítulo é VIP
 
     function atualizarHistoricoLocal(obraId, obraTituloParam, numeroCapitulo) {
         const tituloParaSalvar = obraTituloParam || obraTitulo;
@@ -202,7 +204,6 @@ function Leitura() {
         }
         setNovoTituloCap('');
         setNovoConteudo('');
-        setNovoEVip(false);
         setModalAberto(true);
     }
 
@@ -225,8 +226,8 @@ function Leitura() {
                     numero_capitulo: numParsed,
                     titulo_capitulo: novoTituloCap || `Capítulo ${numParsed}`,
                     conteudo: novoConteudo || 'Conteúdo padrão do capítulo.',
-                    e_vip: novoEVip,
-                    valor_moeda: null
+                    e_vip: true,
+                    valor_moeda: VALOR_CAPITULO
                 }
             ]);
 
@@ -330,7 +331,7 @@ function Leitura() {
                         {listaCapitulos.length > 0 ? (
                             listaCapitulos.map(cap => (
                                 <option key={cap.id} value={cap.numero_capitulo}>
-                                    Capítulo {cap.numero_capitulo} {cap.titulo_capitulo ? `- ${cap.titulo_capitulo}` : ''} {cap.e_vip ? '⭐ (VIP)' : ''}
+                                    Capítulo {cap.numero_capitulo} {cap.titulo_capitulo ? `- ${cap.titulo_capitulo}` : ''} {cap.e_vip ? `⭐ (${cap.valor_moeda || 0} moedas)` : ''}
                                 </option>
                             ))
                         ) : (
@@ -372,18 +373,9 @@ function Leitura() {
                                 style={{ padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#2a2a40', color: '#fff' }}
                             />
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '5px' }}>
-                                <input
-                                    type="checkbox"
-                                    id="vipCheck"
-                                    checked={novoEVip}
-                                    onChange={e => setNovoEVip(e.target.checked)}
-                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                />
-                                <label htmlFor="vipCheck" style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                    Capítulo VIP (Conteúdo Pago)
-                                </label>
-                            </div>
+                            <p style={{ color: '#c384ff', fontWeight: 'bold', marginTop: '5px' }}>
+                                ⭐ Conteúdo Pago – {VALOR_CAPITULO} moedas
+                            </p>
 
                             <label>Conteúdo / Texto:</label>
                             <textarea
