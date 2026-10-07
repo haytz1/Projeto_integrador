@@ -1,27 +1,76 @@
 import '../css/moedas.css'
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../supabase';
 import Rodape from '../components/Rodape';
 import NavbarPesquisa from '../components/Navbar_pesquisa';
+import Checkout from '../components/Checkout';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+// Preço de cada pacote de moedas (em reais)
+const PRECOS = {
+    50: 5,
+    100: 10,
+    150: 15
+};
 
-const supabaseKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+function formatarReais(valor) {
+    return valor.toFixed(2).replace('.', ',');
+}
 
 function Moedas() {
 
-    const comprarMoedas = async (quantidade) => {
+    const [saldo, setSaldo] = useState(null);
+    const [comprando, setComprando] = useState(null);
+
+    // Aviso que aparece na tela (no lugar do alert): { tipo: 'sucesso' | 'erro', titulo, texto }
+    const [aviso, setAviso] = useState(null);
+
+    // Pacote escolhido: abre a tela de pagamento (null = fechada)
+    const [pacoteNoCheckout, setPacoteNoCheckout] = useState(null);
+
+    // Mostra o saldo atual assim que a página abre
+    useEffect(() => {
+        async function buscarSaldo() {
+            const usuarioId = localStorage.getItem('usuario_id');
+            if (!usuarioId) return;
+
+            const { data } = await supabase
+                .from('usuarios')
+                .select('moedas')
+                .eq('id', usuarioId)
+                .maybeSingle();
+
+            if (data) {
+                setSaldo(data.moedas || 0);
+            }
+        }
+
+        buscarSaldo();
+    }, []);
+
+    // Clique em "Comprar": confere o login e abre a tela de pagamento
+    const abrirCheckout = (quantidade) => {
+
+        setAviso(null);
+
+        if (!localStorage.getItem('usuario_id')) {
+            setAviso({
+                tipo: 'erro',
+                titulo: 'Você não está logado',
+                texto: 'Faça login para comprar moedas.'
+            });
+            return;
+        }
+
+        setPacoteNoCheckout(quantidade);
+    };
+
+    // Chamada pela tela de pagamento depois do "pagamento"
+    const comprarMoedas = async (quantidade, metodo) => {
 
         const usuarioId = localStorage.getItem('usuario_id');
 
-        if (!usuarioId) {
-            alert('Faça login para comprar moedas.');
-            return;
-        }
+        setComprando(quantidade);
 
         // Busca o saldo atual
         const { data: usuario, error: erroBusca } = await supabase
@@ -37,34 +86,23 @@ function Moedas() {
                 erroBusca
             );
 
-            alert('Erro ao consultar suas moedas.');
+            setAviso({
+                tipo: 'erro',
+                titulo: 'Erro na compra',
+                texto: 'Não foi possível consultar suas moedas. Tente novamente.'
+            });
+
+            setComprando(null);
+            setPacoteNoCheckout(null);
 
             return;
         }
 
         const moedasAtuais = usuario.moedas || 0;
 
-        // Mantém o limite de 150 moedas
-        if (moedasAtuais >= 150) {
-
-            alert(
-                'Você já possui 150 moedas.'
-            );
-
-            return;
-        }
-
-        // Calcula quantas moedas ainda podem ser adicionadas
-        const moedasDisponiveis = 150 - moedasAtuais;
-
-        const moedasRecebidas = Math.min(
-            quantidade,
-            moedasDisponiveis
-        );
-
+        // Sem limite: soma a quantidade comprada ao saldo atual
         const novoSaldo =
-            moedasAtuais + moedasRecebidas;
-
+            moedasAtuais + quantidade;
 
         // Atualiza o saldo no banco
         const { error: erroAtualizacao } = await supabase
@@ -81,24 +119,29 @@ function Moedas() {
                 erroAtualizacao
             );
 
-            alert('Erro ao adicionar moedas.');
+            setAviso({
+                tipo: 'erro',
+                titulo: 'Erro na compra',
+                texto: 'Não foi possível adicionar as moedas. Nenhum valor foi cobrado.'
+            });
+
+            setComprando(null);
+            setPacoteNoCheckout(null);
 
             return;
         }
 
+        // Mostra na tela quanto foi cobrado e o novo saldo
+        setSaldo(novoSaldo);
+        setComprando(null);
+        setPacoteNoCheckout(null);
+        setAviso({
+            tipo: 'sucesso',
+            titulo: 'Compra concluída!',
+            texto: `R$ ${formatarReais(PRECOS[quantidade])} pagos com ${metodo} (pagamento simulado) · +${quantidade} moedas · Saldo atual: ${novoSaldo} moedas`
+        });
 
-        if (moedasRecebidas < quantidade) {
-
-            alert(
-                `Você recebeu ${moedasRecebidas} moedas.`
-            );
-
-        } else {
-
-            alert(
-                `Você recebeu ${moedasRecebidas} moedas!`
-            );
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
 
@@ -124,7 +167,32 @@ function Moedas() {
                         disponíveis do Anime Spot.
                     </p>
 
+                    {saldo !== null && (
+                        <div className="saldo-atual">
+                            <i className="ph-fill ph-coins"></i>
+                            Seu saldo: <strong>{saldo} moedas</strong>
+                        </div>
+                    )}
+
                 </header>
+
+
+                {/* =========================================
+                    AVISO DA COMPRA (no lugar do alert)
+                ========================================== */}
+
+                {aviso && (
+                    <div className={`aviso-compra aviso-compra-${aviso.tipo}`}>
+                        <i className={`ph ${aviso.tipo === 'sucesso' ? 'ph-check-circle' : 'ph-warning-circle'}`}></i>
+
+                        <div>
+                            <strong>{aviso.titulo}</strong>
+                            <span>{aviso.texto}</span>
+                        </div>
+
+                        <button onClick={() => setAviso(null)} aria-label="Fechar aviso">×</button>
+                    </div>
+                )}
 
 
                 {/* =========================================
@@ -182,9 +250,10 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(50)}
+                                onClick={() => abrirCheckout(50)}
+                                disabled={comprando !== null}
                             >
-                                Comprar 50 moedas
+                                {comprando === 50 ? 'Comprando...' : 'Comprar 50 moedas'}
                             </button>
 
                         </div>
@@ -245,9 +314,10 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(100)}
+                                onClick={() => abrirCheckout(100)}
+                                disabled={comprando !== null}
                             >
-                                Comprar 100 moedas
+                                {comprando === 100 ? 'Comprando...' : 'Comprar 100 moedas'}
                             </button>
 
                         </div>
@@ -303,9 +373,10 @@ function Moedas() {
 
                             <button
                                 className="btn-coin"
-                                onClick={() => comprarMoedas(150)}
+                                onClick={() => abrirCheckout(150)}
+                                disabled={comprando !== null}
                             >
-                                Comprar 150 moedas
+                                {comprando === 150 ? 'Comprando...' : 'Comprar 150 moedas'}
                             </button>
 
                         </div>
@@ -341,6 +412,20 @@ function Moedas() {
                 </div>
 
             </main>
+
+            {/* TELA DE PAGAMENTO (abre ao clicar em Comprar) */}
+            <Checkout
+                key={pacoteNoCheckout || 'fechado'}
+                item={pacoteNoCheckout && {
+                    titulo: `${pacoteNoCheckout} Moedas`,
+                    descricao: 'Moedas adicionadas na hora à sua conta para desbloquear capítulos VIP.',
+                    valor: PRECOS[pacoteNoCheckout],
+                    recorrente: false
+                }}
+                onFechar={() => setPacoteNoCheckout(null)}
+                onPagar={(metodo) => comprarMoedas(pacoteNoCheckout, metodo)}
+            />
+
 <Rodape/>
         </>
     );

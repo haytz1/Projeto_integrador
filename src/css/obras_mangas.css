@@ -281,6 +281,15 @@
     cursor: pointer;
 }
 
+.obras-lidas .obra-lida-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
 .obras-lidas ul li:hover {
     background-color: rgba(139, 92, 246, 0.14);
     border-color: rgba(139, 92, 246, 0.35);
@@ -866,6 +875,67 @@
 }
 
 /* =====================
+   CAMPOS DE GÊNERO NO MODAL
+   ===================== */
+.form-generos-modal {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.form-generos-modal .form-group {
+    margin-bottom: 0;
+}
+
+.select-genero {
+    background-color: rgba(13, 17, 23, 0.8);
+    border: 1.5px solid rgba(139, 92, 246, 0.25);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b5cf6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.select-genero:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.select-genero option {
+    background-color: #1a1035;
+    color: var(--text-primary);
+}
+
+.input-subgenero {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.label-opcional {
+    font-size: 0.72rem;
+    opacity: 0.55;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+@media (max-width: 520px) {
+    .form-generos-modal {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================
    RESPONSIVO
    ===================== */
 @media (max-width: 1024px) {
@@ -900,5 +970,46 @@
 @media (max-width: 480px) {
     .grade-obras {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =====================
+   CELULAR: botões do topo só com ícone,
+   para a busca caber sem empurrar nada para fora
+   ===================== */
+@media (max-width: 600px) {
+    .cabecalho-obras {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .cabecalho-obras .acoes-direita {
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+        justify-content: flex-end;
+    }
+
+    .cabecalho-obras .texto-botao {
+        display: none;
+    }
+
+    .pagina-obras-mangas .barra-pesquisa {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pagina-obras-mangas .btn-voltar,
+    .pagina-obras-mangas .btn-add-obra,
+    .pagina-obras-mangas .filtro-icone {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* lista de gêneros não pode passar da borda da tela */
+    .pagina-obras-mangas .filtro-generos {
+        right: 0;
+        max-width: calc(100vw - 20px);
     }
 }

@@ -1,0 +1,50 @@
+#tela-nao-encontrada {
+    min-height: 100vh;
+    background-color: #15092e;
+    color: #fff;
+}
+
+#tela-nao-encontrada .nao-encontrada-conteudo {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: calc(64px + 2rem) 1.5rem 2rem;
+}
+
+#tela-nao-encontrada .nao-encontrada-icone {
+    font-size: 5rem;
+    color: #a855f7;
+    margin-bottom: 1rem;
+}
+
+#tela-nao-encontrada h1 {
+    font-size: 5rem;
+    margin: 0;
+    color: #c384ff;
+}
+
+#tela-nao-encontrada h2 {
+    font-size: 1.6rem;
+    margin: 0.5rem 0;
+}
+
+#tela-nao-encontrada p {
+    color: #aaa;
+    margin-bottom: 2rem;
+}
+
+#tela-nao-encontrada .nao-encontrada-botao {
+    padding: 12px 28px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+#tela-nao-encontrada .nao-encontrada-botao:hover {
+    opacity: 0.9;
+}

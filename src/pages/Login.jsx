@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Navbar from '../components/Navbar';
 
@@ -75,20 +75,6 @@ function Login() {
             }
 
 
-            console.log(
-                'LOGIN REALIZADO COM SUCESSO!'
-            );
-
-            console.log(
-                'ID DO AUTH:',
-                data.user.id
-            );
-
-            console.log(
-                'E-MAIL:',
-                data.user.email
-            );
-
 
             // Verifica se a sessão realmente existe
             const { data: sessionData, error: sessionError } =
@@ -124,19 +110,36 @@ function Login() {
             }
 
 
-            console.log(
-                'SESSÃO CRIADA COM SUCESSO!'
+
+            await carregarPerfilEEntrar(data.user, false);
+
+        } catch (erro) {
+
+            console.error(
+                'ERRO NO LOGIN:',
+                erro
             );
 
-            console.log(
-                'USUÁRIO DA SESSÃO:',
-                sessionData.session.user
+            alert(
+                'Ocorreu um erro ao tentar fazer login.'
             );
 
+        } finally {
 
-            // =====================================================
-            // BUSCAR O PERFIL NA TABELA usuarios
-            // =====================================================
+            setCarregando(false);
+
+        }
+    };
+
+
+    // =====================================================
+    // BUSCAR O PERFIL NA TABELA usuarios E ENTRAR
+    // (usado pelo login com senha e pelo login com Google)
+    // criarSeFaltar = true só no login social: no primeiro acesso
+    // pelo Google ainda não existe perfil, então criamos um.
+    // =====================================================
+
+    async function carregarPerfilEEntrar(user, criarSeFaltar) {
 
             let usuario = null;
 
@@ -147,7 +150,7 @@ function Login() {
             } = await supabase
                 .from('usuarios')
                 .select('*')
-                .eq('auth_id', data.user.id)
+                .eq('auth_id', user.id)
                 .maybeSingle();
 
             if (erroAuthId) {
@@ -163,7 +166,7 @@ function Login() {
 
             // Se não encontrou, tenta pelo e-mail.
             // Isso permite recuperar um perfil antigo que ficou sem auth_id.
-            if (!usuario && data.user.email) {
+            if (!usuario && user.email) {
 
                 const {
                     data: usuarioPorEmail,
@@ -171,7 +174,7 @@ function Login() {
                 } = await supabase
                     .from('usuarios')
                     .select('*')
-                    .eq('email', data.user.email)
+                    .eq('email', user.email)
                     .maybeSingle();
 
                 if (erroEmail) {
@@ -183,6 +186,59 @@ function Login() {
 
                 if (usuarioPorEmail) {
                     usuario = usuarioPorEmail;
+                }
+            }
+
+            // Dados que o Google manda (nome e foto)
+            const dadosSociais = user.user_metadata || {};
+            const fotoSocial = dadosSociais.avatar_url || dadosSociais.picture || null;
+
+            // Primeiro acesso pelo Google: cria o perfil
+            if (!usuario && criarSeFaltar) {
+
+                const username = await gerarUsernameLivre(user);
+
+                const {
+                    data: novoUsuario,
+                    error: erroCriar
+                } = await supabase
+                    .from('usuarios')
+                    .insert({
+                        auth_id: user.id,
+                        email: user.email,
+                        username: username,
+                        foto: fotoSocial
+                    })
+                    .select('*')
+                    .single();
+
+                if (erroCriar) {
+                    console.error(
+                        'ERRO AO CRIAR PERFIL DO LOGIN SOCIAL:',
+                        erroCriar
+                    );
+                } else {
+                    usuario = novoUsuario;
+                }
+            }
+
+            // Perfil criado pelo banco, mas sem nome (login social): completa
+            if (usuario && !usuario.username && criarSeFaltar) {
+
+                const username = await gerarUsernameLivre(user);
+
+                const { data: atualizado } = await supabase
+                    .from('usuarios')
+                    .update({
+                        username: username,
+                        foto: usuario.foto || fotoSocial
+                    })
+                    .eq('id', usuario.id)
+                    .select('*')
+                    .single();
+
+                if (atualizado) {
+                    usuario = atualizado;
                 }
             }
 
@@ -213,12 +269,12 @@ function Login() {
 
             localStorage.setItem(
                 'usuario_auth_id',
-                String(data.user.id)
+                String(user.id)
             );
 
             localStorage.setItem(
                 'usuario_email',
-                usuario.email || data.user.email || ''
+                usuario.email || user.email || ''
             );
 
             localStorage.setItem(
@@ -226,41 +282,143 @@ function Login() {
                 usuario.username || ''
             );
 
-            console.log(
-                'PERFIL ENCONTRADO:',
-                usuario
-            );
-
-            console.log(
-                'ID DA TABELA usuarios:',
-                usuario.id
-            );
-
-            console.log(
-                'ID DO AUTH:',
-                data.user.id
-            );
-
             // Agora sim vai para o Perfil
             navigate('/Perfil');
+    }
 
+
+    // Cria um username a partir do nome do Google ou do e-mail.
+    // Se já existir alguém com esse nome, coloca números no final.
+    async function gerarUsernameLivre(user) {
+
+        const dados = user.user_metadata || {};
+
+        const base = (
+            dados.full_name ||
+            dados.name ||
+            (user.email || 'usuario').split('@')[0]
+        )
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')   // tira acentos
+            .replace(/[^a-zA-Z0-9_]/g, '')       // tira espaços e símbolos
+            .slice(0, 20) || 'usuario';
+
+        let tentativa = base;
+
+        for (let i = 0; i < 5; i++) {
+
+            const { data: existente } = await supabase
+                .from('usuarios')
+                .select('id')
+                .eq('username', tentativa)
+                .maybeSingle();
+
+            if (!existente) {
+                return tentativa;
+            }
+
+            tentativa = base + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        return tentativa;
+    }
+
+
+    // =====================================================
+    // LOGIN COM GOOGLE
+    // =====================================================
+    // 1. O botão manda a pessoa para a tela do Google
+    // 2. Depois de entrar, ela volta para /Login
+    // 3. O useEffect abaixo percebe a sessão e chama carregarPerfilEEntrar
+
+    const entrarComProvedor = async (provedor) => {
+
+        const nomeProvedor = 'Google';
+
+        // Confere no Supabase se esse login já foi ativado.
+        // Sem isso, a pessoa cairia numa página de erro do Supabase.
+        try {
+            const resposta = await fetch(
+                import.meta.env.VITE_SUPABASE_URL + '/auth/v1/settings',
+                {
+                    headers: {
+                        apikey:
+                            import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+                            import.meta.env.VITE_SUPABASE_ANON_KEY
+                    }
+                }
+            );
+            const config = await resposta.json();
+
+            if (!config.external?.[provedor]) {
+                alert('O login com ' + nomeProvedor + ' ainda não foi ativado no Supabase.');
+                return;
+            }
         } catch (erro) {
+            console.error('ERRO AO VERIFICAR LOGIN SOCIAL:', erro);
+        }
 
-            console.error(
-                'ERRO NO LOGIN:',
-                erro
-            );
+        localStorage.setItem('login_social', provedor);
 
-            alert(
-                'Ocorreu um erro ao tentar fazer login.'
-            );
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: provedor,
+            options: {
+                redirectTo: window.location.origin + '/Login'
+            }
+        });
 
-        } finally {
+        if (error) {
 
-            setCarregando(false);
+            localStorage.removeItem('login_social');
 
+            console.error('ERRO NO LOGIN SOCIAL:', error);
+
+            alert('Erro ao entrar com ' + nomeProvedor + ': ' + error.message);
         }
     };
+
+
+    // Quando volta do Google
+    useEffect(() => {
+
+        async function voltarDoLoginSocial() {
+
+            // O Google pode devolver um erro na própria URL
+            const parametros = new URLSearchParams(
+                window.location.search + '&' + window.location.hash.replace('#', '')
+            );
+            const erroUrl = parametros.get('error_description');
+
+            const provedor = localStorage.getItem('login_social');
+
+            if (!provedor) return;
+
+            localStorage.removeItem('login_social');
+
+            if (erroUrl) {
+                console.error('ERRO VINDO DO LOGIN SOCIAL:', erroUrl);
+                alert('Erro ao entrar com Google: ' + erroUrl);
+                return;
+            }
+
+            const { data } = await supabase.auth.getSession();
+
+            if (data?.session?.user) {
+                setCarregando(true);
+                try {
+                    await carregarPerfilEEntrar(data.session.user, true);
+                } catch (erro) {
+                    console.error('ERRO NO LOGIN SOCIAL:', erro);
+                    alert('Ocorreu um erro ao tentar fazer login.');
+                } finally {
+                    setCarregando(false);
+                }
+            }
+        }
+
+        voltarDoLoginSocial();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 
     // RECUPERAR SENHA
@@ -544,6 +702,20 @@ function Login() {
                             Ou
 
                         </div>
+
+
+                        {/* LOGIN COM GOOGLE */}
+
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-social"
+                            onClick={() => entrarComProvedor('google')}
+                            disabled={carregando}
+                        >
+                            <i className="ph ph-google-logo"></i>
+                            Continuar com o Google
+                        </button>
+
 
 
                         {/* CADASTRO */}

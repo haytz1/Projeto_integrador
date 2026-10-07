@@ -1,0 +1,164 @@
+#tela-notificacoes {
+    min-height: 100vh;
+    background-color: #15092e;
+    color: #fff;
+}
+
+#tela-notificacoes .notif-conteudo {
+    max-width: 800px;
+    min-height: 80vh;
+    margin: 0 auto;
+    padding: calc(64px + 2rem) 1.5rem 4rem;
+}
+
+#tela-notificacoes .notif-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+#tela-notificacoes .notif-cabecalho h1 {
+    font-size: 2rem;
+    margin: 0 0 0.3rem;
+}
+
+#tela-notificacoes .notif-cabecalho p {
+    color: #aaa;
+    margin: 0;
+}
+
+#tela-notificacoes .notif-botao-lidas {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background: transparent;
+    color: #c384ff;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+#tela-notificacoes .notif-botao-lidas:hover {
+    background: rgba(168, 85, 247, 0.15);
+}
+
+#tela-notificacoes .notif-filtros {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#tela-notificacoes .notif-filtros button {
+    padding: 7px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: transparent;
+    color: #ccc;
+    cursor: pointer;
+}
+
+#tela-notificacoes .notif-filtros button.ativo {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border-color: transparent;
+    color: #fff;
+}
+
+#tela-notificacoes .notif-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+#tela-notificacoes .notif-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#tela-notificacoes .notif-item:hover {
+    background: rgba(168, 85, 247, 0.1);
+}
+
+#tela-notificacoes .notif-item.nao-lida {
+    background: rgba(168, 85, 247, 0.12);
+    border-left: 4px solid #a855f7;
+}
+
+#tela-notificacoes .notif-icone {
+    font-size: 1.6rem;
+    color: #c384ff;
+}
+
+#tela-notificacoes .notif-texto {
+    flex: 1;
+}
+
+#tela-notificacoes .notif-texto p {
+    margin: 0 0 0.25rem;
+    line-height: 1.4;
+}
+
+#tela-notificacoes .notif-item.nao-lida .notif-texto p {
+    font-weight: 600;
+}
+
+#tela-notificacoes .notif-texto span {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+#tela-notificacoes .notif-apagar {
+    background: transparent;
+    border: none;
+    color: #777;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+}
+
+#tela-notificacoes .notif-apagar:hover {
+    color: #f87171;
+}
+
+#tela-notificacoes .notif-mensagem {
+    color: #aaa;
+    text-align: center;
+}
+
+#tela-notificacoes .notif-vazio {
+    text-align: center;
+    padding: 4rem 2rem;
+    border-radius: 16px;
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px dashed rgba(168, 85, 247, 0.3);
+}
+
+#tela-notificacoes .notif-vazio i {
+    font-size: 4rem;
+    color: #a855f7;
+}
+
+#tela-notificacoes .notif-vazio p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+#tela-notificacoes .notif-vazio span {
+    color: #888;
+    font-size: 0.95rem;
+}

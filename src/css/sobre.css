@@ -1,0 +1,112 @@
+#tela-sobre {
+    min-height: 100vh;
+    background-color: #15092e;
+    color: #fff;
+}
+
+#tela-sobre .sobre-conteudo {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: calc(64px + 2rem) 1.5rem 4rem;
+}
+
+#tela-sobre .sobre-cabecalho {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+#tela-sobre .sobre-cabecalho h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
+#tela-sobre .sobre-cabecalho p {
+    color: #aaa;
+}
+
+#tela-sobre .sobre-atalhos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+#tela-sobre .sobre-atalhos a {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    color: #c384ff;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+#tela-sobre .sobre-atalhos a:hover {
+    background: rgba(168, 85, 247, 0.15);
+}
+
+#tela-sobre .sobre-secao {
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    /* espaço para a navbar fixa não cobrir o título ao rolar */
+    scroll-margin-top: 80px;
+}
+
+#tela-sobre .sobre-secao h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.4rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #c384ff;
+}
+
+#tela-sobre .sobre-secao p,
+#tela-sobre .sobre-secao li {
+    color: #ddd;
+    line-height: 1.7;
+}
+
+#tela-sobre .sobre-secao ul {
+    padding-left: 1.2rem;
+    list-style: disc;
+}
+
+#tela-sobre .sobre-pergunta {
+    border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+    padding: 0.9rem 0;
+}
+
+#tela-sobre .sobre-pergunta summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#tela-sobre .sobre-pergunta p {
+    margin: 0.75rem 0 0;
+}
+
+#tela-sobre .sobre-botao {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 10px 24px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    #tela-sobre .sobre-secao {
+        padding: 1.25rem;
+    }
+
+    #tela-sobre .sobre-cabecalho h1 {
+        font-size: 1.7rem;
+    }
+}

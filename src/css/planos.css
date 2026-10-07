@@ -231,3 +231,81 @@ body {
         transform: translateY(-10px);
     }
 }
+
+/* =========================================================
+   AVISO NA TELA (no lugar do alert) E PLANO ATUAL
+   ========================================================= */
+
+.plano-atual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1.2rem;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(195, 132, 255, 0.12);
+    border: 1px solid rgba(195, 132, 255, 0.4);
+    color: #fff;
+}
+
+.plano-atual i {
+    color: #f5c542;
+    font-size: 1.2rem;
+}
+
+.aviso-plano {
+    max-width: 900px;
+    margin: -1.5rem auto 2rem;
+    padding: 14px 18px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: aviso-planoEntrada 0.3s ease-out;
+}
+
+.aviso-plano > i {
+    font-size: 1.8rem;
+}
+
+.aviso-plano div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.aviso-plano span {
+    opacity: 0.9;
+}
+
+.aviso-plano button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.aviso-plano-sucesso {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #86efac;
+}
+
+.aviso-plano-erro {
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    color: #fca5a5;
+}
+
+@keyframes aviso-planoEntrada {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-coin:disabled,
+.btn-plan:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

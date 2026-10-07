@@ -52,10 +52,44 @@ function Denuncias() {
     const [atualizandoStatus, setAtualizandoStatus] = useState(null);
     const [processandoAlvo, setProcessandoAlvo] = useState(false);
 
-    const tipoUsuario = localStorage.getItem("tipo_usuario");
+    const [tipoUsuario, setTipoUsuario] = useState(null);
+    const [verificandoAcesso, setVerificandoAcesso] = useState(true);
 
     const usuarioAutorizado =
         tipoUsuario === "admin" || tipoUsuario === "moderador";
+
+    /*
+    |--------------------------------------------------------------------------
+    | DESCOBRIR O TIPO DO USUÁRIO
+    |--------------------------------------------------------------------------
+    |
+    | O tipo (admin / moderador) é buscado na tabela "usuarios" pelo
+    | usuário logado no Supabase Auth. Não usamos o localStorage, porque
+    | qualquer pessoa consegue alterar o localStorage pelo navegador.
+    |
+    */
+
+    useEffect(() => {
+        async function buscarTipoUsuario() {
+            const { data: authData } = await supabase.auth.getUser();
+
+            if (authData && authData.user) {
+                const { data } = await supabase
+                    .from("usuarios")
+                    .select("tipo_usuario")
+                    .eq("auth_id", authData.user.id)
+                    .maybeSingle();
+
+                if (data) {
+                    setTipoUsuario(data.tipo_usuario);
+                }
+            }
+
+            setVerificandoAcesso(false);
+        }
+
+        buscarTipoUsuario();
+    }, []);
 
     /*
     |--------------------------------------------------------------------------
@@ -64,6 +98,10 @@ function Denuncias() {
     */
 
     useEffect(() => {
+        if (verificandoAcesso) {
+            return;
+        }
+
         if (!usuarioAutorizado) {
             // eslint-disable-next-line react/set-state-in-effect
             setCarregando(false);
@@ -71,7 +109,7 @@ function Denuncias() {
         }
 
         buscarDenuncias();
-    }, [usuarioAutorizado]);
+    }, [verificandoAcesso, usuarioAutorizado]);
 
     /*
     |--------------------------------------------------------------------------
@@ -248,7 +286,7 @@ function Denuncias() {
     */
 
     const excluirDenuncia = async (denuncia) => {
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "Tem certeza que deseja excluir esta denúncia?\n\n" +
                 "Esta ação não pode ser desfeita.",
         );
@@ -312,7 +350,7 @@ function Denuncias() {
             return;
         }
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "Deseja ocultar esta postagem?\n\n" +
                 "Ela continuará salva no banco de dados, " +
                 "mas não aparecerá para os usuários.",
@@ -413,7 +451,7 @@ function Denuncias() {
             return;
         }
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "ATENÇÃO!\n\n" +
                 "Deseja excluir definitivamente esta postagem?\n\n" +
                 "Esta ação não pode ser desfeita.",
@@ -496,7 +534,7 @@ function Denuncias() {
             return;
         }
 
-        const confirmou = window.confirm(
+        const confirmou = await window.confirmarNaTela(
             "ATENÇÃO!\n\n" +
                 "Deseja excluir definitivamente este comentário?\n\n" +
                 "Esta ação não pode ser desfeita.",
@@ -609,6 +647,10 @@ function Denuncias() {
     | ACESSO NEGADO
     |--------------------------------------------------------------------------
     */
+
+    if (verificandoAcesso) {
+        return null;
+    }
 
     if (!usuarioAutorizado) {
         return (

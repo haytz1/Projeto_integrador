@@ -84,7 +84,7 @@ function Cadastro() {
 
             if (error) {
 
-                console.log('ERRO DO SUPABASE AUTH:', error);
+                console.error('ERRO DO SUPABASE AUTH:', error);
 
                 alert('Erro ao cadastrar: ' + error.message);
 
@@ -98,16 +98,13 @@ function Cadastro() {
                 return;
             }
 
-            console.log('USUÁRIO CRIADO NO SUPABASE AUTH!');
-            console.log('ID DO AUTH:', data.user.id);
-
             alert('Conta criada com sucesso!');
 
             navigate('/Login');
 
         } catch (erro) {
 
-            console.log('ERRO:', erro);
+            console.error('ERRO:', erro);
 
             alert('Ocorreu um erro ao criar a conta.');
 
@@ -117,6 +114,55 @@ function Cadastro() {
 
         }
     }
+
+    // Criar conta com Google.
+    // Depois de entrar, a pessoa volta para /Login, que cria o perfil
+    // na tabela usuarios (se for o primeiro acesso) e leva para o Perfil.
+    const entrarComProvedor = async (provedor) => {
+
+        const nomeProvedor = 'Google';
+
+        // Confere no Supabase se esse login já foi ativado.
+        // Sem isso, a pessoa cairia numa página de erro do Supabase.
+        try {
+            const resposta = await fetch(
+                import.meta.env.VITE_SUPABASE_URL + '/auth/v1/settings',
+                {
+                    headers: {
+                        apikey:
+                            import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+                            import.meta.env.VITE_SUPABASE_ANON_KEY
+                    }
+                }
+            );
+            const config = await resposta.json();
+
+            if (!config.external?.[provedor]) {
+                alert('O login com ' + nomeProvedor + ' ainda não foi ativado no Supabase.');
+                return;
+            }
+        } catch (erro) {
+            console.error('ERRO AO VERIFICAR LOGIN SOCIAL:', erro);
+        }
+
+        localStorage.setItem('login_social', provedor);
+
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: provedor,
+            options: {
+                redirectTo: window.location.origin + '/Login'
+            }
+        });
+
+        if (error) {
+
+            localStorage.removeItem('login_social');
+
+            console.error('ERRO NO LOGIN SOCIAL:', error);
+
+            alert('Erro ao entrar com ' + nomeProvedor + ': ' + error.message);
+        }
+    };
 
     return (
         <>
@@ -330,9 +376,13 @@ function Cadastro() {
                         <button
                             type="button"
                             className="btn btn-secondary"
+                            onClick={() => entrarComProvedor('google')}
+                            disabled={carregando}
                         >
+                            <i className="ph ph-google-logo"></i>
                             Continuar com o Google
                         </button>
+
 
                         <div className="login-link-container">
 
